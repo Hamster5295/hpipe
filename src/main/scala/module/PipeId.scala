@@ -93,7 +93,7 @@ class PipeId(implicit val p: Parameters) extends Module {
       ECALL  -> parse(N, Src1.None, Src2.None, false, false, false, false, false, false, false),
       EBREAK -> parse(N, Src1.None, Src2.None, false, false, false, false, false, false, false)
     ),
-    BitPat(0.U)
+    BitPat(0.U(14.W))
   )
   val result   = decoder(inst, instTable)
   val instType = result.head(3).asTypeOf(InstType())

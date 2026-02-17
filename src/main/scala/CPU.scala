@@ -44,5 +44,10 @@ class CPU(implicit val p: Parameters) extends Module {
 }
 
 object CPU extends App {
-  Export(new CPU()(new Parameters), "cpu", useOutputBuffer = false)
+  Export(
+    new CPU()(new Parameters),
+    "sim/rtl",
+    useOutputBuffer = false,
+    usePathPrefix = false
+  )
 }
