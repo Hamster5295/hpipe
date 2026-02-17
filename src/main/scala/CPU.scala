@@ -47,7 +47,8 @@ object CPU extends App {
   Export(
     new CPU()(new Parameters),
     "sim/rtl",
-    useOutputBuffer = false,
-    usePathPrefix = false
+    withOutputBuffer = false,
+    withPathPrefix = false,
+    splitVerilog = false
   )
 }

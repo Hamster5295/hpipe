@@ -50,7 +50,3 @@ class RegFile(implicit val p: Parameters) extends Module {
     }
   }
 }
-
-object RegFile extends App {
-  Export(new RegFile()(new Parameters), "regfile", useOutputBuffer = false)
-}
