@@ -16,7 +16,7 @@ make verilog
 
 This Core implements a classical 5-stage pipelined CPU.  
 
-Currently it only supports RV32I, but more instruction sets are on the way.
+Currently it only supports RV32I, but more extensions are on the way.
 
 ## Road Map
 - [ ] Testbenches & Unit Tests using `verilator` and [`riscv-tests`](https://github.com/riscv-software-src/riscv-tests)  
