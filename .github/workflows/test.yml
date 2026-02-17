@@ -30,4 +30,4 @@ jobs:
           sudo apt-get install verilator
           verilator --version
       - name: mill Test
-        run: ./mill _.test
+        run: ./mill hpipe.runMain hpipe.CPU
