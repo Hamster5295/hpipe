@@ -1,0 +1,6 @@
+[submodule "script/riscv-opcodes"]
+	path = script/riscv-opcodes
+	url = git@github.com:riscv/riscv-opcodes
+[submodule "src/main/scala/hammer"]
+	path = src/main/scala/hammer
+	url = git@github.com:Hamster5295/hammer.git
