@@ -5,7 +5,7 @@ import chisel3.util._
 import hammer._
 import hpipe.ALUOp._
 
-class ALUIO(implicit val p: Parameters) extends Bundle {
+class ALUIO(implicit p: Parameters) extends Bundle {
   val src1 = Input(Word())
   val src2 = Input(Word())
   val op   = Input(ALUOp())
@@ -15,7 +15,7 @@ class ALUIO(implicit val p: Parameters) extends Bundle {
   val result = Output(Word())
 }
 
-class ALU(implicit val p: Parameters) extends Module {
+class ALU(implicit p: Parameters) extends Module {
   val io = IO(new ALUIO)
 
   val unsigned = io.op === SLTU

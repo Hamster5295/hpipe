@@ -4,13 +4,17 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class CPUIO(implicit val p: Parameters) extends Bundle {
+class CPUIO(implicit p: Parameters) extends Bundle {
   val instFetch = new InstFetchIO
   val memLoad   = new MemLoadIO
   val memStore  = new MemStoreIO
+
+  val retire = Output(new RetireInfo)
+
+  val debug = if (p.debug) Output(new DebugInfo) else null
 }
 
-class CPU(implicit val p: Parameters) extends Module {
+class CPU(implicit p: Parameters) extends Module {
   val io = IO(new CPUIO)
 
   val pipeIf  = Module(new PipeIf)
@@ -41,14 +45,35 @@ class CPU(implicit val p: Parameters) extends Module {
   pipeMem.io.fromEx := RegNext(pipeEx.io.toMem)
   pipeWb.io.fromMem := RegNext(pipeMem.io.toWb)
 
+  // Retire Observation
+  io.retire := pipeWb.io.retire
+
+  // Debug
+  if (p.debug) {
+    io.debug.pcIf  := pipeIf.io.toId.pc
+    io.debug.pcId  := pipeId.io.toEx.pc
+    io.debug.pcEx  := pipeEx.io.toMem.pc
+    io.debug.pcMem := pipeMem.io.toWb.pc
+    io.debug.pcWb  := pipeWb.io.retire.pc
+
+    io.debug.regs := pipeId.io.regs
+  }
 }
 
 object CPU extends App {
   Export(
-    new CPU()(new Parameters),
+    new CPU()(new Parameters()),
+    "build",
+    withOutputBuffer = false,
+    withPathPrefix = false
+  )
+}
+
+object CPUSim extends App {
+  Export(
+    new CPU()(new Parameters(debug = true)),
     "sim/rtl",
     withOutputBuffer = false,
-    withPathPrefix = false,
-    splitVerilog = false
+    withPathPrefix = false
   )
 }

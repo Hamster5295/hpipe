@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class PipeMemIO(implicit val p: Parameters) extends Bundle {
+class PipeMemIO(implicit p: Parameters) extends Bundle {
   val memLoad  = new MemLoadIO
   val memStore = new MemStoreIO
   val fromEx   = Flipped(new Ex2MemIO)
@@ -13,7 +13,7 @@ class PipeMemIO(implicit val p: Parameters) extends Bundle {
   val toId = new FeedForward
 }
 
-class PipeMem(implicit val p: Parameters) extends Module {
+class PipeMem(implicit p: Parameters) extends Module {
   val io     = IO(new PipeMemIO)
   val fromEx = io.fromEx
 
@@ -40,10 +40,12 @@ class PipeMem(implicit val p: Parameters) extends Module {
   ))
 
   val toWb = io.toWb
+  toWb.valid   := fromEx.valid
   toWb.pc      := fromEx.pc
   toWb.rd      := fromEx.rd
   toWb.writeRd := fromEx.uop.writeRd
   toWb.data    := Mux(fromEx.uop.isLd, result, fromEx.alu)
+  toWb.ebreak  := fromEx.uop.isEBreak
 
   val toId = io.toId
   toId.writeRd := fromEx.uop.writeRd
