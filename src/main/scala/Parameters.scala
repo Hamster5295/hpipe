@@ -4,6 +4,8 @@ import chisel3._
 import hammer._
 
 class Parameters(
+    val debug: Boolean = false,
+
     val XLEN: Int = 32,
 
     val InstWidth: Int = 32,
