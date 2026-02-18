@@ -4,3 +4,6 @@
 [submodule "src/main/scala/hammer"]
 	path = src/main/scala/hammer
 	url = git@github.com:Hamster5295/hammer.git
+[submodule "sim/lib/mini-gdbstub"]
+	path = sim/lib/mini-gdbstub
+	url = https://github.com/RinHizakura/mini-gdbstub.git

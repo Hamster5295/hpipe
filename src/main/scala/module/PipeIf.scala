@@ -4,14 +4,14 @@ import chisel3._
 import chisel3.util._
 import hammer.MuxIf
 
-class PipeIfIO(implicit val p: Parameters) extends Bundle {
+class PipeIfIO(implicit p: Parameters) extends Bundle {
   val fetch = new InstFetchIO
   val toId  = new If2IdIO
 
   val fromEx = Input(ValidIO(Addr()))
 }
 
-class PipeIf(implicit val p: Parameters) extends Module {
+class PipeIf(implicit p: Parameters) extends Module {
   val io = IO(new PipeIfIO)
 
   val pc     = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
@@ -22,6 +22,7 @@ class PipeIf(implicit val p: Parameters) extends Module {
   pc := nextpc
 
   io.fetch.addr := pc
+  io.toId.valid := !reset.asBool
   io.toId.pc    := pc
   io.toId.inst  := io.fetch.inst
 }

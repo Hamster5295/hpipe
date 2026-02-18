@@ -3,25 +3,27 @@ package hpipe
 import chisel3._
 import chisel3.util._
 
-class InstFetchIO(implicit val p: Parameters) extends Bundle {
+// Data Bundles
+
+class InstFetchIO(implicit p: Parameters) extends Bundle {
   val addr = Output(Addr())
   val inst = Input(Inst())
 }
 
-class MemLoadIO(implicit val p: Parameters) extends Bundle {
+class MemLoadIO(implicit p: Parameters) extends Bundle {
   val req  = Output(Bool())
   val addr = Output(Addr())
   val data = Input(Word())
 }
 
-class MemStoreIO(implicit val p: Parameters) extends Bundle {
+class MemStoreIO(implicit p: Parameters) extends Bundle {
   val req  = Output(Bool())
   val addr = Output(Addr())
   val data = Output(Word())
   val mask = Output(UInt(4.W))
 }
 
-class FeedForward(implicit val p: Parameters) extends Bundle {
+class FeedForward(implicit p: Parameters) extends Bundle {
   val rd      = XRegAddr()
   val writeRd = Bool()
   val data    = Word()
@@ -29,12 +31,46 @@ class FeedForward(implicit val p: Parameters) extends Bundle {
   def isValid(rs: UInt) = writeRd && rd.orR && (rs === rd)
 }
 
-class If2IdIO(implicit val p: Parameters) extends Bundle {
+class UOp(implicit p: Parameters) extends Bundle {
+  val writeRd  = Bool() // Write data back to rf
+  val isBr     = Bool() // Branch current pc
+  val isLd     = Bool() // Load data in mem stage
+  val isSt     = Bool() // Store data in mem stage
+  val isJal    = Bool() // Is JAL (get PC+4 and use it for wb)
+  val isSra    = Bool() // Is SRA (for ALU)
+  val isEBreak = Bool() // Is EBreak Inst
+
+  def isMem = isLd || isSt
+}
+
+class RetireInfo(implicit p: Parameters) extends Bundle {
+  val valid  = Bool()
+  val pc     = Addr()
+  val ebreak = Bool()
+}
+
+class DebugInfo(implicit p: Parameters) extends Bundle {
+  val pcIf  = Addr()
+  val pcId  = Addr()
+  val pcEx  = Addr()
+  val pcMem = Addr()
+  val pcWb  = Addr()
+
+  val regs = Vec(31, Word())
+}
+
+// Pipeline IOs
+
+class PipeIO(implicit p: Parameters) extends Bundle {
+  val valid = Output(Bool())
+}
+
+class If2IdIO(implicit p: Parameters) extends PipeIO {
   val inst = Output(Inst())
   val pc   = Output(Addr())
 }
 
-class Id2ExIO(implicit val p: Parameters) extends Bundle {
+class Id2ExIO(implicit p: Parameters) extends PipeIO {
   val pc = Addr()
 
   val rs1 = XRegAddr()
@@ -49,7 +85,7 @@ class Id2ExIO(implicit val p: Parameters) extends Bundle {
   val uop   = new UOp()
 }
 
-class Ex2MemIO(implicit val p: Parameters) extends Bundle {
+class Ex2MemIO(implicit p: Parameters) extends PipeIO {
   val pc = Addr()
   val rd = XRegAddr()
 
@@ -60,23 +96,16 @@ class Ex2MemIO(implicit val p: Parameters) extends Bundle {
   val uop = new UOp()
 }
 
-class Mem2WbIO(implicit val p: Parameters) extends Bundle {
+class Mem2WbIO(implicit p: Parameters) extends PipeIO {
   val pc      = Addr()
   val writeRd = Bool()
   val rd      = XRegAddr()
   val data    = Word()
+
+  val ebreak = Bool()
 }
 
-class UOp(implicit val p: Parameters) extends Bundle {
-  val writeRd = Bool() // Write data back to rf
-  val isBr    = Bool() // Branch current pc
-  val isLd    = Bool() // Load data in mem stage
-  val isSt    = Bool() // Store data in mem stage
-  val isJal   = Bool() // Is JAL (get PC+4 and use it for wb)
-  val isSra   = Bool() // Is SRA (for ALU)
-
-  def isMem = isLd || isSt
-}
+// Enums
 
 object InstType extends ChiselEnum {
   val Invalid, R, I, S, B, U, J, N = Value

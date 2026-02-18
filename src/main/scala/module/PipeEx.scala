@@ -6,7 +6,7 @@ import hammer._
 import hpipe.ALUOp._
 import hpipe.BranchOp._
 
-class PipeExIO(implicit val p: Parameters) extends Bundle {
+class PipeExIO(implicit p: Parameters) extends Bundle {
   val fromId = Flipped(new Id2ExIO)
   val toMem  = new Ex2MemIO
 
@@ -14,7 +14,7 @@ class PipeExIO(implicit val p: Parameters) extends Bundle {
   val toIf = Output(ValidIO(Addr()))
 }
 
-class PipeEx(implicit val p: Parameters) extends Module {
+class PipeEx(implicit p: Parameters) extends Module {
   val io     = IO(new PipeExIO)
   val fromId = io.fromId
 
@@ -36,7 +36,7 @@ class PipeEx(implicit val p: Parameters) extends Module {
   alu.io.sra  := fromId.uop.isSra
 
   // Branch
-  val brTake = MuxLookup(fromId.funct, false.B)(Seq(
+  val brTake = fromId.uop.isBr && MuxLookup(fromId.funct, false.B)(Seq(
     EQ.asUInt  -> (alu.io.result === 0.U),
     NE.asUInt  -> (alu.io.result === 1.U),
     LT.asUInt  -> (alu.io.result === 1.U),
@@ -51,6 +51,7 @@ class PipeEx(implicit val p: Parameters) extends Module {
 
   // To Mem
   val toMem = io.toMem
+  toMem.valid := fromId.valid
   toMem.pc    := fromId.pc
   toMem.rd    := fromId.rd
   toMem.funct := fromId.funct
