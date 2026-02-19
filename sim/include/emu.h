@@ -2,6 +2,9 @@
 #define __EMU_H
 
 #define MEM_SIZE 16384
+#define MAX_CYCLE_PER_INST 32
+
+#define RESET_VECTOR 0x80000000
 
 #define REGS                                                                   \
   REG(0);                                                                      \
@@ -37,6 +40,6 @@
   REG(30);
 
 struct target_ops emu_init();
-void emu_cleanup();
+int emu_cleanup();
 
 #endif
