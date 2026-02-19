@@ -33,7 +33,7 @@ object `hpipe` extends SbtModule { m =>
 
   override def semanticDbVersion = "4.15.2"
 
-  val resourcesPath = os.pwd.toString() + "/src/main/resources"
+  val resourcesPath = millSourcePath.toString() + "/src/main/resources"
   val envPath       = sys.env("PATH") + ":" + resourcesPath
   override def forkEnv: T[Map[String, String]] = super.forkEnv() ++ Map(
     "PATH" -> envPath
