@@ -26,7 +26,7 @@ int main() {
     return -1;
   }
 
-  INFO("GDB Session created, starting...");
+  INFO("GDB Connected");
 
   if (!gdbstub_run(&handle, NULL)) {
     ERR("Cannot run gdb server at %s", HOST);
@@ -35,4 +35,5 @@ int main() {
 
   gdbstub_close(&handle);
   emu_cleanup();
+  INFO("GDB disconnected, Cleaned up");
 }
