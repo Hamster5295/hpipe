@@ -58,5 +58,6 @@ wave: sim
 
 clean:
 	@rm -rf $(BUILD_DIR)
+	@rm -rf app/$(BUILD_DIR)
 
 .PHONY: build clean sim wave
