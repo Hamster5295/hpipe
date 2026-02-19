@@ -1,6 +1,7 @@
 #include "emu.h"
 #include "VTop.h"
 #include "debug.h"
+#include <cstdint>
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
@@ -40,21 +41,27 @@ uint32_t mem_addr_trans(uint32_t addr) { return addr - 0x80000000; }
 uint32_t mem_read(uint32_t addr) {
   uint32_t paddr = mem_addr_trans(addr);
   if (paddr >= MEM_SIZE) {
-    ERR("Invalid memory access at 0x%08X", addr);
+    ERR("Invalid memory read at 0x%08X", addr);
     return 0;
   }
 
-  return mem[paddr + 3] << 24 | mem[paddr + 2] << 16 | mem[paddr + 1] << 8 |
-         mem[paddr];
+  uint32_t result = mem[paddr + 3] << 24 | mem[paddr + 2] << 16 |
+                    mem[paddr + 1] << 8 | mem[paddr];
+
+  DBG("[Mem] R [0x%08X] -> 0x%08X", addr, result);
+
+  return result;
 }
 
 void mem_write(uint32_t addr, uint32_t data, uint32_t mask) {
   uint32_t paddr = mem_addr_trans(addr);
 
   if (paddr >= MEM_SIZE) {
-    ERR("Invalid memory access at 0x%08X", addr);
+    ERR("Invalid memory write at 0x%08X", addr);
     return;
   }
+
+  DBG("[Mem] W [0x%08X] <- 0x%08X", addr, data);
 
   for (int i = 0; i < 4; i++) {
     if ((mask >> i) & 0x1)
@@ -97,6 +104,7 @@ gdb_action_t gdb_cont(void *args) {
     exec();
 
     if (cpu->io_retire_ebreak) {
+      INFO("Hit EBREAK, process ended!");
       return ACT_SHUTDOWN;
     }
 
@@ -143,18 +151,23 @@ bool gdb_del_bp(void *args, size_t addr, bp_type_t type) {
 void gdb_on_interrupt(void *args) { halted = true; }
 
 int gdb_read_mem(void *args, size_t addr, size_t len, void *val) {
-  if (addr + len > MEM_SIZE) {
+  if (mem_addr_trans(addr) + len > MEM_SIZE) {
     return EFAULT;
   }
-  memcpy(val, (void *)(mem + addr), len);
+  uint32_t result = mem_read(addr);
+  memcpy(val, (void *)&result, len);
   return 0;
 }
 
 int gdb_write_mem(void *args, size_t addr, size_t len, void *val) {
-  if (addr + len > MEM_SIZE) {
+  size_t paddr = mem_addr_trans(addr);
+  if (mem_addr_trans(addr) + len > MEM_SIZE) {
     return EFAULT;
   }
-  memcpy((void *)(mem + addr), val, len);
+  memcpy(mem + paddr, val, len);
+  //   for (int i = 0; i < len; i++) {
+  //     mem_write(addr + i, *(uint8_t *)val, 0x1);
+  //   }
   return 0;
 }
 

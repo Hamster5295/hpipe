@@ -37,5 +37,13 @@ sim: debug
 wave: debug
 	@make -C sim wave
 
+APP := dummy
+APP_DIR = sim/app/$(APP)
+APP_ELF = sim/app/build/$(APP)/$(APP).elf
+
+gdb:
+	@make -C $(APP_DIR)
+	@riscv64-unknown-linux-gnu-gdb --command=script/sim.gdb --args $(APP_ELF)
+
 clean:
 	@make -C sim clean
