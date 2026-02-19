@@ -34,6 +34,6 @@ int main() {
   }
 
   gdbstub_close(&handle);
-  emu_cleanup();
-  INFO("GDB disconnected, Cleaned up");
+  INFO("GDB disconnected, Cleaning up");
+  return emu_cleanup();
 }
