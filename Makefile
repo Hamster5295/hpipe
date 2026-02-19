@@ -9,6 +9,10 @@ TEST_TARGET ?= $(TARGET)Spec
 TEST_NAME = $(lastword $(subst ., ,$(TEST_TARGET)))
 TEST_TARGET_DIR = $(TEST_DIR)/$(TEST_NAME)
 
+APP := dummy
+APP_DIR = sim/app/$(APP)
+APP_ELF = sim/app/build/$(APP)/$(APP).elf
+
 verilog:
 	@echo Exporting SystemVerilog...
 	@$(MILL) $(PRJ).runMain $(TARGET)
@@ -36,10 +40,6 @@ sim: debug
 
 wave: debug
 	@make -C sim wave
-
-APP := dummy
-APP_DIR = sim/app/$(APP)
-APP_ELF = sim/app/build/$(APP)/$(APP).elf
 
 gdb:
 	@make -C $(APP_DIR)
