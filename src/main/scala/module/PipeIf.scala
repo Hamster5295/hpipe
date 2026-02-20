@@ -9,6 +9,8 @@ class PipeIfIO(implicit p: Parameters) extends Bundle {
   val toId  = new If2IdIO
 
   val fromEx = Input(ValidIO(Addr()))
+
+  val stall = Input(Bool())
 }
 
 class PipeIf(implicit p: Parameters) extends Module {
@@ -16,6 +18,7 @@ class PipeIf(implicit p: Parameters) extends Module {
 
   val pc     = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
   val nextpc = MuxIf(
+    io.stall        -> pc,
     io.fromEx.valid -> io.fromEx.bits
   )(pc + 4.U)
 

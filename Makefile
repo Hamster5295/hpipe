@@ -9,7 +9,7 @@ TEST_TARGET ?= $(TARGET)Spec
 TEST_NAME = $(lastword $(subst ., ,$(TEST_TARGET)))
 TEST_TARGET_DIR = $(TEST_DIR)/$(TEST_NAME)
 
-APP := dummy
+APP ?= dummy
 APP_DIR = sim/app/$(APP)
 APP_ELF = sim/app/build/$(APP)/$(APP).elf
 
@@ -36,14 +36,16 @@ debug:
 	@$(MILL) $(PRJ).runMain $(TARGET)Sim
 
 sim: debug
-	@make -C sim sim
+	@make -C $(APP_DIR) sim
 
 wave: debug
+	@make -C $(APP_DIR) wave
+
+gdb-server:
 	@make -C sim wave
 
 gdb:
-	@make -C $(APP_DIR)
-	@riscv64-unknown-linux-gnu-gdb --command=script/sim.gdb --args $(APP_ELF)
+	@riscv64-unknown-linux-gnu-gdb --command=script/sim.gdb
 
 clean:
 	@make -C sim clean

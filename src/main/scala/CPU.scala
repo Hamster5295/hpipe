@@ -34,14 +34,25 @@ class CPU(implicit p: Parameters) extends Module {
   // Feed Forward
   pipeId.io.fromEx  := pipeEx.io.toId
   pipeId.io.fromMem := pipeMem.io.toId
+  pipeIf.io.stall   := pipeId.io.feedForwardStall
 
   // Branch
   val branch = pipeEx.io.toIf
   pipeIf.io.fromEx := branch
 
   // Pipeline
-  pipeId.io.fromIf  := RegNext(Mux(branch.valid, Zero(pipeIf.io.toId), pipeIf.io.toId))
-  pipeEx.io.fromId  := RegNext(Mux(branch.valid, Zero(pipeId.io.toEx), pipeId.io.toEx))
+  pipeId.io.fromIf :=
+    RegEnable(
+      Mux(branch.valid, Zero(pipeIf.io.toId), pipeIf.io.toId),
+      Zero(pipeIf.io.toId),
+      !pipeId.io.feedForwardStall
+    )
+  pipeEx.io.fromId :=
+    RegNext(Mux(
+      branch.valid || pipeId.io.feedForwardStall,
+      Zero(pipeId.io.toEx),
+      pipeId.io.toEx
+    ))
   pipeMem.io.fromEx := RegNext(pipeEx.io.toMem)
   pipeWb.io.fromMem := RegNext(pipeMem.io.toWb)
 

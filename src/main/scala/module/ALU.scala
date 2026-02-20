@@ -10,7 +10,7 @@ class ALUIO(implicit p: Parameters) extends Bundle {
   val src2 = Input(Word())
   val op   = Input(ALUOp())
 
-  val sra = Input(Bool()) // For SRL/SRA only
+  val inv = Input(Bool()) // For SRL/SRA only
 
   val result = Output(Word())
 }
@@ -35,12 +35,12 @@ class ALU(implicit p: Parameters) extends Module {
 
   io.result := MuxLookup(io.op, 0.U)(
     Seq(
-      ADD  -> add.end(32),
+      ADD  -> Mux(io.inv, sub, add).end(32),
       SLL  -> sll.end(32),
       SLT  -> sub.msb(),
       SLTU -> sub.msb(),
       XOR  -> xor,
-      SRX  -> Mux(io.sra, sra, srl),
+      SRX  -> Mux(io.inv, sra, srl),
       OR   -> or,
       AND  -> and
     )

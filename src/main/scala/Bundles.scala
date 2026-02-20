@@ -25,10 +25,11 @@ class MemStoreIO(implicit p: Parameters) extends Bundle {
 
 class FeedForward(implicit p: Parameters) extends Bundle {
   val rd      = XRegAddr()
-  val writeRd = Bool()
+  val isWrite = Bool()
+  val isLd    = Bool()
   val data    = Word()
 
-  def isValid(rs: UInt) = writeRd && rd.orR && (rs === rd)
+  def isValid(rs: UInt) = isWrite && rd.orR && (rs === rd)
 }
 
 class UOp(implicit p: Parameters) extends Bundle {
@@ -37,7 +38,7 @@ class UOp(implicit p: Parameters) extends Bundle {
   val isLd     = Bool() // Load data in mem stage
   val isSt     = Bool() // Store data in mem stage
   val isJal    = Bool() // Is JAL (get PC+4 and use it for wb)
-  val isSra    = Bool() // Is SRA (for ALU)
+  val isAluInv = Bool() // Is Invert op in ALU (for `sub` and `sra`)
   val isEBreak = Bool() // Is EBreak Inst
 
   def isMem = isLd || isSt

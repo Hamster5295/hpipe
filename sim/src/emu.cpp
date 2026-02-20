@@ -1,7 +1,6 @@
 #include "emu.h"
 #include "VTop.h"
 #include "debug.h"
-#include <cstdint>
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
@@ -103,8 +102,8 @@ bool step(int n) {
       exec();
       DBG("Step if 0x%08X", cpu->io_debug_pcIf);
       if (cnt++ >= MAX_CYCLE_PER_INST) {
-        WARN("No valid inst retired aftere %d cycles, stopping",
-             MAX_CYCLE_PER_INST);
+        ERR("No valid inst retired aftere %d cycles, stopping",
+            MAX_CYCLE_PER_INST);
         return false;
       }
     } while (!cpu->io_retire_valid);
@@ -117,14 +116,47 @@ bool try_trap() {
   if (cpu->io_retire_ebreak) {
     if (cpu->io_debug_regs_9) {
       ret = 1;
-      INFO("Hit " ANSI_FG_RED "BAD" ANSI_NONE " Trap at 0x%08X",
-           cpu->io_retire_pc);
+      ERR("Simulation FAILED at 0x%08X", cpu->io_retire_pc);
     } else
-      INFO("Hit " ANSI_FG_GREEN "GOOD" ANSI_NONE " Trap at 0x%08X",
+      INFO(ANSI_FG_GREEN "Simulation PASSED at 0x%08X" ANSI_NONE,
            cpu->io_retire_pc);
     return true;
   }
   return false;
+}
+
+void emu_run(char *file) {
+  FILE *fp = fopen(file, "r");
+  if (fp == NULL) {
+    ERR("Image '%s' not found", file);
+    ret = 1;
+    return;
+  }
+
+  fseek(fp, 0L, SEEK_END);
+  int size = ftell(fp);
+
+  if (size > MEM_SIZE) {
+    ERR("Image '%s' has size %d > mem size %d", file, size, MEM_SIZE);
+    ret = 1;
+    return;
+  }
+
+  fseek(fp, 0L, SEEK_SET);
+  fread(mem, size, 1, fp);
+  INFO("Image Loaded");
+
+  while (true) {
+    if (!step(1)) {
+      ret = 1;
+      break;
+    }
+
+    if (try_trap())
+      break;
+  }
+
+  INFO("Emulator Stopped");
 }
 
 gdb_action_t gdb_cont(void *args) {
@@ -262,7 +294,7 @@ int gdb_write_reg(void *args, int regno, void *data) {
 
 size_t gdb_get_reg_bytes(int regno __attribute__((unused))) { return 4; }
 
-struct target_ops emu_init() {
+struct target_ops emu_init(char *fst) {
   ctx = new VerilatedContext;
   cpu = new VTop(ctx);
 
@@ -270,7 +302,10 @@ struct target_ops emu_init() {
   tfp = new VerilatedFstC;
   ctx->traceEverOn(true);
   cpu->trace(tfp, 99);
-  tfp->open("build/top.fst");
+
+  fst = fst != NULL ? fst : (char *)"build/emu.fst";
+  tfp->open(fst);
+  INFO("FST waveform will be saved at '" ANSI_FG_WHITE "%s" ANSI_NONE "'", fst);
 #endif
 
   // Reset
