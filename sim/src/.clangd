@@ -1,0 +1,8 @@
+CompileFlags:
+    Add: [-I/usr/share/verilator/include, 
+        -I/usr/share/verilator/include/vltstd,
+        -I/home/hamster/prj/hdl/hpipe/sim/include,
+        -I/home/hamster/prj/hdl/hpipe/sim/lib/mini-gdbstub/include,
+        -I/home/hamster/prj/hdl/hpipe/sim/build/obj/wave,
+        -DENABLE_TRACE,
+      ]

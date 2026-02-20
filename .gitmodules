@@ -7,3 +7,6 @@
 [submodule "sim/lib/mini-gdbstub"]
 	path = sim/lib/mini-gdbstub
 	url = https://github.com/RinHizakura/mini-gdbstub.git
+[submodule "sim/app/rv-tests/repo"]
+	path = sim/app/rv-tests/repo
+	url = https://github.com/riscv/riscv-tests
