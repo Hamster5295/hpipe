@@ -9,13 +9,13 @@ OBJDUMP   = $(CROSS_COMPILE)objdump
 OBJCOPY   = $(CROSS_COMPILE)objcopy
 READELF   = $(CROSS_COMPILE)readelf
 
-TARGET = $(notdir $(shell pwd))
+TARGET ?= $(notdir $(shell pwd))
 BUILD_DIR = ../build
 OBJ_DIR = $(BUILD_DIR)/$(TARGET)
 IMAGE = $(OBJ_DIR)/$(TARGET)
 $(shell mkdir -p $(OBJ_DIR))
 
-SRCS += $(shell find ../common/ -name "*.[cS]")
+SRCS += $(shell find ../common -name "*.[cS]")
 # SRCS += $(shell find ../common/ -name "*.c")
 
 OBJS      = $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
