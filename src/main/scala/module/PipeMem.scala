@@ -25,8 +25,8 @@ class PipeMem(implicit p: Parameters) extends Module {
     LoadOp.Byte.asUInt  -> SignExt(loaded.end(8), 32),
     LoadOp.Half.asUInt  -> SignExt(loaded.end(16), 32),
     LoadOp.Word.asUInt  -> loaded,
-    LoadOp.UByte.asUInt -> (loaded & "b0001".U),
-    LoadOp.UHalf.asUInt -> (loaded & "b0011".U)
+    LoadOp.UByte.asUInt -> loaded.end(8),
+    LoadOp.UHalf.asUInt -> loaded.end(16)
   ))
 
   // Store
@@ -34,21 +34,24 @@ class PipeMem(implicit p: Parameters) extends Module {
   io.memStore.addr := fromEx.addr
   io.memStore.data := fromEx.alu
   io.memStore.mask := MuxLookup(fromEx.funct, 0.U)(Seq(
-    StoreOp.Byte.asUInt -> "b1111".U,
+    StoreOp.Byte.asUInt -> "b0001".U,
     StoreOp.Half.asUInt -> "b0011".U,
-    StoreOp.Byte.asUInt -> "b0001".U
+    StoreOp.Word.asUInt -> "b1111".U
   ))
+
+  val data = Mux(fromEx.uop.isLd, result, fromEx.alu)
 
   val toWb = io.toWb
   toWb.valid   := fromEx.valid
   toWb.pc      := fromEx.pc
   toWb.rd      := fromEx.rd
   toWb.writeRd := fromEx.uop.writeRd
-  toWb.data    := Mux(fromEx.uop.isLd, result, fromEx.alu)
+  toWb.data    := data
   toWb.ebreak  := fromEx.uop.isEBreak
 
   val toId = io.toId
-  toId.writeRd := fromEx.uop.writeRd
   toId.rd      := fromEx.rd
-  toId.data    := fromEx.alu
+  toId.isWrite := fromEx.uop.writeRd
+  toId.isLd    := fromEx.uop.isLd
+  toId.data    := data
 }

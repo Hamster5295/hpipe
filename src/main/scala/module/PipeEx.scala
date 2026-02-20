@@ -20,25 +20,36 @@ class PipeEx(implicit p: Parameters) extends Module {
 
   // ALU Op when inst is BR
   val opForBr = MuxLookup(fromId.funct, SLT)(Seq(
+    EQ.asUInt  -> ADD,
+    NE.asUInt  -> ADD,
     LTU.asUInt -> SLTU,
     GEU.asUInt -> SLTU
   ))
 
   val op = MuxIf(
-    fromId.uop.isMem -> ADD,
-    fromId.uop.isBr  -> opForBr
+    (fromId.uop.isMem || fromId.uop.isJal) -> ADD,
+    fromId.uop.isBr                        -> opForBr
   )(fromId.funct.asTypeOf(ALUOp()))
+
+  val aluInv = Mux(
+    fromId.uop.isBr,
+    MuxLookup(fromId.funct, fromId.uop.isAluInv)(Seq(
+      EQ.asUInt -> 1.B,
+      NE.asUInt -> 1.B
+    )),
+    fromId.uop.isAluInv
+  )
 
   val alu = Module(new ALU)
   alu.io.src1 := fromId.src1
   alu.io.src2 := fromId.src2
   alu.io.op   := op
-  alu.io.sra  := fromId.uop.isSra
+  alu.io.inv  := aluInv
 
   // Branch
   val brTake = fromId.uop.isBr && MuxLookup(fromId.funct, false.B)(Seq(
-    EQ.asUInt  -> (alu.io.result === 0.U),
-    NE.asUInt  -> (alu.io.result === 1.U),
+    EQ.asUInt  -> (!alu.io.result.orR),
+    NE.asUInt  -> (alu.io.result.orR),
     LT.asUInt  -> (alu.io.result === 1.U),
     GE.asUInt  -> (alu.io.result === 0.U),
     LTU.asUInt -> (alu.io.result === 1.U),
@@ -61,7 +72,8 @@ class PipeEx(implicit p: Parameters) extends Module {
 
   // Feed Forward
   val toId = io.toId
-  toId.writeRd := fromId.uop.writeRd
   toId.rd      := fromId.rd
+  toId.isWrite := fromId.uop.writeRd
+  toId.isLd    := fromId.uop.isLd
   toId.data    := alu.io.result
 }
