@@ -216,10 +216,6 @@ main:
 
 #define RVTEST_DATA_BEGIN                                               \
         EXTRA_DATA                                                      \
-        .pushsection .tohost,"aw",@progbits;                            \
-        .align 6; .global tohost; tohost: .dword 0; .size tohost, 8;    \
-        .align 6; .global fromhost; fromhost: .dword 0; .size fromhost, 8;\
-        .popsection;                                                    \
         .align 4; .global begin_signature; begin_signature:
 
 #define RVTEST_DATA_END .align 4; .global end_signature; end_signature:

@@ -16,6 +16,8 @@ class PipeIdIO(implicit p: Parameters) extends Bundle {
 
   val fromWb = new RegFileWritePort
 
+  val feedForwardStall = Output(Bool())
+
   val regs = Output(Vec(p.XLEN - 1, Word()))
 }
 
@@ -33,12 +35,12 @@ class PipeId(implicit p: Parameters) extends Module {
       rs2:      Src2.Type,
       addrType: Boolean,
 
-      rd:  Boolean,
-      br:  Boolean,
-      ld:  Boolean,
-      st:  Boolean,
-      jal: Boolean,
-      sra: Boolean,
+      rd:     Boolean,
+      br:     Boolean,
+      ld:     Boolean,
+      st:     Boolean,
+      jal:    Boolean,
+      aluInv: Boolean,
       ebreak: Boolean
   ) =
     BitPat(
@@ -52,51 +54,53 @@ class PipeId(implicit p: Parameters) extends Module {
         ++ s"${if (ld) 1 else 0}"
         ++ s"${if (st) 1 else 0}"
         ++ s"${if (jal) 1 else 0}"
-        ++ s"${if (sra) 1 else 0}"
+        ++ s"${if (aluInv) 1 else 0}"
         ++ s"${if (ebreak) 1 else 0}"
     )
 
   val instTable = TruthTable(
     Map(
-      LUI    -> parse(U, Src1.None, Src2.Imm, false, true, false, false, false, false, false, false),
-      AUIPC  -> parse(U, Src1.PC, Src2.Imm, false, true, false, false, false, false, false, false),
-      JAL    -> parse(J, Src1.PC, Src2.Four, false, true, false, false, false, true, false, false),
-      JALR   -> parse(I, Src1.PC, Src2.Four, true, true, false, false, false, true, false, false),
-      BEQ    -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BNE    -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BLT    -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BGE    -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BLTU   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BGEU   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      LB     -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      LH     -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      LW     -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      LBU    -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      LHU    -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      SB     -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
-      SH     -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
-      SW     -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
-      ADDI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SLTI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SLTIU  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      XORI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      ORI    -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      ANDI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SLLI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SRLI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SRAI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, true, false),
-      ADD    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SUB    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SLL    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SLT    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SLTU   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      XOR    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SRL    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SRA    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, true, false),
-      OR     -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      AND    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-    //   ECALL  -> parse(N, Src1.None, Src2.None, false, false, false, false, false, false, false, false),
+// format: off
+      LUI   -> parse(U, Src1.None, Src2.Imm, false, true, false, false, false, false, false, false),
+      AUIPC -> parse(U, Src1.PC, Src2.Imm, false, true, false, false, false, false, false, false),
+      JAL   -> parse(J, Src1.PC, Src2.Four, false, true, false, false, false, true, false, false),
+      JALR  -> parse(I, Src1.PC, Src2.Four, true, true, false, false, false, true, false, false),
+      BEQ   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
+      BNE   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
+      BLT   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
+      BGE   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
+      BLTU  -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
+      BGEU  -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
+      LB    -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
+      LH    -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
+      LW    -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
+      LBU   -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
+      LHU   -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
+      SB    -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
+      SH    -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
+      SW    -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
+      ADDI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
+      SLTI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
+      SLTIU -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
+      XORI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
+      ORI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
+      ANDI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
+      SLLI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
+      SRLI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
+      SRAI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, true, false),
+      ADD   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
+      SUB   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, true, false),
+      SLL   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
+      SLT   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
+      SLTU  -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
+      XOR   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
+      SRL   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
+      SRA   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, true, false),
+      OR    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
+      AND   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
+      //   ECALL  -> parse(N, Src1.None, Src2.None, false, false, false, false, false, false, false, false),
       EBREAK -> parse(N, Src1.None, Src2.None, false, false, false, false, false, false, false, true)
+// format: on
     ),
     BitPat(0.U(15.W))
   )
@@ -117,19 +121,23 @@ class PipeId(implicit p: Parameters) extends Module {
   toEx.rs1   := rs1Addr
   toEx.rs2   := rs2Addr
   toEx.rd    := inst(11, 7)
-  toEx.funct := inst(14, 12)
-  val imm = SignExt(
+  toEx.funct := Mux(instType === U, 0.U, inst(14, 12))
+  val imm =
     MuxLookup(instType, 0.U(32.W))(
       Seq(
-        I -> inst(31, 20),
-        S -> inst(31, 25) ## inst(11, 7),
-        B -> inst(31) ## inst(7) ## inst(30, 25) ## inst(11, 8) ## 0.U(1.W),
+        I -> SignExt(inst(31, 20), 32),
+        S -> SignExt(inst(31, 25) ## inst(11, 7), 32),
+        B -> SignExt(
+          inst(31) ## inst(7) ## inst(30, 25) ## inst(11, 8) ## 0.U(1.W),
+          32
+        ),
         U -> inst(31, 12) ## 0.U(12.W),
-        J -> inst(31) ## inst(19, 12) ## inst(20) ## inst(30, 21) ## 0.U(1.W)
+        J -> SignExt(
+          inst(31) ## inst(19, 12) ## inst(20) ## inst(30, 21) ## 0.U(1.W),
+          32
+        )
       )
-    ),
-    32
-  )
+    )
 
   // RegFile
   val regFile = Module(new RegFile)
@@ -139,7 +147,7 @@ class PipeId(implicit p: Parameters) extends Module {
   regFile.io.write      := io.fromWb
 
   // Feed Forward
-  val useRs1 = src1 === Src1.Reg
+  val useRs1 = src1 === Src1.Reg || addrType
   val rs1    = MuxIf(
     (io.fromEx.isValid(rs1Addr) && useRs1)  -> io.fromEx.data,
     (io.fromMem.isValid(rs1Addr) && useRs1) -> io.fromMem.data
@@ -147,9 +155,13 @@ class PipeId(implicit p: Parameters) extends Module {
 
   val useRs2 = (src2 === Src2.Reg) && rs2Addr.orR
   val rs2    = MuxIf(
-    (io.fromEx.isValid(rs2Addr) && useRs2) -> io.fromEx.data,
-    (io.fromEx.isValid(rs2Addr) && useRs2) -> io.fromMem.data
+    (io.fromEx.isValid(rs2Addr) && useRs2)  -> io.fromEx.data,
+    (io.fromMem.isValid(rs2Addr) && useRs2) -> io.fromMem.data
   )(regFile.io.readB.data)
+
+  io.feedForwardStall := io.fromEx.isLd &&
+    ((useRs1 && io.fromEx.isValid(rs1Addr)) ||
+      (useRs2 && io.fromEx.isValid(rs2Addr)))
 
   // Operator selection
   toEx.src1 := MuxLookup(src1, 0.U)(

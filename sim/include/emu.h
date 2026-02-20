@@ -39,7 +39,8 @@
   REG(29);                                                                     \
   REG(30);
 
-struct target_ops emu_init();
+struct target_ops emu_init(char *fst);
+void emu_run(char *file);
 int emu_cleanup();
 
 #endif

@@ -11,6 +11,11 @@ BIN = $(BUILD_DIR)/emu
 
 $(shell mkdir -p $(OBJ_DIR))
 
+ifdef APP_DIR
+SIMFLAGS += -b$(APP_DIR)
+SIMFLAGS += -t$(basename $(APP_DIR)).fst
+endif
+
 LIB = lib
 LIBS = $(addprefix $(LIB_DIR)/, $(LIB_LIST))
 
@@ -49,7 +54,7 @@ build: $(LIBS)
 	
 
 sim: build
-	@$(BIN)
+	@$(BIN) $(SIMFLAGS)
 
 wave: OBJ_DIR = $(BUILD_DIR)/obj/wave
 wave: VFLAGS += --trace-fst
