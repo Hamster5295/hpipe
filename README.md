@@ -51,7 +51,7 @@ All characteristics were estimated under [icsprout55](https://github.com/openeco
 - [x] Enable GDB Debugging
 - [x] Testbenches & Unit Tests using `verilator` and [`riscv-tests`](https://github.com/riscv-software-src/riscv-tests)  
 - [ ] RV32M extension  
-- [ ] Yosys-based backend analysis
+- [x] Yosys-based backend analysis
 - [ ] Branch Prediction & Optimized Branch Penalty
 - [ ] CSRs supporting M mode
 - [ ] L1 Cache & TLB
