@@ -43,16 +43,17 @@ class CPU(implicit p: Parameters) extends Module {
   // Pipeline
   pipeId.io.fromIf :=
     RegEnable(
+      // When branch takes, discard current IF result
       Mux(branch.valid, Zero(pipeIf.io.toId), pipeIf.io.toId),
       Zero(pipeIf.io.toId),
-      !pipeId.io.feedForwardStall
+      !pipeId.io.feedForwardStall // When ld-use hazard, stall for 1 cycle
     )
   pipeEx.io.fromId :=
     RegNext(Mux(
       branch.valid || pipeId.io.feedForwardStall,
       Zero(pipeId.io.toEx),
       pipeId.io.toEx
-    ))
+    )) // When branch takes or ld-use hazard, discard current ID result
   pipeMem.io.fromEx := RegNext(pipeEx.io.toMem)
   pipeWb.io.fromMem := RegNext(pipeMem.io.toWb)
 
@@ -86,5 +87,18 @@ object CPUSim extends App {
     "sim/rtl",
     withOutputBuffer = false,
     withPathPrefix = false
+  )
+}
+
+object CPUBackend extends App {
+  Export(
+    new CPU()(new Parameters()),
+    "backend/rtl",
+    Array( // Make yosys happy
+      "--lowering-options=disallowLocalVariables,disallowPackedArrays"
+    ),
+    withOutputBuffer = false,
+    withPathPrefix = false,
+    splitVerilog = false
   )
 }
