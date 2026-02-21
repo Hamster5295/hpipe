@@ -10,3 +10,6 @@
 [submodule "sim/app/rv-tests/repo"]
 	path = sim/app/rv-tests/repo
 	url = https://github.com/riscv/riscv-tests
+[submodule "backend/pdk/icsprout55"]
+	path = backend/pdk/icsprout55
+	url = https://github.com/openecos-projects/icsprout55-pdk.git

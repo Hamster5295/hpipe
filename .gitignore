@@ -342,3 +342,4 @@ hs_err_pid*
 .vscode
 .metals
 sim/rtl
+backend/rtl
