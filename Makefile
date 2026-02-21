@@ -31,14 +31,14 @@ vcd:
 	@echo Conducting Test for $(TEST_TARGET) with Vcd
 	@$(MILL) $(PRJ).test.testOnly $(TEST_TARGET) --verbose -- -DemitVcd=1
 
-debug:
-	@echo Exporting Debugging SystemVerilog...
+verilog-sim:
+	@echo Exporting SystemVerilog for Simulation...
 	@$(MILL) $(PRJ).runMain $(TARGET)Sim
 
-sim: debug
+sim: verilog-sim
 	@make -C $(APP_DIR) sim
 
-wave: debug
+wave: verilog-sim
 	@make -C $(APP_DIR) wave
 
 gdb-server:
@@ -46,6 +46,20 @@ gdb-server:
 
 gdb:
 	@riscv64-unknown-linux-gnu-gdb --command=script/sim.gdb
+
+init-backend:
+	@make -C backend init
+
+verilog-backend:
+	@echo Exporting SystemVerilog for Backend Analysis...
+	@$(MILL) $(PRJ).runMain $(TARGET)Backend
+
+backend: verilog-backend
+	@echo Analysing backend...
+	@make -C backend all
+	@echo 
+	@echo Backend Analysis Completed
+	@echo Reports available at 'backend/build'
 
 clean:
 	@make -C sim clean
