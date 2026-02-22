@@ -11,7 +11,7 @@ class PipeExIO(implicit p: Parameters) extends Bundle {
   val toMem  = new Ex2MemIO
 
   val feedForward = Output(new FeedForward)
-  val branch        = Output(new BranchFeedback)
+  val branch      = Output(new BranchFeedback)
 }
 
 class PipeEx(implicit p: Parameters) extends Module {
@@ -61,7 +61,7 @@ class PipeEx(implicit p: Parameters) extends Module {
   io.branch.pc       := fromId.pc
   io.branch.take     := take
   io.branch.redirect := take ^ fromId.brTake
-  io.branch.addr     := fromId.addr
+  io.branch.addr     := Mux(take, fromId.addr, fromId.pc + 4.U)
 
   // To Mem
   val toMem = io.toMem

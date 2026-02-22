@@ -32,6 +32,7 @@ class BTB(implicit p: Parameters) extends Module {
   val io = IO(new BTBIO)
 
   val pointer     = RegInit(0.U(p.BranchEntryPtrWidth.W))
+  val entryValids = RegZero(Vec(p.BranchEntryCount, Bool()))
   val entryTags   = RegZero(Vec(p.BranchEntryCount, UInt(p.BranchEntryPCLen.W)))
   val entryCnters = Seq.fill(p.BranchEntryCount)(Module(SaturateCounter(
     p.BranchEntryCnterWidth,
@@ -45,19 +46,22 @@ class BTB(implicit p: Parameters) extends Module {
     VecInit(entryTags.map(i => i === write.pc.end(p.BranchEntryPCLen)))
   val wmatched = wmatches.asUInt.orR
 
-  pointer := Mux(wmatched, pointer, pointer +% 1.U)
+  pointer := Mux(wmatched || !write.valid, pointer, pointer +% 1.U)
 
-  entryTags.zip(entryCnters).zipWithIndex.map { case ((tag, cnter), idx) =>
+  entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
+    case (((valid, tag), cnter), idx) =>
 
-    val canWrite = !wmatched && pointer === idx.U
-    tag := Mux(
-      canWrite,
-      write.pc.end(p.BranchEntryPCLen),
-      tag
-    )
+      val canWrite = !wmatched && pointer === idx.U && write.valid
+      valid := valid | canWrite
 
-    cnter.io.enable := wmatches(idx) || canWrite
-    cnter.io.op     := write.take
+      tag := Mux(
+        canWrite,
+        write.pc.end(p.BranchEntryPCLen),
+        tag
+      )
+
+      cnter.io.enable := (valid && wmatches(idx)) || canWrite
+      cnter.io.op     := write.take
   }
 
   // Read
@@ -68,8 +72,7 @@ class BTB(implicit p: Parameters) extends Module {
     VecInit(entryTags.map(i => i === read.pc.end(p.BranchEntryPCLen)))
   val rmatched = rmatches.asUInt.orR
 
-  val ridx = PriorityEncoder(Reverse(rmatches.asUInt))
-
+  val ridx = PriorityEncoder(rmatches.asUInt)
   read.nextpc := Mux(
     (read.isJal || read.isJalr) ||
       (read.isBr && rmatched && entryCnterValues(ridx).msb()),
