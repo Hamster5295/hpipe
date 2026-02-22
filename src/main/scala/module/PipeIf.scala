@@ -43,12 +43,12 @@ class PipeIf(implicit p: Parameters) extends Module {
     Map(
       JAL  -> parse(false, true, false),
       JALR -> parse(false, false, true),
-      BEQ  -> parse(false, false, false),
-      BNE  -> parse(false, false, false),
-      BLT  -> parse(false, false, false),
-      BGE  -> parse(false, false, false),
-      BLTU -> parse(false, false, false),
-      BGEU -> parse(false, false, false)
+      BEQ  -> parse(true, false, false),
+      BNE  -> parse(true, false, false),
+      BLT  -> parse(true, false, false),
+      BGE  -> parse(true, false, false),
+      BLTU -> parse(true, false, false),
+      BGEU -> parse(true, false, false)
     ),
     BitPat(0.U(3.W))
   )
