@@ -1,7 +1,6 @@
 #include "debug.h"
 #include "emu.h"
-#include <cstddef>
-#include <cstring>
+#include <signal.h>
 
 extern "C" {
 #include "gdbstub.h"
@@ -9,7 +8,19 @@ extern "C" {
 
 const char *HOST = "127.0.0.1:5555";
 
+void sig_handler(int sig) {
+  if (sig == SIGINT) {
+    INFO("SIGINT recved, Emu Cleaning Up");
+    int ret = emu_cleanup();
+    INFO(ANSI_FG_BLUE "===================" ANSI_NONE);
+    exit(1);
+  }
+}
+
 int main(int argc, char *argv[]) {
+
+  signal(SIGINT, sig_handler);
+
   INFO(ANSI_FG_BLUE "====== HPipe ======" ANSI_NONE);
 
   char *batch_target = NULL;
@@ -57,8 +68,8 @@ int main(int argc, char *argv[]) {
     emu_run(batch_target);
   }
 
+  INFO("Emu Cleaning Up");
   int ret = emu_cleanup();
-
   INFO(ANSI_FG_BLUE "===================" ANSI_NONE);
 
   return ret;

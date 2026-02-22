@@ -10,8 +10,8 @@ class PipeExIO(implicit p: Parameters) extends Bundle {
   val fromId = Flipped(new Id2ExIO)
   val toMem  = new Ex2MemIO
 
-  val toId = Output(new FeedForward)
-  val toIf = Output(ValidIO(Addr()))
+  val feedForward = Output(new FeedForward)
+  val branch        = Output(new BranchFeedback)
 }
 
 class PipeEx(implicit p: Parameters) extends Module {
@@ -57,8 +57,11 @@ class PipeEx(implicit p: Parameters) extends Module {
   ))
   val jalTake = fromId.uop.isJal
   val take    = brTake || jalTake
-  io.toIf.valid := take
-  io.toIf.bits  := fromId.addr
+  io.branch.isBr     := fromId.uop.isBr
+  io.branch.pc       := fromId.pc
+  io.branch.take     := take
+  io.branch.redirect := take ^ fromId.brTake
+  io.branch.addr     := fromId.addr
 
   // To Mem
   val toMem = io.toMem
@@ -71,7 +74,7 @@ class PipeEx(implicit p: Parameters) extends Module {
   toMem.uop   := fromId.uop
 
   // Feed Forward
-  val toId = io.toId
+  val toId = io.feedForward
   toId.rd      := fromId.rd
   toId.isWrite := fromId.uop.writeRd
   toId.isLd    := fromId.uop.isLd

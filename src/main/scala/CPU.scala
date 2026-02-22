@@ -23,34 +23,44 @@ class CPU(implicit p: Parameters) extends Module {
   val pipeMem = Module(new PipeMem)
   val pipeWb  = Module(new PipeWb)
 
+  val regFile = Module(new RegFile)
+
   // Ports
   io.instFetch <> pipeIf.io.fetch
   pipeMem.io.memLoad <> io.memLoad
   pipeMem.io.memStore <> io.memStore
 
-  // Writeback
-  pipeId.io.fromWb := pipeWb.io.toId
+  // RegFile
+  pipeId.io.rs1Read <> regFile.io.read(0)
+  pipeId.io.rs2Read <> regFile.io.read(1)
+  pipeIf.io.regRead <> regFile.io.read(2)
+  regFile.io.write := pipeWb.io.regWrite
 
   // Feed Forward
-  pipeId.io.fromEx  := pipeEx.io.toId
-  pipeId.io.fromMem := pipeMem.io.toId
-  pipeIf.io.stall   := pipeId.io.feedForwardStall
+  pipeIf.io.stall := pipeId.io.ldUseStall
+
+  pipeIf.io.feedForwardId := pipeId.io.feedForward
+  pipeIf.io.feedForwardEx := pipeEx.io.feedForward
+  pipeIf.io.feedForwardMem := pipeMem.io.feedForward
+
+  pipeId.io.fromEx  := pipeEx.io.feedForward
+  pipeId.io.fromMem := pipeMem.io.feedForward
 
   // Branch
-  val branch = pipeEx.io.toIf
+  val branch = pipeEx.io.branch
   pipeIf.io.fromEx := branch
 
   // Pipeline
   pipeId.io.fromIf :=
     RegEnable(
       // When branch takes, discard current IF result
-      Mux(branch.valid, Zero(pipeIf.io.toId), pipeIf.io.toId),
+      Mux(branch.redirect, Zero(pipeIf.io.toId), pipeIf.io.toId),
       Zero(pipeIf.io.toId),
-      !pipeId.io.feedForwardStall // When ld-use hazard, stall for 1 cycle
+      !pipeId.io.ldUseStall // When ld-use hazard, stall for 1 cycle
     )
   pipeEx.io.fromId :=
     RegNext(Mux(
-      branch.valid || pipeId.io.feedForwardStall,
+      branch.redirect || pipeId.io.ldUseStall,
       Zero(pipeId.io.toEx),
       pipeId.io.toEx
     )) // When branch takes or ld-use hazard, discard current ID result
@@ -68,7 +78,7 @@ class CPU(implicit p: Parameters) extends Module {
     io.debug.pcMem := pipeMem.io.toWb.pc
     io.debug.pcWb  := pipeWb.io.retire.pc
 
-    io.debug.regs := pipeId.io.regs
+    io.debug.regs := regFile.io.regs
   }
 }
 

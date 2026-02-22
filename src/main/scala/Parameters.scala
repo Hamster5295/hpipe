@@ -11,11 +11,17 @@ class Parameters(
     val InstWidth: Int = 32,
     val DataWidth: Int = 32,
 
-    val ResetVector: String = "x80000000"
+    val ResetVector: String = "x80000000",
+
+    // BTB
+    val BranchEntryPCLen: Int = 12,
+    val BranchEntryCount: Int = 16,
+    val BranchEntryCnterWidth: Int = 2
 ) {
   val XRegAddrWidth = CLog2(XLEN)
+  val AddrWidth     = DataWidth
 
-  val AddrWidth = DataWidth
+  val BranchEntryPtrWidth = CLog2(BranchEntryCount)
 }
 
 object Addr {

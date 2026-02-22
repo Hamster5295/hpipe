@@ -10,7 +10,7 @@ class PipeMemIO(implicit p: Parameters) extends Bundle {
   val fromEx   = Flipped(new Ex2MemIO)
   val toWb     = new Mem2WbIO
 
-  val toId = new FeedForward
+  val feedForward = new FeedForward
 }
 
 class PipeMem(implicit p: Parameters) extends Module {
@@ -49,7 +49,7 @@ class PipeMem(implicit p: Parameters) extends Module {
   toWb.data    := data
   toWb.ebreak  := fromEx.uop.isEBreak
 
-  val toId = io.toId
+  val toId = io.feedForward
   toId.rd      := fromEx.rd
   toId.isWrite := fromEx.uop.writeRd
   toId.isLd    := fromEx.uop.isLd

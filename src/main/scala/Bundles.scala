@@ -32,6 +32,14 @@ class FeedForward(implicit p: Parameters) extends Bundle {
   def isValid(rs: UInt) = isWrite && rd.orR && (rs === rd)
 }
 
+class BranchFeedback(implicit p: Parameters) extends Bundle {
+  val isBr    = Bool()
+  val pc       = Addr()
+  val take     = Bool()
+  val redirect = Bool()
+  val addr     = Addr()
+}
+
 class UOp(implicit p: Parameters) extends Bundle {
   val writeRd  = Bool() // Write data back to rf
   val isBr     = Bool() // Branch current pc
@@ -69,6 +77,8 @@ class PipeIO(implicit p: Parameters) extends Bundle {
 class If2IdIO(implicit p: Parameters) extends PipeIO {
   val inst = Output(Inst())
   val pc   = Output(Addr())
+
+  val brTake = Output(Bool())
 }
 
 class Id2ExIO(implicit p: Parameters) extends PipeIO {
@@ -84,6 +94,8 @@ class Id2ExIO(implicit p: Parameters) extends PipeIO {
 
   val funct = UInt(3.W)
   val uop   = new UOp()
+
+  val brTake = Output(Bool())
 }
 
 class Ex2MemIO(implicit p: Parameters) extends PipeIO {
