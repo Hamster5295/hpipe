@@ -14,8 +14,8 @@ class Parameters(
     val ResetVector: String = "x80000000",
 
     // BTB
-    val BranchEntryPCLen: Int = 12,
-    val BranchEntryCount: Int = 16,
+    val BranchEntryPCLen: Int = 8,
+    val BranchEntryCount: Int = 4,
     val BranchEntryCnterWidth: Int = 2
 ) {
   val XRegAddrWidth = CLog2(XLEN)
