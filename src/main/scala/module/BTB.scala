@@ -5,14 +5,6 @@ import chisel3.util._
 import hammer._
 import hammer.model.Fixed
 
-class BranchEntry(implicit p: Parameters) extends Bundle {
-  val tag   = UInt(p.BranchEntryPCLen.W)
-  val cnter = Module(SaturateCounter(
-    p.BranchEntryCnterWidth,
-    Fixed.mask(p.BranchEntryCnterWidth - 1)
-  ))
-}
-
 class BranchReadPort(implicit p: Parameters) extends Bundle {
   val pc     = Input(Addr())
   val brAddr = Input(Addr())
@@ -56,27 +48,27 @@ class BTB(implicit p: Parameters) extends Module {
   pointer := Mux(wmatched, pointer, pointer +% 1.U)
 
   entryTags.zip(entryCnters).zipWithIndex.map { case ((tag, cnter), idx) =>
+
+    val canWrite = !wmatched && pointer === idx.U
     tag := Mux(
-      !wmatched && pointer === idx.U,
+      canWrite,
       write.pc.end(p.BranchEntryPCLen),
       tag
     )
 
-    cnter.io.enable := (wmatched && wmatches(idx)) ||
-      (!wmatched && pointer === idx.U)
-    cnter.io.op := write.take
+    cnter.io.enable := wmatches(idx) || canWrite
+    cnter.io.op     := write.take
   }
 
   // Read
   val read      = io.read
-  val valid     = read.isJalr || read.isJal || read.isBr
   val defaultPc = read.pc +% 4.U
 
   val rmatches =
     VecInit(entryTags.map(i => i === read.pc.end(p.BranchEntryPCLen)))
   val rmatched = rmatches.asUInt.orR
 
-  val ridx = PriorityEncoder(rmatches.asUInt)
+  val ridx = PriorityEncoder(Reverse(rmatches.asUInt))
 
   read.nextpc := Mux(
     (read.isJal || read.isJalr) ||
@@ -88,4 +80,7 @@ class BTB(implicit p: Parameters) extends Module {
   read.take :=
     (read.isJal || read.isJalr) ||
       (read.isBr && rmatched && entryCnterValues(ridx).msb())
+
+//   dontTouch(read)
+//   dontTouch(write)
 }

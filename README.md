@@ -1,4 +1,5 @@
 # HPipe
+
 Hamster's Pipelined RISC-V CPU Core
 
 This design is for learning purpose
@@ -38,13 +39,65 @@ This Core implements a classical 5-stage pipelined CPU.
 Currently it only supports RV32I, but more extensions are on the way.
 
 
+### IF & BTB
+
+The IF stage involves a 4-entry BTB with 2-bit saturation counters for each entry.  
+
+The Penalty of branch miss is **2 cycles**.
+
+
+### ID
+
+The ID stage decodes each instruction into uops that determines the behavour of EX and MEM stages.
+
+
+### EX
+
+The EX stage currently uses symbol `+` as the Adder Implemention. Should be optimized soon.
+
+
+### MEM
+
+The MEM stage uses a simple interface to interact with MMIOs. AXI support is planned.
+
+
+### WB
+
+The WB stage signals whether a valid instruction is retired.
+
+
+### Feed Forward
+
+There're 2 primary paths to forward:
+
+1. ID
+
+The ID stage requires up-to-date source data (`rs1` & `rs2`). Thus, if `rs1` or `rs2` will be written by the instructions executing in EX or MEM stage, the dest data should be forwarded to ID.
+
+- EX -> ID: No stalls/bubbles required
+- MEM -> ID: No stalls/bubbles required
+- EX(needs MEM) -> ID: 1 cycle's stall
+
+
+2. IF
+
+The IF stage requires `rs1` to generate the address of `JALR` to predict jump location.  
+
+If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes branch; otherwise, BTB won't predict, as dest pc is not known for now.
+
+- ID -> IF: Will not predict
+- EX -> IF: Predict
+- MEM -> IF: Predict
+- EX(needs MEM) -> IF: Will not predict
+
+
 ## PPA
 
-All characteristics were estimated under [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
+All characteristics were estimated using [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
 
-- Power = 579.9mW
-- Clock Freq = 635Hz
-- Area = 24172.12nm2
+- Power = 527.4mW
+- Clock Freq = 584.36Hz
+- Area = 24557.96nm2
 
 
 ## Road Map
