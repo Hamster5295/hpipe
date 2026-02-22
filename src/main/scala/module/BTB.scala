@@ -1,0 +1,91 @@
+package hpipe
+
+import chisel3._
+import chisel3.util._
+import hammer._
+import hammer.model.Fixed
+
+class BranchEntry(implicit p: Parameters) extends Bundle {
+  val tag   = UInt(p.BranchEntryPCLen.W)
+  val cnter = Module(SaturateCounter(
+    p.BranchEntryCnterWidth,
+    Fixed.mask(p.BranchEntryCnterWidth - 1)
+  ))
+}
+
+class BranchReadPort(implicit p: Parameters) extends Bundle {
+  val pc     = Input(Addr())
+  val brAddr = Input(Addr())
+
+  val isJalr = Input(Bool())
+  val isJal  = Input(Bool())
+  val isBr   = Input(Bool())
+
+  val nextpc = Output(Addr())
+  val take   = Output(Bool())
+}
+
+class BranchWritePort(implicit p: Parameters) extends Bundle {
+  val valid = Input(Bool())
+  val pc    = Input(Addr())
+  val take  = Input(Bool())
+}
+
+class BTBIO(implicit p: Parameters) extends Bundle {
+  val read  = new BranchReadPort
+  val write = new BranchWritePort
+}
+
+class BTB(implicit p: Parameters) extends Module {
+  val io = IO(new BTBIO)
+
+  val pointer     = RegInit(0.U(p.BranchEntryPtrWidth.W))
+  val entryTags   = RegZero(Vec(p.BranchEntryCount, UInt(p.BranchEntryPCLen.W)))
+  val entryCnters = Seq.fill(p.BranchEntryCount)(Module(SaturateCounter(
+    p.BranchEntryCnterWidth,
+    Fixed.mask(p.BranchEntryCnterWidth - 1)
+  )))
+  val entryCnterValues = VecInit(entryCnters.map(i => i.io.next))
+
+  // Write
+  val write    = io.write
+  val wmatches =
+    VecInit(entryTags.map(i => i === write.pc.end(p.BranchEntryPCLen)))
+  val wmatched = wmatches.asUInt.orR
+
+  pointer := Mux(wmatched, pointer, pointer +% 1.U)
+
+  entryTags.zip(entryCnters).zipWithIndex.map { case ((tag, cnter), idx) =>
+    tag := Mux(
+      !wmatched && pointer === idx.U,
+      write.pc.end(p.BranchEntryPCLen),
+      tag
+    )
+
+    cnter.io.enable := (wmatched && wmatches(idx)) ||
+      (!wmatched && pointer === idx.U)
+    cnter.io.op := write.take
+  }
+
+  // Read
+  val read      = io.read
+  val valid     = read.isJalr || read.isJal || read.isBr
+  val defaultPc = read.pc +% 4.U
+
+  val rmatches =
+    VecInit(entryTags.map(i => i === read.pc.end(p.BranchEntryPCLen)))
+  val rmatched = rmatches.asUInt.orR
+
+  val ridx = PriorityEncoder(rmatches.asUInt)
+
+  read.nextpc := Mux(
+    (read.isJal || read.isJalr) ||
+      (read.isBr && rmatched && entryCnterValues(ridx).msb()),
+    read.brAddr,
+    defaultPc
+  )
+
+  read.take :=
+    (read.isJal || read.isJalr) ||
+      (read.isBr && rmatched && entryCnterValues(ridx).msb())
+}

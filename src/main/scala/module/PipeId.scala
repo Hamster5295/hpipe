@@ -14,11 +14,11 @@ class PipeIdIO(implicit p: Parameters) extends Bundle {
   val fromEx  = Input(new FeedForward)
   val fromMem = Input(new FeedForward)
 
-  val fromWb = new RegFileWritePort
+  val rs1Read = Flipped(new RegFileReadPort)
+  val rs2Read = Flipped(new RegFileReadPort)
 
-  val feedForwardStall = Output(Bool())
-
-  val regs = Output(Vec(p.XLEN - 1, Word()))
+  val ldUseStall  = Output(Bool())
+  val feedForward = Output(new FeedForward)
 }
 
 class PipeId(implicit p: Parameters) extends Module {
@@ -26,7 +26,8 @@ class PipeId(implicit p: Parameters) extends Module {
 
   val toEx = io.toEx
   val inst = io.fromIf.inst
-  toEx.pc := io.fromIf.pc
+  toEx.pc     := io.fromIf.pc
+  toEx.brTake := io.fromIf.brTake
 
   // UOp
   def parse(
@@ -140,26 +141,23 @@ class PipeId(implicit p: Parameters) extends Module {
     )
 
   // RegFile
-  val regFile = Module(new RegFile)
-  io.regs               := regFile.io.regs
-  regFile.io.readA.addr := toEx.rs1
-  regFile.io.readB.addr := toEx.rs2
-  regFile.io.write      := io.fromWb
+  io.rs1Read.addr := toEx.rs1
+  io.rs2Read.addr := toEx.rs2
 
   // Feed Forward
   val useRs1 = src1 === Src1.Reg || addrType
   val rs1    = MuxIf(
     (io.fromEx.isValid(rs1Addr) && useRs1)  -> io.fromEx.data,
     (io.fromMem.isValid(rs1Addr) && useRs1) -> io.fromMem.data
-  )(regFile.io.readA.data)
+  )(io.rs1Read.data)
 
   val useRs2 = (src2 === Src2.Reg) && rs2Addr.orR
   val rs2    = MuxIf(
     (io.fromEx.isValid(rs2Addr) && useRs2)  -> io.fromEx.data,
     (io.fromMem.isValid(rs2Addr) && useRs2) -> io.fromMem.data
-  )(regFile.io.readB.data)
+  )(io.rs2Read.data)
 
-  io.feedForwardStall := io.fromEx.isLd &&
+  io.ldUseStall := io.fromEx.isLd &&
     ((useRs1 && io.fromEx.isValid(rs1Addr)) ||
       (useRs2 && io.fromEx.isValid(rs2Addr)))
 
@@ -180,4 +178,11 @@ class PipeId(implicit p: Parameters) extends Module {
 
   // Addr Gen
   toEx.addr := Mux(addrType, rs1, io.fromIf.pc) +% imm
+
+  // Feed forward to IF (BTB)
+  val ff = io.feedForward
+  ff.rd      := io.toEx.rd
+  ff.isLd    := 0.U // Dont Care
+  ff.isWrite := io.toEx.uop.writeRd
+  ff.data    := 0.U // Dont Care
 }
