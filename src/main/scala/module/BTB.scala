@@ -43,7 +43,7 @@ class BTB(implicit p: Parameters) extends Module {
       Fixed.mask(p.BranchEntryCnterWidth - 1)
     ))
   )
-  val entryCnterValues = VecInit(entryCnters.map(i => i.io.next))
+  val entryCnterValues = VecInit(entryCnters.map(i => i.io.value))
   // How long since this entry last used?
   val entryUseds = Seq.fill(p.BranchEntryCount)(
     Module(SaturateCounter(

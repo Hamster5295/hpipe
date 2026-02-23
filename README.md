@@ -41,7 +41,7 @@ Currently it only supports RV32I, but more extensions are on the way.
 
 ### IF & BTB
 
-The IF stage involves a 4-entry BTB with 2-bit saturation counters for each entry.  
+The IF stage involves a 16-entry BTB with 2-bit saturation counters for each entry, adopting **LR** substitution strategy.
 
 The Penalty of branch miss is **2 cycles**.
 
@@ -95,9 +95,9 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 All characteristics were estimated using [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
 
-- Power = 527.4mW
-- Clock Freq = 584.36Hz
-- Area = 24557.96nm2
+- Power = 2.419W
+- Clock Freq = 580.101Hz
+- Area = 29903.16nm2
 
 
 ## Road Map
