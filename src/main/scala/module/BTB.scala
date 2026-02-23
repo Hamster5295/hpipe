@@ -66,26 +66,25 @@ class BTB(implicit p: Parameters) extends Module {
       val cmp   = (l.data.pad(width) +% ~r.data.pad(width) +% 1.U).msb()
       Mux(cmp, r, l)
     }.idx
-  dontTouch(widx)
 
-  val canWrites = entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
+  entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
     case (((valid, tag), cnter), idx) =>
 
-      val canWrite = !wmatched && widx === idx.U && write.valid
-      valid := valid | canWrite
+      // We need to write but no previous matched, also this entry is the LRU one
+      // So this entry will be overriden
+      val canOverride = write.valid && !wmatched && widx === idx.U
+      valid := valid | canOverride
 
       tag := Mux(
-        canWrite,
+        canOverride,
         write.pc.end(p.BranchEntryPCLen),
         tag
       )
 
-      cnter.io.enable   := (valid && wmatches(idx)) || canWrite
+      cnter.io.enable   := (valid && wmatches(idx)) || canOverride
       cnter.io.op       := write.take
       cnter.io.set      := false.B
       cnter.io.setValue := 0.U
-
-      canWrite
   }
 
   // Read
@@ -112,7 +111,7 @@ class BTB(implicit p: Parameters) extends Module {
     case (used, idx) =>
       used.io.enable   := true.B
       used.io.op       := true.B
-      used.io.set      := rmatches(idx) || canWrites(idx)
+      used.io.set      := rmatches(idx)
       used.io.setValue := 0.U
   }
 }
