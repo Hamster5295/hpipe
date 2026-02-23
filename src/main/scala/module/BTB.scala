@@ -31,14 +31,27 @@ class BTBIO(implicit p: Parameters) extends Bundle {
 class BTB(implicit p: Parameters) extends Module {
   val io = IO(new BTBIO)
 
-  val pointer     = RegInit(0.U(p.BranchEntryPtrWidth.W))
+  // Entries
+  // Is this entry valid?
   val entryValids = RegZero(Vec(p.BranchEntryCount, Bool()))
-  val entryTags   = RegZero(Vec(p.BranchEntryCount, UInt(p.BranchEntryPCLen.W)))
-  val entryCnters = Seq.fill(p.BranchEntryCount)(Module(SaturateCounter(
-    p.BranchEntryCnterWidth,
-    Fixed.mask(p.BranchEntryCnterWidth - 1)
-  )))
+  // The PC tag of the entry
+  val entryTags = RegZero(Vec(p.BranchEntryCount, UInt(p.BranchEntryPCLen.W)))
+  // The counter of the prediction
+  val entryCnters = Seq.fill(p.BranchEntryCount)(
+    Module(SaturateCounter(
+      p.BranchEntryCnterWidth,
+      Fixed.mask(p.BranchEntryCnterWidth - 1)
+    ))
+  )
   val entryCnterValues = VecInit(entryCnters.map(i => i.io.next))
+  // How long since this entry last used?
+  val entryUseds = Seq.fill(p.BranchEntryCount)(
+    Module(SaturateCounter(
+      p.BranchEntryLRUWidth,
+      0
+    ))
+  )
+  val entryUsedValues = VecInit(entryUseds.map(i => i.io.value))
 
   // Write
   val write    = io.write
@@ -46,12 +59,19 @@ class BTB(implicit p: Parameters) extends Module {
     VecInit(entryTags.map(i => i === write.pc.end(p.BranchEntryPCLen)))
   val wmatched = wmatches.asUInt.orR
 
-  pointer := Mux(wmatched || !write.valid, pointer, pointer +% 1.U)
+  // LRU Calculations for write pointer
+  val widx =
+    entryUsedValues.withIndex(p.BranchEntryPtrWidth).reduceTree { (l, r) =>
+      val width = l.data.getWidth + 1
+      val cmp   = (l.data.pad(width) +% ~r.data.pad(width) +% 1.U).msb()
+      Mux(cmp, r, l)
+    }.idx
+  dontTouch(widx)
 
-  entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
+  val canWrites = entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
     case (((valid, tag), cnter), idx) =>
 
-      val canWrite = !wmatched && pointer === idx.U && write.valid
+      val canWrite = !wmatched && widx === idx.U && write.valid
       valid := valid | canWrite
 
       tag := Mux(
@@ -60,8 +80,12 @@ class BTB(implicit p: Parameters) extends Module {
         tag
       )
 
-      cnter.io.enable := (valid && wmatches(idx)) || canWrite
-      cnter.io.op     := write.take
+      cnter.io.enable   := (valid && wmatches(idx)) || canWrite
+      cnter.io.op       := write.take
+      cnter.io.set      := false.B
+      cnter.io.setValue := 0.U
+
+      canWrite
   }
 
   // Read
@@ -84,6 +108,11 @@ class BTB(implicit p: Parameters) extends Module {
     (read.isJal || read.isJalr) ||
       (read.isBr && rmatched && entryCnterValues(ridx).msb())
 
-//   dontTouch(read)
-//   dontTouch(write)
+  entryUseds.zipWithIndex.map {
+    case (used, idx) =>
+      used.io.enable   := true.B
+      used.io.op       := true.B
+      used.io.set      := rmatches(idx) || canWrites(idx)
+      used.io.setValue := 0.U
+  }
 }
