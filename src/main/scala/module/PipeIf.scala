@@ -88,7 +88,8 @@ class PipeIf(implicit p: Parameters) extends Module {
   // 2. An inst in EX stage feeds forward, but it's a ld inst
   val rs1Valid = !ffId && !(ffEx && io.feedForwardEx.isLd)
 
-  val brAddr = Mux(isJalr, rs1, pc) +% imm
+//   val brAddr = Mux(isJalr, rs1, pc) +% imm
+  val brAddr = UIntCLA(32)(Mux(isJalr, rs1, pc), imm, 0.B).end(32)
 
   val btb = Module(new BTB)
   btb.io.read.pc     := pc
@@ -97,8 +98,8 @@ class PipeIf(implicit p: Parameters) extends Module {
   btb.io.read.isJal  := isJal
   btb.io.read.isBr   := isBr
 
-  btb.io.write.pc := io.fromEx.pc
-  btb.io.write.take := io.fromEx.take
+  btb.io.write.pc    := io.fromEx.pc
+  btb.io.write.take  := io.fromEx.take
   btb.io.write.valid := io.fromEx.isBr
 
   val nextpc = MuxIf(
