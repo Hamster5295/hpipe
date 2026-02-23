@@ -24,8 +24,15 @@ class ALU(implicit p: Parameters) extends Module {
   val src1 = Mux(unsigned, 0.B, io.src1.msb()) ## io.src1
   val src2 = Mux(unsigned, 0.B, io.src2.msb()) ## io.src2
 
-  val add = src1 +% src2
-  val sub = src1 +% ~src2 +% 1.U
+  val sub = MuxLookup(io.op, false.B)(
+    Seq(
+      ADD  -> io.inv,
+      SLT  -> true.B,
+      SLTU -> true.B
+    )
+  )
+
+  val add = UIntCLA(33)(src1, Mux(sub, ~src2, src2), sub).end(33)
   val sll = io.src1 << io.src2.end(5)
   val srl = io.src1 >> io.src2.end(5)
   val sra = (Fill(32, src1.msb(1)) ## io.src1) >> io.src2.end(5)
@@ -35,10 +42,10 @@ class ALU(implicit p: Parameters) extends Module {
 
   io.result := MuxLookup(io.op, 0.U)(
     Seq(
-      ADD  -> Mux(io.inv, sub, add).end(32),
+      ADD  -> add,
       SLL  -> sll.end(32),
-      SLT  -> sub.msb(),
-      SLTU -> sub.msb(),
+      SLT  -> add.msb(),
+      SLTU -> add.msb(),
       XOR  -> xor,
       SRX  -> Mux(io.inv, sra, srl),
       OR   -> or,
