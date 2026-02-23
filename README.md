@@ -95,9 +95,9 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 All characteristics were estimated using [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
 
-- Power = 2.419W
-- Clock Freq = 580.101Hz
-- Area = 29903.16nm2
+- Power = 7444mW
+- Clock Freq = 685.184MHz
+- Area = 30881.2nm2
 
 
 ## Road Map
