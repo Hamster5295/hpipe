@@ -16,7 +16,6 @@ IMAGE = $(OBJ_DIR)/$(TARGET)
 $(shell mkdir -p $(OBJ_DIR))
 
 SRCS += $(shell find ../common -name "*.[cS]")
-# SRCS += $(shell find ../common/ -name "*.c")
 
 OBJS      = $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 LINKAGE   = $(OBJS)
