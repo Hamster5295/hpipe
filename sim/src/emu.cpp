@@ -38,12 +38,13 @@ uint8_t mem[MEM_SIZE];
 
 int ret = 0;
 
-uint32_t mem_addr_trans(uint32_t addr) { return addr - 0x80000000; }
+uint32_t mem_addr_trans(uint32_t addr) { return addr - RESET_VECTOR; }
 
 uint32_t mem_read(uint32_t addr) {
   uint32_t paddr = mem_addr_trans(addr);
   if (paddr >= MEM_SIZE) {
-    ERR("Invalid memory read at 0x%08X", addr);
+    ERR("Invalid memory read at 0x%08X: Out of range 0x%08X", addr,
+        RESET_VECTOR + MEM_SIZE);
     return 0;
   }
 
@@ -59,7 +60,8 @@ void mem_write(uint32_t addr, uint32_t data, uint32_t mask) {
   uint32_t paddr = mem_addr_trans(addr);
 
   if (paddr >= MEM_SIZE) {
-    ERR("Invalid memory write at 0x%08X", addr);
+    ERR("Invalid memory write at 0x%08X: Out of range 0x%08X", addr,
+        RESET_VECTOR + MEM_SIZE);
     return;
   }
 
