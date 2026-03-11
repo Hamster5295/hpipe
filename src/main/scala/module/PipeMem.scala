@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class PipeMemIO(implicit p: Parameters) extends Bundle {
+class PipeMemIO(implicit p: Parameters) extends StageIO {
   val memLoad  = new MemLoadIO
   val memStore = new MemStoreIO
   val fromEx   = Flipped(new Ex2MemIO)
@@ -16,6 +16,8 @@ class PipeMemIO(implicit p: Parameters) extends Bundle {
 class PipeMem(implicit p: Parameters) extends Module {
   val io     = IO(new PipeMemIO)
   val fromEx = io.fromEx
+
+  io.busy := false.B
 
   // Load
   io.memLoad.req  := fromEx.uop.isLd

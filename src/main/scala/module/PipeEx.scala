@@ -6,7 +6,7 @@ import hammer._
 import hpipe.ALUOp._
 import hpipe.BranchOp._
 
-class PipeExIO(implicit p: Parameters) extends Bundle {
+class PipeExIO(implicit p: Parameters) extends StageIO {
   val fromId = Flipped(new Id2ExIO)
   val toMem  = new Ex2MemIO
 
@@ -17,6 +17,8 @@ class PipeExIO(implicit p: Parameters) extends Bundle {
 class PipeEx(implicit p: Parameters) extends Module {
   val io     = IO(new PipeExIO)
   val fromId = io.fromId
+
+  io.busy := false.B
 
   // ALU Op when inst is BR
   val opForBr = MuxLookup(fromId.funct, SLT)(Seq(

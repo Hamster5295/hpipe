@@ -39,8 +39,8 @@ class CPU(implicit p: Parameters) extends Module {
   // Feed Forward
   pipeIf.io.stall := pipeId.io.ldUseStall
 
-  pipeIf.io.feedForwardId := pipeId.io.feedForward
-  pipeIf.io.feedForwardEx := pipeEx.io.feedForward
+  pipeIf.io.feedForwardId  := pipeId.io.feedForward
+  pipeIf.io.feedForwardEx  := pipeEx.io.feedForward
   pipeIf.io.feedForwardMem := pipeMem.io.feedForward
 
   pipeId.io.fromEx  := pipeEx.io.feedForward
@@ -51,21 +51,26 @@ class CPU(implicit p: Parameters) extends Module {
   pipeIf.io.fromEx := branch
 
   // Pipeline
-  pipeId.io.fromIf :=
-    RegEnable(
-      // When branch takes, discard current IF result
-      Mux(branch.redirect, Zero(pipeIf.io.toId), pipeIf.io.toId),
-      Zero(pipeIf.io.toId),
-      !pipeId.io.ldUseStall // When ld-use hazard, stall for 1 cycle
-    )
-  pipeEx.io.fromId :=
-    RegNext(Mux(
-      branch.redirect || pipeId.io.ldUseStall,
-      Zero(pipeId.io.toEx),
-      pipeId.io.toEx
-    )) // When branch takes or ld-use hazard, discard current ID result
-  pipeMem.io.fromEx := RegNext(pipeEx.io.toMem)
-  pipeWb.io.fromMem := RegNext(pipeMem.io.toWb)
+  pipeId.io.fromIf := RegFlush(
+    pipeIf.io.toId,
+    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeId.io.busy,
+    pipeIf.io.busy || branch.redirect
+  )
+  pipeEx.io.fromId := RegFlush(
+    pipeId.io.toEx,
+    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy,
+    pipeId.io.busy || branch.redirect
+  )
+  pipeMem.io.fromEx := RegFlush(
+    pipeEx.io.toMem,
+    !pipeWb.io.busy && !pipeMem.io.busy,
+    pipeEx.io.busy
+  )
+  pipeWb.io.fromMem := RegFlush(
+    pipeMem.io.toWb,
+    !pipeWb.io.busy,
+    pipeMem.io.busy
+  )
 
   // Retire Observation
   io.retire := pipeWb.io.retire
