@@ -33,7 +33,7 @@ class FeedForward(implicit p: Parameters) extends Bundle {
 }
 
 class BranchFeedback(implicit p: Parameters) extends Bundle {
-  val isBr    = Bool()
+  val isBr     = Bool()
   val pc       = Addr()
   val take     = Bool()
   val redirect = Bool()
@@ -72,6 +72,10 @@ class DebugInfo(implicit p: Parameters) extends Bundle {
 
 class PipeIO(implicit p: Parameters) extends Bundle {
   val valid = Output(Bool())
+}
+
+class StageIO(implicit p: Parameters) extends Bundle {
+  val busy = Output(Bool())
 }
 
 class If2IdIO(implicit p: Parameters) extends PipeIO {

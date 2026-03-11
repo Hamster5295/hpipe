@@ -7,7 +7,7 @@ import hammer._
 import hpipe.Insts._
 import hpipe.InstType._
 
-class PipeIdIO(implicit p: Parameters) extends Bundle {
+class PipeIdIO(implicit p: Parameters) extends StageIO {
   val fromIf = Flipped(new If2IdIO)
   val toEx   = new Id2ExIO
 
@@ -157,9 +157,11 @@ class PipeId(implicit p: Parameters) extends Module {
     (io.fromMem.isValid(rs2Addr) && useRs2) -> io.fromMem.data
   )(io.rs2Read.data)
 
-  io.ldUseStall := io.fromEx.isLd &&
+  val ldUseStall = io.fromEx.isLd &&
     ((useRs1 && io.fromEx.isValid(rs1Addr)) ||
       (useRs2 && io.fromEx.isValid(rs2Addr)))
+
+  io.ldUseStall := ldUseStall
 
   // Operator selection
   toEx.src1 := MuxLookup(src1, 0.U)(
@@ -178,6 +180,9 @@ class PipeId(implicit p: Parameters) extends Module {
 
   // Addr Gen
   toEx.addr := Mux(addrType, rs1, io.fromIf.pc) +% imm
+
+  // Valid & Ready
+  io.busy := ldUseStall
 
   // Feed forward to IF (BTB)
   val ff = io.feedForward

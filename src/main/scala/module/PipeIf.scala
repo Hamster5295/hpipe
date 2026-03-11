@@ -6,7 +6,7 @@ import chisel3.util.experimental.decode._
 import hammer._
 import hpipe.Insts._
 
-class PipeIfIO(implicit p: Parameters) extends Bundle {
+class PipeIfIO(implicit p: Parameters) extends StageIO {
   val fetch   = new InstFetchIO
   val regRead = Flipped(new RegFileReadPort)
 
@@ -22,6 +22,8 @@ class PipeIfIO(implicit p: Parameters) extends Bundle {
 
 class PipeIf(implicit p: Parameters) extends Module {
   val io = IO(new PipeIfIO)
+
+  io.busy := false.B
 
   val pc = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
 

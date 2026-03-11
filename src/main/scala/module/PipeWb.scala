@@ -3,7 +3,7 @@ package hpipe
 import chisel3._
 import chisel3.util._
 
-class PipeWbIO(implicit p: Parameters) extends Bundle {
+class PipeWbIO(implicit p: Parameters) extends StageIO {
   val fromMem = Flipped(new Mem2WbIO)
   val regWrite    = Flipped(new RegFileWritePort)
 
@@ -13,6 +13,8 @@ class PipeWbIO(implicit p: Parameters) extends Bundle {
 class PipeWb(implicit p: Parameters) extends Module {
   val io      = IO(new PipeWbIO)
   val fromMem = io.fromMem
+
+  io.busy := false.B
 
   io.regWrite.addr := Mux(fromMem.writeRd, fromMem.rd, 0.U)
   io.regWrite.data := fromMem.data
