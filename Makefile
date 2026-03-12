@@ -2,6 +2,7 @@ PRJ = hpipe
 TARGET ?= hpipe.CPU
 
 MILL = ./mill
+JAVA = java
 
 TEST_DIR = build/test
 
@@ -30,6 +31,12 @@ vcd:
 	@rm -rf $(TEST_TARGET_DIR)
 	@echo Conducting Test for $(TEST_TARGET) with Vcd
 	@$(MILL) $(PRJ).test.testOnly $(TEST_TARGET) --verbose -- -DemitVcd=1
+
+format:
+	@$(MILL) _.reformat
+
+lint:
+	@$(JAVA) -jar src/main/resources/scalastyle.jar -c .scalastyle.xml src
 
 verilog-sim:
 	@echo Exporting SystemVerilog for Simulation...

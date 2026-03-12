@@ -90,7 +90,6 @@ class PipeIf(implicit p: Parameters) extends Module {
   // 2. An inst in EX stage feeds forward, but it's a ld inst
   val rs1Valid = !ffId && !(ffEx && io.feedForwardEx.isLd)
 
-//   val brAddr = Mux(isJalr, rs1, pc) +% imm
   val brAddr = UIntCLA(32)(Mux(isJalr, rs1, pc), imm, 0.B).end(32)
 
   val btb = Module(new BTB)
