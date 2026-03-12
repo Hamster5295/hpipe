@@ -4,8 +4,8 @@ import chisel3._
 import chisel3.util._
 
 class PipeWbIO(implicit p: Parameters) extends StageIO {
-  val fromMem = Flipped(new Mem2WbIO)
-  val regWrite    = Flipped(new RegFileWritePort)
+  val fromMem  = Flipped(new Mem2WbIO)
+  val regWrite = Flipped(new RegFileWritePort)
 
   val retire = Output(new RetireInfo)
 }

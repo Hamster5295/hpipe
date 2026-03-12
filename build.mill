@@ -5,6 +5,7 @@ import mill.bsp._
 import mill.define.Sources
 import mill.modules.Util
 import mill.scalalib.TestModule.ScalaTest
+import mill.scalalib.scalafmt.ScalafmtModule
 import scalalib._
 
 // Note: This project requires .mill-jvm-opts file containing:
@@ -13,7 +14,7 @@ import scalalib._
 // to properly generate and handle test directories and output files.
 // See: https://github.com/com-lihaoyi/mill/issues/3840
 
-object `hpipe` extends SbtModule { m =>
+object `hpipe` extends SbtModule with ScalafmtModule { m =>
   override def millSourcePath = super.millSourcePath / os.up
   override def scalaVersion   = "2.13.18"
   def chiselVersion           = "7.7.0"

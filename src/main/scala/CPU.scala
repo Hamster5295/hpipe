@@ -37,7 +37,8 @@ class CPU(implicit p: Parameters) extends Module {
   regFile.io.write := pipeWb.io.regWrite
 
   // Feed Forward
-  pipeIf.io.stall := pipeId.io.ldUseStall
+  pipeIf.io.stall :=
+    pipeWb.io.busy || pipeMem.io.busy || pipeEx.io.busy || pipeId.io.busy
 
   pipeIf.io.feedForwardId  := pipeId.io.feedForward
   pipeIf.io.feedForwardEx  := pipeEx.io.feedForward
