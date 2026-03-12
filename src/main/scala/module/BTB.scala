@@ -63,7 +63,8 @@ class BTB(implicit p: Parameters) extends Module {
   val widx =
     entryUsedValues.withIndex(p.BranchEntryPtrWidth).reduceTree { (l, r) =>
       val width = l.data.getWidth + 1
-      val cmp = UIntCLA(width)(l.data.pad(width), ~r.data.pad(width), 1.B).msb(1)
+      val cmp   =
+        UIntCLA(width)(l.data.pad(width), ~r.data.pad(width), 1.B).msb(1)
       Mux(cmp, r, l)
     }.idx
 

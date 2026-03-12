@@ -1,0 +1,17 @@
+#!/bin/sh
+
+echo -e "\033[36mChecking Format...\033[0m"
+./mill _.checkFormat
+if [ $? -eq 1 ]; then
+    echo -e "\033[31mFormat Check \033[1mFAILED\033[0m"
+    exit 1
+fi
+
+echo -e "\033[36mChecking Code Style...\033[0m"
+java -jar src/main/resources/scalastyle.jar -c .scalastyle.xml src
+if [ $? -eq 1 ]; then
+    echo -e "\033[31mCode Style Check \033[1mFAILED\033[0m"
+    exit 1
+fi
+
+echo -e "\033[32mCode Check \033[1mPASSED\033[0m"

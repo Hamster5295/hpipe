@@ -17,7 +17,6 @@ class PipeIdIO(implicit p: Parameters) extends StageIO {
   val rs1Read = Flipped(new RegFileReadPort)
   val rs2Read = Flipped(new RegFileReadPort)
 
-  val ldUseStall  = Output(Bool())
   val feedForward = Output(new FeedForward)
 }
 
@@ -160,8 +159,6 @@ class PipeId(implicit p: Parameters) extends Module {
   val ldUseStall = io.fromEx.isLd &&
     ((useRs1 && io.fromEx.isValid(rs1Addr)) ||
       (useRs2 && io.fromEx.isValid(rs2Addr)))
-
-  io.ldUseStall := ldUseStall
 
   // Operator selection
   toEx.src1 := MuxLookup(src1, 0.U)(
