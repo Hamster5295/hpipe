@@ -36,7 +36,7 @@ format:
 	@$(MILL) _.reformat
 
 lint:
-	@$(JAVA) -jar src/main/resources/scalastyle.jar -c .scalastyle.xml src
+	@$(JAVA) -jar src/main/resources/scalastyle -c .scalastyle.xml src
 
 verilog-sim:
 	@echo Exporting SystemVerilog for Simulation...
