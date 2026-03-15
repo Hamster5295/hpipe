@@ -23,13 +23,13 @@ class BranchWritePort(implicit p: Parameters) extends Bundle {
   val take  = Input(Bool())
 }
 
-class BTBIO(implicit p: Parameters) extends Bundle {
+class BranchPredictorIO(implicit p: Parameters) extends Bundle {
   val read  = new BranchReadPort
   val write = new BranchWritePort
 }
 
-class BTB(implicit p: Parameters) extends Module {
-  val io = IO(new BTBIO)
+class BranchPredictor(implicit p: Parameters) extends Module {
+  val io = IO(new BranchPredictorIO)
 
   // Entries
   // Is this entry valid?

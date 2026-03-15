@@ -42,7 +42,7 @@ class PipeEx(implicit p: Parameters) extends Module {
     fromId.uop.isAluInv
   )
 
-  val alu = Module(new ALU)
+  val alu = Module(new ArithUnit)
   alu.io.src1 := fromId.src1
   alu.io.src2 := fromId.src2
   alu.io.op   := op
