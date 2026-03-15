@@ -92,7 +92,7 @@ class PipeIf(implicit p: Parameters) extends Module {
 
   val brAddr = UIntCLA(32)(Mux(isJalr, rs1, pc), imm, 0.B).end(32)
 
-  val btb = Module(new BTB)
+  val btb = Module(new BranchPredictor)
   btb.io.read.pc     := pc
   btb.io.read.brAddr := brAddr
   btb.io.read.isJalr := isJalr && rs1Valid // If
