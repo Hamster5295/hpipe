@@ -13,16 +13,28 @@ class Parameters(
 
     val ResetVector: String = "x80000000",
 
-    // BTB
-    val BranchEntryPCLen:      Int = 16,
-    val BranchEntryCount:      Int = 16,
-    val BranchEntryCnterWidth: Int = 2,
-    val BranchEntryLRUWidth:   Int = 4
+    // Branch
+    val HistBuf:      HistBufferParameters = new HistBufferParameters,
+    val RetAddrStack: RetAddrStackParameters = new RetAddrStackParameters,
 ) {
   val XRegAddrWidth = CLog2(XLEN)
   val AddrWidth     = DataWidth
+}
 
-  val BranchEntryPtrWidth = CLog2(BranchEntryCount)
+class HistBufferParameters(
+    val PCLen:      Int = 16,
+    val Count:      Int = 16,
+    val CnterWidth: Int = 2,
+    val LRUWidth:   Int = 4,
+) {
+  val PtrWidth = CLog2(Count)
+}
+
+class RetAddrStackParameters(
+    val Depth: Int = 8,
+    val PCLen: Int = 16,
+) {
+  val PtrWidth = CLog2(Depth)
 }
 
 object Addr {

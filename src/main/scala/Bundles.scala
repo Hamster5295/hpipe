@@ -33,7 +33,8 @@ class FeedForward(implicit p: Parameters) extends Bundle {
 }
 
 class BranchFeedback(implicit p: Parameters) extends Bundle {
-  val isBr     = Bool()
+  val isBr  = Bool()
+
   val pc       = Addr()
   val take     = Bool()
   val redirect = Bool()
