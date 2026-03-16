@@ -28,6 +28,10 @@ class PipeId(implicit p: Parameters) extends Module {
   toEx.pc     := io.fromIf.pc
   toEx.brTake := io.fromIf.brTake
 
+  val rs1Addr = inst(19, 15)
+  val rs2Addr = inst(24, 20)
+  val rdAddr  = inst(11, 7)
+
   // UOp
   def parse(
       instType: InstType.Type,
@@ -41,7 +45,7 @@ class PipeId(implicit p: Parameters) extends Module {
       st:     Boolean,
       jal:    Boolean,
       aluInv: Boolean,
-      ebreak: Boolean
+      ebreak: Boolean,
   ) =
     BitPat(
       s"b1" // Inst is valid
@@ -55,7 +59,7 @@ class PipeId(implicit p: Parameters) extends Module {
         ++ s"${if (st) 1 else 0}"
         ++ s"${if (jal) 1 else 0}"
         ++ s"${if (aluInv) 1 else 0}"
-        ++ s"${if (ebreak) 1 else 0}"
+        ++ s"${if (ebreak) 1 else 0}",
     )
 
   val instTable = TruthTable(
@@ -102,7 +106,7 @@ class PipeId(implicit p: Parameters) extends Module {
       EBREAK -> parse(N, Src1.None, Src2.None, false, false, false, false, false, false, false, true)
 // format: on
     ),
-    BitPat(0.U(15.W))
+    BitPat(0.U(15.W)),
   )
   val result = decoder(inst, instTable)
 
@@ -116,11 +120,10 @@ class PipeId(implicit p: Parameters) extends Module {
   toEx.uop   := result.tail(9).asTypeOf(new UOp)
 
   // Regs & Imm
-  val rs1Addr = inst(19, 15)
-  val rs2Addr = inst(24, 20)
+
   toEx.rs1   := rs1Addr
   toEx.rs2   := rs2Addr
-  toEx.rd    := inst(11, 7)
+  toEx.rd    := rdAddr
   toEx.funct := Mux(instType === U, 0.U, inst(14, 12))
   val imm =
     MuxLookup(instType, 0.U(32.W))(
@@ -129,14 +132,14 @@ class PipeId(implicit p: Parameters) extends Module {
         S -> SignExt(inst(31, 25) ## inst(11, 7), 32),
         B -> SignExt(
           inst(31) ## inst(7) ## inst(30, 25) ## inst(11, 8) ## 0.U(1.W),
-          32
+          32,
         ),
         U -> inst(31, 12) ## 0.U(12.W),
         J -> SignExt(
           inst(31) ## inst(19, 12) ## inst(20) ## inst(30, 21) ## 0.U(1.W),
-          32
-        )
-      )
+          32,
+        ),
+      ),
     )
 
   // RegFile
@@ -147,13 +150,13 @@ class PipeId(implicit p: Parameters) extends Module {
   val useRs1 = src1 === Src1.Reg || addrType
   val rs1    = MuxIf(
     (io.fromEx.isValid(rs1Addr) && useRs1)  -> io.fromEx.data,
-    (io.fromMem.isValid(rs1Addr) && useRs1) -> io.fromMem.data
+    (io.fromMem.isValid(rs1Addr) && useRs1) -> io.fromMem.data,
   )(io.rs1Read.data)
 
   val useRs2 = (src2 === Src2.Reg) && rs2Addr.orR
   val rs2    = MuxIf(
     (io.fromEx.isValid(rs2Addr) && useRs2)  -> io.fromEx.data,
-    (io.fromMem.isValid(rs2Addr) && useRs2) -> io.fromMem.data
+    (io.fromMem.isValid(rs2Addr) && useRs2) -> io.fromMem.data,
   )(io.rs2Read.data)
 
   val ldUseStall = io.fromEx.isLd &&
@@ -164,15 +167,15 @@ class PipeId(implicit p: Parameters) extends Module {
   toEx.src1 := MuxLookup(src1, 0.U)(
     Seq(
       Src1.Reg -> rs1,
-      Src1.PC  -> io.fromIf.pc
-    )
+      Src1.PC  -> io.fromIf.pc,
+    ),
   )
   toEx.src2 := MuxLookup(src2, 0.U)(
     Seq(
       Src2.Reg  -> rs2,
       Src2.Imm  -> imm,
-      Src2.Four -> 4.U
-    )
+      Src2.Four -> 4.U,
+    ),
   )
 
   // Addr Gen
