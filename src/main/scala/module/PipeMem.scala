@@ -28,7 +28,7 @@ class PipeMem(implicit p: Parameters) extends Module {
     LoadOp.Half.asUInt  -> SignExt(loaded.end(16), 32),
     LoadOp.Word.asUInt  -> loaded,
     LoadOp.UByte.asUInt -> loaded.end(8),
-    LoadOp.UHalf.asUInt -> loaded.end(16)
+    LoadOp.UHalf.asUInt -> loaded.end(16),
   ))
 
   // Store
@@ -38,7 +38,7 @@ class PipeMem(implicit p: Parameters) extends Module {
   io.memStore.mask := MuxLookup(fromEx.funct, 0.U)(Seq(
     StoreOp.Byte.asUInt -> "b0001".U,
     StoreOp.Half.asUInt -> "b0011".U,
-    StoreOp.Word.asUInt -> "b1111".U
+    StoreOp.Word.asUInt -> "b1111".U,
   ))
 
   val data = Mux(fromEx.uop.isLd, result, fromEx.alu)

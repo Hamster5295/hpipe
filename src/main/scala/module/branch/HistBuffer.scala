@@ -83,7 +83,7 @@ class HistBuffer(implicit p: Parameters) extends Module {
   }
 
   // Read
-  val read      = io.read
+  val read     = io.read
   val rmatches =
     VecInit(entryTags.map(i => i === read.pc.end(conf.PCLen)))
   val rmatched = rmatches.asUInt.orR

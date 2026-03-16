@@ -21,8 +21,8 @@ class BranchReadPort(implicit p: Parameters) extends BranchReadPortBase {
 
 class BranchWritePort(implicit p: Parameters) extends Bundle {
   val isBr = Input(Bool())
-  val pc    = Input(Addr())
-  val take  = Input(Bool())
+  val pc   = Input(Addr())
+  val take = Input(Bool())
 }
 
 class BranchPredictorIO(implicit p: Parameters) extends Bundle {
@@ -37,6 +37,6 @@ class BranchPredictor(implicit p: Parameters) extends Module {
 
   val hist = Module(new HistBuffer)
   io.read :>> hist.io.read
-  hist.io.write       := io.write
-  hist.io.defaultPc   := defaultPc
+  hist.io.write     := io.write
+  hist.io.defaultPc := defaultPc
 }

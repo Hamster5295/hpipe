@@ -100,9 +100,9 @@ class PipeIf(implicit p: Parameters) extends Module {
   btb.io.read.isJal := isJal
   btb.io.read.isBr  := isBr
 
-  btb.io.write.pc     := io.fromEx.pc
-  btb.io.write.take   := io.fromEx.take
-  btb.io.write.isBr  := io.fromEx.isBr
+  btb.io.write.pc   := io.fromEx.pc
+  btb.io.write.take := io.fromEx.take
+  btb.io.write.isBr := io.fromEx.isBr
 
   val nextpc = MuxIf(
     io.stall           -> pc,
