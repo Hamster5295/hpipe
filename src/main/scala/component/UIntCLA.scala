@@ -118,7 +118,7 @@ class UIntCLA(width: Int, groupBy: Int) extends Module {
     }
 
     io.o := clu.io.co.msb() ## VecInit(adds.map(i =>
-      i.io.o.tail(1)
+      i.io.o.tail(1),
     )).asUInt.end(width)
     clu.io.p := VecInit(adds.map(i => i.po)).asUInt
     clu.io.g := VecInit(adds.map(i => i.go)).asUInt
@@ -132,7 +132,7 @@ class UIntCLA(width: Int, groupBy: Int) extends Module {
 object UIntCLA {
   def apply(
       width:   Int,
-      groupBy: Int = 4
+      groupBy: Int = 4,
   )(src1: UInt, src2: UInt, carry: Bool): UInt = {
     val adder = Module(new UIntCLA(width, groupBy))
     adder.io.a := src1
