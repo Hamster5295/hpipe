@@ -55,22 +55,22 @@ class CPU(implicit p: Parameters) extends Module {
   pipeId.io.fromIf := RegFlush(
     pipeIf.io.toId,
     !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeId.io.busy,
-    pipeIf.io.busy || branch.redirect
+    pipeIf.io.busy || branch.redirect,
   )
   pipeEx.io.fromId := RegFlush(
     pipeId.io.toEx,
     !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy,
-    pipeId.io.busy || branch.redirect
+    pipeId.io.busy || branch.redirect,
   )
   pipeMem.io.fromEx := RegFlush(
     pipeEx.io.toMem,
     !pipeWb.io.busy && !pipeMem.io.busy,
-    pipeEx.io.busy
+    pipeEx.io.busy,
   )
   pipeWb.io.fromMem := RegFlush(
     pipeMem.io.toWb,
     !pipeWb.io.busy,
-    pipeMem.io.busy
+    pipeMem.io.busy,
   )
 
   // Retire Observation
@@ -93,7 +93,7 @@ object CPU extends App {
     new CPU()(new Parameters()),
     "build",
     withOutputBuffer = false,
-    withPathPrefix = false
+    withPathPrefix = false,
   )
 }
 
@@ -102,7 +102,7 @@ object CPUSim extends App {
     new CPU()(new Parameters(debug = true)),
     "sim/rtl",
     withOutputBuffer = false,
-    withPathPrefix = false
+    withPathPrefix = false,
   )
 }
 
@@ -111,10 +111,10 @@ object CPUBackend extends App {
     new CPU()(new Parameters()),
     "backend/rtl",
     Array( // Make yosys happy
-      "--lowering-options=disallowLocalVariables,disallowPackedArrays"
+      "--lowering-options=disallowLocalVariables,disallowPackedArrays",
     ),
     withOutputBuffer = false,
     withPathPrefix = false,
-    splitVerilog = false
+    splitVerilog = false,
   )
 }

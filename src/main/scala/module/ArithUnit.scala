@@ -28,8 +28,8 @@ class ArithUnit(implicit p: Parameters) extends Module {
     Seq(
       ADD  -> io.inv,
       SLT  -> true.B,
-      SLTU -> true.B
-    )
+      SLTU -> true.B,
+    ),
   )
 
   val add = UIntCLA(33)(src1, Mux(sub, ~src2, src2), sub).end(33)
@@ -49,7 +49,7 @@ class ArithUnit(implicit p: Parameters) extends Module {
       XOR  -> xor,
       SRX  -> Mux(io.inv, sra, srl),
       OR   -> or,
-      AND  -> and
-    )
+      AND  -> and,
+    ),
   )
 }

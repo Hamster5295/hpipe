@@ -25,21 +25,21 @@ class PipeEx(implicit p: Parameters) extends Module {
     EQ.asUInt  -> ADD,
     NE.asUInt  -> ADD,
     LTU.asUInt -> SLTU,
-    GEU.asUInt -> SLTU
+    GEU.asUInt -> SLTU,
   ))
 
   val op = MuxIf(
     (fromId.uop.isMem || fromId.uop.isJal) -> ADD,
-    fromId.uop.isBr                        -> opForBr
+    fromId.uop.isBr                        -> opForBr,
   )(fromId.funct.asTypeOf(ALUOp()))
 
   val aluInv = Mux(
     fromId.uop.isBr,
     MuxLookup(fromId.funct, fromId.uop.isAluInv)(Seq(
       EQ.asUInt -> 1.B,
-      NE.asUInt -> 1.B
+      NE.asUInt -> 1.B,
     )),
-    fromId.uop.isAluInv
+    fromId.uop.isAluInv,
   )
 
   val alu = Module(new ArithUnit)
@@ -55,7 +55,7 @@ class PipeEx(implicit p: Parameters) extends Module {
     LT.asUInt  -> (alu.io.result === 1.U),
     GE.asUInt  -> (alu.io.result === 0.U),
     LTU.asUInt -> (alu.io.result === 1.U),
-    GEU.asUInt -> (alu.io.result === 0.U)
+    GEU.asUInt -> (alu.io.result === 0.U),
   ))
   val jalTake = fromId.uop.isJal
   val take    = brTake || jalTake
