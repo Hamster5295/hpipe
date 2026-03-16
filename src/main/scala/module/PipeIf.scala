@@ -33,12 +33,12 @@ class PipeIf(implicit p: Parameters) extends Module {
   def parse(
       br:   Boolean,
       jal:  Boolean,
-      jalr: Boolean
+      jalr: Boolean,
   ) =
     BitPat(
       s"b${if (br) 1 else 0}"
         ++ s"${if (jal) 1 else 0}"
-        ++ s"${if (jalr) 1 else 0}"
+        ++ s"${if (jalr) 1 else 0}",
     )
 
   val table = TruthTable(
@@ -50,9 +50,9 @@ class PipeIf(implicit p: Parameters) extends Module {
       BLT  -> parse(true, false, false),
       BGE  -> parse(true, false, false),
       BLTU -> parse(true, false, false),
-      BGEU -> parse(true, false, false)
+      BGEU -> parse(true, false, false),
     ),
-    BitPat(0.U(3.W))
+    BitPat(0.U(3.W)),
   )
   val decoded = decoder(inst, table)
   val isBr    = decoded.msb()
@@ -63,12 +63,12 @@ class PipeIf(implicit p: Parameters) extends Module {
     isJalr -> SignExt(inst(31, 20), 32),
     isJal  -> SignExt(
       inst(31) ## inst(19, 12) ## inst(20) ## inst(30, 21) ## 0.U(1.W),
-      32
+      32,
     ),
     isBr -> SignExt(
       inst(31) ## inst(7) ## inst(30, 25) ## inst(11, 8) ## 0.U(1.W),
-      32
-    )
+      32,
+    ),
   )(0.U)
 
   // Addr Gen
@@ -81,7 +81,7 @@ class PipeIf(implicit p: Parameters) extends Module {
 
   val rs1 = MuxIf(
     ffEx  -> io.feedForwardEx.data,
-    ffMem -> io.feedForwardEx.data
+    ffMem -> io.feedForwardEx.data,
   )(io.regRead.data)
 
   // RS1 should be valid for JALR to take branch
@@ -95,17 +95,18 @@ class PipeIf(implicit p: Parameters) extends Module {
   val btb = Module(new BranchPredictor)
   btb.io.read.pc     := pc
   btb.io.read.brAddr := brAddr
-  btb.io.read.isJalr := isJalr && rs1Valid // If
-  btb.io.read.isJal  := isJal
-  btb.io.read.isBr   := isBr
+  btb.io.read.isJalr :=
+    isJalr && rs1Valid // If rs1 is not ready, cancel HistBuffer prediction
+  btb.io.read.isJal := isJal
+  btb.io.read.isBr  := isBr
 
-  btb.io.write.pc    := io.fromEx.pc
-  btb.io.write.take  := io.fromEx.take
-  btb.io.write.valid := io.fromEx.isBr
+  btb.io.write.pc     := io.fromEx.pc
+  btb.io.write.take   := io.fromEx.take
+  btb.io.write.isBr  := io.fromEx.isBr
 
   val nextpc = MuxIf(
     io.stall           -> pc,
-    io.fromEx.redirect -> io.fromEx.addr
+    io.fromEx.redirect -> io.fromEx.addr,
   )(btb.io.read.nextpc)
 
   pc := nextpc
