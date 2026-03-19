@@ -2,7 +2,7 @@
 #define __EMU_H
 
 #define MEM_SIZE (64 * 1024)
-#define MAX_CYCLE_PER_INST 32
+#define MAX_CYCLE_PER_INST 48
 
 #define RESET_VECTOR 0x80000000
 

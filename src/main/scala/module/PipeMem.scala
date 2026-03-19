@@ -34,14 +34,14 @@ class PipeMem(implicit p: Parameters) extends Module {
   // Store
   io.memStore.req  := fromEx.uop.isSt
   io.memStore.addr := fromEx.addr
-  io.memStore.data := fromEx.alu
+  io.memStore.data := fromEx.data
   io.memStore.mask := MuxLookup(fromEx.funct, 0.U)(Seq(
     StoreOp.Byte.asUInt -> "b0001".U,
     StoreOp.Half.asUInt -> "b0011".U,
     StoreOp.Word.asUInt -> "b1111".U,
   ))
 
-  val data = Mux(fromEx.uop.isLd, result, fromEx.alu)
+  val data = Mux(fromEx.uop.isLd, result, fromEx.data)
 
   val toWb = io.toWb
   toWb.valid   := fromEx.valid

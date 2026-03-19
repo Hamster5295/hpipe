@@ -49,6 +49,7 @@ class UOp(implicit p: Parameters) extends Bundle {
   val isJal    = Bool() // Is JAL (get PC+4 and use it for wb)
   val isAluInv = Bool() // Is Invert op in ALU (for `sub` and `sra`)
   val isEBreak = Bool() // Is EBreak Inst
+  val isMulDiv = Bool() // Is Mul || Div
 
   def isMem = isLd || isSt
 }
@@ -108,7 +109,7 @@ class Ex2MemIO(implicit p: Parameters) extends PipeIO {
   val rd = XRegAddr()
 
   val funct = UInt(3.W)
-  val alu   = Word()
+  val data   = Word()
   val addr  = Addr()
 
   val uop = new UOp()
@@ -139,6 +140,10 @@ object Src2 extends ChiselEnum {
 
 object ALUOp extends ChiselEnum {
   val ADD, SLL, SLT, SLTU, XOR, SRX, OR, AND = Value
+}
+
+object MulDivOp extends ChiselEnum {
+  val MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU = Value
 }
 
 object LoadOp extends ChiselEnum {
