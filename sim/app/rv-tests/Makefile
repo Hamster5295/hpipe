@@ -1,11 +1,11 @@
 TEST := all
-TEST_DIR := repo/isa/rv32ui
+TEST_DIR := repo/isa/rv32ui repo/isa/rv32um
 
 TARGET = sim
 
 EXCLUDE_TEST ?= fence_i ma_data
 ORIGINAL_TEST = $(basename $(notdir $(shell find $(TEST_DIR) -name "*.S" | sort)))
-ALL = $(filter-out $(EXCLUDE_TEST),$(ORIGINAL_TEST))
+ALL ?= $(filter-out $(EXCLUDE_TEST),$(ORIGINAL_TEST))
 ALL_SRCS = $(foreach d,$(TEST_DIR),$(foreach f,$(ALL),$(wildcard $(d)/$(f).S)))
 
 RESULT = .result

@@ -46,6 +46,8 @@ class PipeId(implicit p: Parameters) extends Module {
       jal:    Boolean,
       aluInv: Boolean,
       ebreak: Boolean,
+
+      mext: Boolean,
   ) =
     BitPat(
       s"b1" // Inst is valid
@@ -59,51 +61,68 @@ class PipeId(implicit p: Parameters) extends Module {
         ++ s"${if (st) 1 else 0}"
         ++ s"${if (jal) 1 else 0}"
         ++ s"${if (aluInv) 1 else 0}"
-        ++ s"${if (ebreak) 1 else 0}",
+        ++ s"${if (ebreak) 1 else 0}"
+        ++ s"${if (mext) 1 else 0}",
     )
+
+    def T = true
+    def F = false
 
   val instTable = TruthTable(
     Map(
 // format: off
-      LUI   -> parse(U, Src1.None, Src2.Imm, false, true, false, false, false, false, false, false),
-      AUIPC -> parse(U, Src1.PC, Src2.Imm, false, true, false, false, false, false, false, false),
-      JAL   -> parse(J, Src1.PC, Src2.Four, false, true, false, false, false, true, false, false),
-      JALR  -> parse(I, Src1.PC, Src2.Four, true, true, false, false, false, true, false, false),
-      BEQ   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BNE   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BLT   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BGE   -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BLTU  -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      BGEU  -> parse(B, Src1.Reg, Src2.Reg, false, false, true, false, false, false, false, false),
-      LB    -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      LH    -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      LW    -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      LBU   -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      LHU   -> parse(I, Src1.None, Src2.Reg, true, true, false, true, false, false, false, false),
-      SB    -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
-      SH    -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
-      SW    -> parse(S, Src1.None, Src2.Reg, true, false, false, false, true, false, false, false),
-      ADDI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SLTI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SLTIU -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      XORI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      ORI   -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      ANDI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SLLI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SRLI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, false, false),
-      SRAI  -> parse(I, Src1.Reg, Src2.Imm, false, true, false, false, false, false, true, false),
-      ADD   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SUB   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, true, false),
-      SLL   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SLT   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SLTU  -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      XOR   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SRL   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      SRA   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, true, false),
-      OR    -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      AND   -> parse(R, Src1.Reg, Src2.Reg, false, true, false, false, false, false, false, false),
-      //   ECALL  -> parse(N, Src1.None, Src2.None, false, false, false, false, false, false, false, false),
-      EBREAK -> parse(N, Src1.None, Src2.None, false, false, false, false, false, false, false, true)
+
+      // I
+      LUI    -> parse(U, Src1.None, Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      AUIPC  -> parse(U, Src1.PC,   Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      JAL    -> parse(J, Src1.PC,   Src2.Four, F, T, F, F, F, T, F, F, F),
+      JALR   -> parse(I, Src1.PC,   Src2.Four, T, T, F, F, F, T, F, F, F),
+      BEQ    -> parse(B, Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F),
+      BNE    -> parse(B, Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F),
+      BLT    -> parse(B, Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F),
+      BGE    -> parse(B, Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F),
+      BLTU   -> parse(B, Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F),
+      BGEU   -> parse(B, Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F),
+      LB     -> parse(I, Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F),
+      LH     -> parse(I, Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F),
+      LW     -> parse(I, Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F),
+      LBU    -> parse(I, Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F),
+      LHU    -> parse(I, Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F),
+      SB     -> parse(S, Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F),
+      SH     -> parse(S, Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F),
+      SW     -> parse(S, Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F),
+      ADDI   -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      SLTI   -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      SLTIU  -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      XORI   -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      ORI    -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      ANDI   -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      SLLI   -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      SRLI   -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F),
+      SRAI   -> parse(I, Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, T, F, F),
+      ADD    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F),
+      SUB    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, T, F, F),
+      SLL    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F),
+      SLT    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F),
+      SLTU   -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F),
+      XOR    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F),
+      SRL    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F),
+      SRA    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, T, F, F),
+      OR     -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F),
+      AND    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F),
+//    ECALL  -> parse(N, Src1.None, Src2.None, F, F, F, F, F, F, F, F, F),
+      EBREAK -> parse(N, Src1.None, Src2.None, F, F, F, F, F, F, F, T, F),
+
+      // M Extension
+      MUL    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T),
+      MULH   -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T),
+      MULHSU -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T),
+      MULHU  -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T),
+      DIV    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T),
+      DIVU   -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T),
+      REM    -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T),
+      REMU   -> parse(R, Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T),
+
 // format: on
     ),
     BitPat(0.U(15.W)),

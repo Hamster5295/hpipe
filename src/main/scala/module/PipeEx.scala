@@ -18,8 +18,6 @@ class PipeEx(implicit p: Parameters) extends Module {
   val io     = IO(new PipeExIO)
   val fromId = io.fromId
 
-  io.busy := false.B
-
   // ALU Op when inst is BR
   val opForBr = MuxLookup(fromId.funct, SLT)(Seq(
     EQ.asUInt  -> ADD,
@@ -42,11 +40,19 @@ class PipeEx(implicit p: Parameters) extends Module {
     fromId.uop.isAluInv,
   )
 
+  // ALU
   val alu = Module(new ArithUnit)
   alu.io.src1 := fromId.src1
   alu.io.src2 := fromId.src2
   alu.io.op   := op
   alu.io.inv  := aluInv
+
+  // Mul & Div
+  val mdu = Module(new MulDivUnit)
+  mdu.io.src1  := fromId.src1
+  mdu.io.src2  := fromId.src2
+  mdu.io.op    := fromId.funct
+  mdu.io.valid := fromId.uop.isMulDiv
 
   // Branch
   val brTake = fromId.uop.isBr && MuxLookup(fromId.funct, false.B)(Seq(
@@ -65,13 +71,15 @@ class PipeEx(implicit p: Parameters) extends Module {
   io.branch.redirect := take ^ fromId.brTake
   io.branch.addr     := Mux(take, fromId.addr, fromId.pc + 4.U)
 
+  val result = Mux(fromId.uop.isMulDiv, mdu.io.result, alu.io.result)
+
   // To Mem
   val toMem = io.toMem
   toMem.valid := fromId.valid
   toMem.pc    := fromId.pc
   toMem.rd    := fromId.rd
   toMem.funct := fromId.funct
-  toMem.alu   := alu.io.result
+  toMem.data  := result
   toMem.addr  := fromId.addr
   toMem.uop   := fromId.uop
 
@@ -80,5 +88,7 @@ class PipeEx(implicit p: Parameters) extends Module {
   toId.rd      := fromId.rd
   toId.isWrite := fromId.uop.writeRd
   toId.isLd    := fromId.uop.isLd
-  toId.data    := alu.io.result
+  toId.data    := result
+
+  io.busy := Mux(fromId.uop.isMulDiv, mdu.io.busy, false.B)
 }
