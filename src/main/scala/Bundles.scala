@@ -109,7 +109,7 @@ class Ex2MemIO(implicit p: Parameters) extends PipeIO {
   val rd = XRegAddr()
 
   val funct = UInt(3.W)
-  val data   = Word()
+  val data  = Word()
   val addr  = Addr()
 
   val uop = new UOp()
