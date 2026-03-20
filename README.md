@@ -36,7 +36,7 @@ make backend
 
 This Core implements a classical 5-stage pipelined CPU.  
 
-Currently it only supports RV32I, but more extensions are on the way.
+Currently it supports RV32IM, but more extensions are on the way.
 
 
 ### IF & BTB
@@ -53,7 +53,11 @@ The ID stage decodes each instruction into uops that determines the behavour of 
 
 ### EX
 
-The EX stage currently uses symbol `+` as the Adder Implemention. Should be optimized soon.
+The EX stage currently uses **Carry Lookahead Adder**, **Radix-4 Booth Multiplier** and **Non-restoring remainder Divider** as its arithmatic implemention
+
+- The **Carry Lookahead Adder** implements a *group-of-4* hierarchy, i.e. at most 4 adders shares a **Carry Lookahead Unit**
+- The **Radix-4 Booth Multiplier** currently produces result in 1 cycle, which might have impact on frequency
+- The **Non-restoring remainder Divider** requires 32 cycles for a normal divide operation
 
 
 ### MEM
@@ -99,11 +103,15 @@ All characteristics were estimated using [icsprout55](https://github.com/openeco
 - Clock Freq = 685.184MHz
 - Area = 30881.2nm2
 
+The analysis above was taken under `v0.1.3`. 
+
+However, after M extension was implemented, the `yosys` takes too long to synthesis, so no valid backend report was created.
+
 
 ## Road Map
 - [x] Enable GDB Debugging
 - [x] Testbenches & Unit Tests using `verilator` and [`riscv-tests`](https://github.com/riscv-software-src/riscv-tests)  
-- [ ] RV32M extension  
+- [x] RV32M extension  
 - [x] Yosys-based backend analysis
 - [x] Branch Prediction & Optimized Branch Penalty
 - [ ] CSRs supporting M mode
