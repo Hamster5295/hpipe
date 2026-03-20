@@ -23,8 +23,8 @@ class Booth4(width: Int) extends Module {
       (io.enc === "b100".U) -> (neg << 1.U),
       (io.enc === "b101".U) -> neg,
       (io.enc === "b110".U) -> neg,
-      (io.enc === "b111".U) -> 0.U
-    )
+      (io.enc === "b111".U) -> 0.U,
+    ),
   )
 }
 
