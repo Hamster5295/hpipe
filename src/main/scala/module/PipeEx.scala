@@ -64,7 +64,7 @@ class PipeEx(implicit val p: Parameters) extends Module {
     LTU.asUInt -> (alu.io.result === 1.U),
     GEU.asUInt -> (alu.io.result === 0.U),
   ))
-  val brMiss = brTake ^ pred.brTake
+  val brMiss   = brTake ^ pred.brTake
   val jalrMiss = !(fromId.addr === pred.target)
 
   io.branch.info     := pred.branch
