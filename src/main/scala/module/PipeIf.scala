@@ -10,7 +10,7 @@ class PipeIfIO(implicit p: Parameters) extends StageIO {
   val fetch   = new InstFetchIO
   val regRead = Flipped(new RegFileReadPort)
 
-  val toId   = new If2IdIO
+  val toId   = Output(new If2IdIO)
   val fromEx = Input(new BranchFeedback)
 
   val feedForwardMem = Input(new FeedForward)
@@ -20,7 +20,7 @@ class PipeIfIO(implicit p: Parameters) extends StageIO {
   val stall = Input(Bool())
 }
 
-class PipeIf(implicit p: Parameters) extends Module {
+class PipeIf(implicit val p: Parameters) extends Module {
   val io = IO(new PipeIfIO)
 
   io.busy := false.B
@@ -73,6 +73,7 @@ class PipeIf(implicit p: Parameters) extends Module {
 
   // Addr Gen
   val rs1Addr = inst(19, 15)
+  val rdAddr  = inst(11, 7)
   io.regRead.addr := rs1Addr
 
   val ffId  = io.feedForwardId.isValid(rs1Addr)
@@ -81,39 +82,56 @@ class PipeIf(implicit p: Parameters) extends Module {
 
   val rs1 = MuxIf(
     ffEx  -> io.feedForwardEx.data,
-    ffMem -> io.feedForwardEx.data,
+    ffMem -> io.feedForwardMem.data,
   )(io.regRead.data)
 
   // RS1 should be valid for JALR to take branch
   // Invalid cases:
   // 1. An inst in ID stage will write to rs1, but ID stage doesn't calculate
   // 2. An inst in EX stage feeds forward, but it's a ld inst
-  val rs1Valid = !ffId && !(ffEx && io.feedForwardEx.isLd)
+  val rs1Valid = !ffId &&
+    !(io.feedForwardEx.isValid(rs1Addr) && io.feedForwardEx.isLd)
 
   val brAddr = UIntCLA(32)(Mux(isJalr, rs1, pc), imm, 0.B).end(32)
 
-  val btb = Module(new BranchPredictor)
-  btb.io.read.pc     := pc
-  btb.io.read.brAddr := brAddr
-  btb.io.read.isJalr :=
-    isJalr && rs1Valid // If rs1 is not ready, cancel HistBuffer prediction
-  btb.io.read.isJal := isJal
-  btb.io.read.isBr  := isBr
+  val btb  = Module(new BranchPredictor)
+  val read = btb.io.read
+  read.pc            := pc
+  read.brAddr        := brAddr
+  read.defaultTarget := pc +% 4.U
+  read.info.isJalr   := isJalr
+  read.info.isJal    := isJal
+  read.info.isBr     := isBr
+  read.info.isCall   :=
+    (isJal || isJalr) && (rdAddr === 1.U || rdAddr === 5.U)
+  read.info.isRet :=
+    (isJalr
+      && !(rs1Addr === rdAddr)
+      && (rs1Addr === 1.U || rs1Addr === 5.U)
+      && !inst(31, 20).orR)
+  read.rs1Valid := rs1Valid
 
-  btb.io.write.pc   := io.fromEx.pc
-  btb.io.write.take := io.fromEx.take
-  btb.io.write.isBr := io.fromEx.isBr
+  btb.io.write.info     := io.fromEx.info
+  btb.io.write.pc       := io.fromEx.pc
+  btb.io.write.brTake   := io.fromEx.brTake
+  btb.io.write.callAddr := io.fromEx.callAddr
 
   val nextpc = MuxIf(
     io.stall           -> pc,
-    io.fromEx.redirect -> io.fromEx.addr,
-  )(btb.io.read.nextpc)
+    io.fromEx.redirect -> io.fromEx.target,
+  )(btb.io.read.target)
 
-  pc := nextpc
+  pc            := nextpc
+  io.fetch.addr := pc
 
-  io.fetch.addr  := pc
-  io.toId.valid  := !reset.asBool
-  io.toId.pc     := pc
-  io.toId.inst   := io.fetch.inst
-  io.toId.brTake := btb.io.read.take
+  val toId = io.toId
+  toId.valid := !reset.asBool
+  toId.pc    := pc
+  toId.inst  := io.fetch.inst
+
+  toId.predInfo.branch        := btb.io.read.info
+  toId.predInfo.jalrSrc       := rs1Addr
+  toId.predInfo.brTake        := btb.io.read.brTake
+  toId.predInfo.defaultTarget := btb.io.read.defaultTarget
+  toId.predInfo.target        := btb.io.read.target
 }

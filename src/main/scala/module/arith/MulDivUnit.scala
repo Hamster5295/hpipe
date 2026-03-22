@@ -5,7 +5,7 @@ import chisel3.util._
 import hammer._
 import hpipe.MulDivOp._
 
-class MulDivUnitIO(implicit p: Parameters) extends Bundle {
+class MulDivUnitIO(implicit val p: Parameters) extends Bundle {
   val src1   = Input(Word())
   val src2   = Input(Word())
   val op     = Input(UInt(3.W))
@@ -15,7 +15,7 @@ class MulDivUnitIO(implicit p: Parameters) extends Bundle {
   val busy  = Output(Bool())
 }
 
-class MulDivUnit(implicit p: Parameters) extends Module {
+class MulDivUnit(implicit val p: Parameters) extends Module {
   val io = IO(new MulDivUnitIO)
 
   val isMul      = ~io.op.msb()

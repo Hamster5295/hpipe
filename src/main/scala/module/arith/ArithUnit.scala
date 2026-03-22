@@ -5,7 +5,7 @@ import chisel3.util._
 import hammer._
 import hpipe.ALUOp._
 
-class ArithUnitIO(implicit p: Parameters) extends Bundle {
+class ArithUnitIO(implicit val p: Parameters) extends Bundle {
   val src1 = Input(Word())
   val src2 = Input(Word())
   val op   = Input(ALUOp())
@@ -15,7 +15,7 @@ class ArithUnitIO(implicit p: Parameters) extends Bundle {
   val result = Output(Word())
 }
 
-class ArithUnit(implicit p: Parameters) extends Module {
+class ArithUnit(implicit val p: Parameters) extends Module {
   val io = IO(new ArithUnitIO)
 
   val unsigned = io.op === SLTU
