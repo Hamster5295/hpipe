@@ -30,7 +30,7 @@ class RetAddrStack(implicit val p: Parameters) extends Module
 
   ptr := MuxIf(
     (read && write) -> ptr,
-    read            -> (stackTop),
+    read            -> stackTop,
     write           -> (ptr +% 1.U),
   )(ptr)
 

@@ -67,8 +67,8 @@ class BranchInfo(implicit val p: Parameters) extends Bundle {
 class BranchPredictInfo(implicit val p: Parameters) extends Bundle {
   val branch = new BranchInfo
 
-  val jalrSrc   = XRegAddr()
-  val brTake    = Bool()
+  val jalrSrc = XRegAddr()
+  val brTake  = Bool()
 
   val defaultTarget = Addr()
   val target        = Addr()
