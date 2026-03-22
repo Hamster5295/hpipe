@@ -7,14 +7,14 @@ import hpipe.ALUOp._
 import hpipe.BranchOp._
 
 class PipeExIO(implicit p: Parameters) extends StageIO {
-  val fromId = Flipped(new Id2ExIO)
-  val toMem  = new Ex2MemIO
+  val fromId = Input(new Id2ExIO)
+  val toMem  = Output(new Ex2MemIO)
 
   val feedForward = Output(new FeedForward)
   val branch      = Output(new BranchFeedback)
 }
 
-class PipeEx(implicit p: Parameters) extends Module {
+class PipeEx(implicit val p: Parameters) extends Module {
   val io     = IO(new PipeExIO)
   val fromId = io.fromId
 
@@ -55,6 +55,7 @@ class PipeEx(implicit p: Parameters) extends Module {
   mdu.io.valid := fromId.uop.isMulDiv
 
   // Branch
+  val pred   = io.fromId.predInfo
   val brTake = fromId.uop.isBr && MuxLookup(fromId.funct, false.B)(Seq(
     EQ.asUInt  -> (!alu.io.result.orR),
     NE.asUInt  -> (alu.io.result.orR),
@@ -63,13 +64,21 @@ class PipeEx(implicit p: Parameters) extends Module {
     LTU.asUInt -> (alu.io.result === 1.U),
     GEU.asUInt -> (alu.io.result === 0.U),
   ))
-  val jalTake = fromId.uop.isJal
-  val take    = brTake || jalTake
-  io.branch.isBr     := fromId.uop.isBr
+  val brMiss = brTake ^ pred.brTake
+  val jalrMiss = !(fromId.addr === pred.target)
+
+  io.branch.info     := pred.branch
   io.branch.pc       := fromId.pc
-  io.branch.take     := take
-  io.branch.redirect := take ^ fromId.brTake
-  io.branch.addr     := Mux(take, fromId.addr, fromId.pc + 4.U)
+  io.branch.redirect :=
+    !pred.branch.isJal && // Jal always goes to the correct branch
+      ((brMiss && pred.branch.isBr) || (jalrMiss && pred.branch.isJalr))
+  io.branch.target := Mux(
+    (pred.branch.isBr && brTake) || pred.branch.isJalr,
+    fromId.addr,
+    pred.defaultTarget,
+  )
+  io.branch.brTake   := brTake
+  io.branch.callAddr := alu.io.result // CALL will always take the alu result
 
   val result = Mux(fromId.uop.isMulDiv, mdu.io.result, alu.io.result)
 

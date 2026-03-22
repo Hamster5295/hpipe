@@ -7,13 +7,14 @@ import hammer._
 class PipeMemIO(implicit p: Parameters) extends StageIO {
   val memLoad  = new MemLoadIO
   val memStore = new MemStoreIO
-  val fromEx   = Flipped(new Ex2MemIO)
-  val toWb     = new Mem2WbIO
+
+  val fromEx = Input(new Ex2MemIO)
+  val toWb   = Output(new Mem2WbIO)
 
   val feedForward = new FeedForward
 }
 
-class PipeMem(implicit p: Parameters) extends Module {
+class PipeMem(implicit val p: Parameters) extends Module {
   val io     = IO(new PipeMemIO)
   val fromEx = io.fromEx
 

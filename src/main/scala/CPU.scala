@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class CPUIO(implicit p: Parameters) extends Bundle {
+class CPUIO(implicit val p: Parameters) extends Bundle {
   val instFetch = new InstFetchIO
   val memLoad   = new MemLoadIO
   val memStore  = new MemStoreIO
@@ -14,7 +14,7 @@ class CPUIO(implicit p: Parameters) extends Bundle {
   val debug = if (p.debug) Output(new DebugInfo) else null
 }
 
-class CPU(implicit p: Parameters) extends Module {
+class CPU(implicit val p: Parameters) extends Module {
   val io = IO(new CPUIO)
 
   val pipeIf  = Module(new PipeIf)
