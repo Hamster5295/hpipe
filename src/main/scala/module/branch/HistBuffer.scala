@@ -5,20 +5,9 @@ import chisel3.util._
 import hammer._
 import hammer.model._
 
-class HistBufferReadPort(implicit p: Parameters) extends BranchReadPortBase {
-  val isJalr = Input(Bool())
-  val isJal  = Input(Bool())
-  val isBr   = Input(Bool())
-}
+class HistBufferIO(implicit p: Parameters) extends BranchPredictorIO
 
-class HistBufferIO(implicit p: Parameters) extends Bundle {
-  val read  = new HistBufferReadPort
-  val write = new BranchWritePort
-
-  val defaultPc = Input(Addr())
-}
-
-class HistBuffer(implicit p: Parameters) extends Module {
+class HistBuffer(implicit val p: Parameters) extends Module {
   val conf = p.HistBuf
 
   val io = IO(new HistBufferIO)
@@ -67,7 +56,7 @@ class HistBuffer(implicit p: Parameters) extends Module {
       // 1. The write signal is valid (a branch inst is executed)
       // 2. No previous entry matches the branch PC
       // 3. This entry is the least recently used one
-      val canOverride = write.isBr && !wmatched && lruIdx === idx.U
+      val canOverride = write.info.isBr && !wmatched && lruIdx === idx.U
       valid := valid | canOverride
 
       tag := Mux(
@@ -77,7 +66,7 @@ class HistBuffer(implicit p: Parameters) extends Module {
       )
 
       cnter.io.enable   := (valid && wmatches(idx)) || canOverride
-      cnter.io.op       := write.take
+      cnter.io.op       := write.brTake
       cnter.io.set      := false.B
       cnter.io.setValue := 0.U
   }
@@ -89,16 +78,12 @@ class HistBuffer(implicit p: Parameters) extends Module {
   val rmatched = rmatches.asUInt.orR
 
   val ridx = PriorityEncoder(rmatches.asUInt)
-  read.nextpc := Mux(
-    (read.isJal || read.isJalr) ||
-      (read.isBr && rmatched && entryCnterValues(ridx).msb()),
+  read.target := Mux(
+    read.info.isBr && rmatched && entryCnterValues(ridx).msb(),
     read.brAddr,
-    io.defaultPc,
+    io.read.defaultTarget,
   )
-
-  read.take :=
-    (read.isJal || read.isJalr) ||
-      (read.isBr && rmatched && entryCnterValues(ridx).msb())
+  read.brTake := read.info.isBr && rmatched && entryCnterValues(ridx).msb()
 
   entryUseds.zipWithIndex.map {
     case (used, idx) =>

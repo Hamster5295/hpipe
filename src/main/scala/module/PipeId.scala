@@ -8,8 +8,8 @@ import hpipe.Insts._
 import hpipe.InstType._
 
 class PipeIdIO(implicit p: Parameters) extends StageIO {
-  val fromIf = Flipped(new If2IdIO)
-  val toEx   = new Id2ExIO
+  val fromIf = Input(new If2IdIO)
+  val toEx   = Output(new Id2ExIO)
 
   val fromEx  = Input(new FeedForward)
   val fromMem = Input(new FeedForward)
@@ -20,13 +20,13 @@ class PipeIdIO(implicit p: Parameters) extends StageIO {
   val feedForward = Output(new FeedForward)
 }
 
-class PipeId(implicit p: Parameters) extends Module {
+class PipeId(implicit val p: Parameters) extends Module {
   val io = IO(new PipeIdIO)
 
   val toEx = io.toEx
   val inst = io.fromIf.inst
-  toEx.pc     := io.fromIf.pc
-  toEx.brTake := io.fromIf.brTake
+  toEx.pc       := io.fromIf.pc
+  toEx.predInfo := io.fromIf.predInfo
 
   val rs1Addr = inst(19, 15)
   val rs2Addr = inst(24, 20)
@@ -139,7 +139,6 @@ class PipeId(implicit p: Parameters) extends Module {
   toEx.uop   := result.tail(9).asTypeOf(new UOp)
 
   // Regs & Imm
-
   toEx.rs1   := rs1Addr
   toEx.rs2   := rs2Addr
   toEx.rd    := rdAddr
