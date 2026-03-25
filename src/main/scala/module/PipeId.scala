@@ -26,7 +26,7 @@ class PipeId(implicit val p: Parameters) extends Module {
   val toEx = io.toEx
   val inst = io.fromIf.inst
   toEx.pc       := io.fromIf.pc
-  toEx.predInfo := io.fromIf.predInfo
+  toEx.predInfo := io.fromIf.prediction
 
   val rs1Addr = inst(19, 15)
   val rs2Addr = inst(24, 20)

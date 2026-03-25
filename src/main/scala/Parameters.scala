@@ -52,3 +52,7 @@ object Word {
 object XRegAddr {
   def apply()(implicit p: Parameters) = UInt(p.XRegAddrWidth.W)
 }
+
+object CsrAddr {
+  def apply() = UInt(12.W) // 12 is specified by
+}
