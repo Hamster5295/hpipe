@@ -65,7 +65,7 @@ class BranchInfo(implicit val p: Parameters) extends Bundle {
 }
 
 class BranchPredictInfo(implicit val p: Parameters) extends Bundle {
-  val branch = new BranchInfo
+  val branchInfo = new BranchInfo
 
   val jalrSrc = XRegAddr()
   val brTake  = Bool()
@@ -104,7 +104,7 @@ class If2IdIO(implicit p: Parameters) extends PipeIO {
   val inst = Inst()
   val pc   = Addr()
 
-  val predInfo = new BranchPredictInfo
+  val prediction = new BranchPredictInfo
 }
 
 class Id2ExIO(implicit p: Parameters) extends PipeIO {

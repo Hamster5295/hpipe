@@ -67,13 +67,13 @@ class PipeEx(implicit val p: Parameters) extends Module {
   val brMiss   = brTake ^ pred.brTake
   val jalrMiss = !(fromId.addr === pred.target)
 
-  io.branch.info     := pred.branch
+  io.branch.info     := pred.branchInfo
   io.branch.pc       := fromId.pc
   io.branch.redirect :=
-    !pred.branch.isJal && // Jal always goes to the correct branch
-      ((brMiss && pred.branch.isBr) || (jalrMiss && pred.branch.isJalr))
+    !pred.branchInfo.isJal && // Jal always goes to the correct branch
+      ((brMiss && pred.branchInfo.isBr) || (jalrMiss && pred.branchInfo.isJalr))
   io.branch.target := Mux(
-    (pred.branch.isBr && brTake) || pred.branch.isJalr,
+    (pred.branchInfo.isBr && brTake) || pred.branchInfo.isJalr,
     fromId.addr,
     pred.defaultTarget,
   )
