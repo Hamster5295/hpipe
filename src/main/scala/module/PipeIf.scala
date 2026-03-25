@@ -94,8 +94,8 @@ class PipeIf(implicit val p: Parameters) extends Module {
 
   val brAddr = UIntCLA(32)(Mux(isJalr, rs1, pc), imm, 0.B).end(32)
 
-  val btb  = Module(new BranchPredictor)
-  val read = btb.io.read
+  val predictor = Module(new BranchPredictor)
+  val read      = predictor.io.read
   read.pc            := pc
   read.brAddr        := brAddr
   read.defaultTarget := pc +% 4.U
@@ -111,15 +111,16 @@ class PipeIf(implicit val p: Parameters) extends Module {
       && !inst(31, 20).orR)
   read.rs1Valid := rs1Valid
 
-  btb.io.write.info     := io.fromEx.info
-  btb.io.write.pc       := io.fromEx.pc
-  btb.io.write.brTake   := io.fromEx.brTake
-  btb.io.write.callAddr := io.fromEx.callAddr
+  val write = predictor.io.write
+  write.info     := io.fromEx.info
+  write.pc       := io.fromEx.pc
+  write.brTake   := io.fromEx.brTake
+  write.callAddr := io.fromEx.callAddr
 
   val nextpc = MuxIf(
     io.stall           -> pc,
     io.fromEx.redirect -> io.fromEx.target,
-  )(btb.io.read.target)
+  )(predictor.io.read.target)
 
   pc            := nextpc
   io.fetch.addr := pc
@@ -129,9 +130,9 @@ class PipeIf(implicit val p: Parameters) extends Module {
   toId.pc    := pc
   toId.inst  := io.fetch.inst
 
-  toId.predInfo.branch        := btb.io.read.info
-  toId.predInfo.jalrSrc       := rs1Addr
-  toId.predInfo.brTake        := btb.io.read.brTake
-  toId.predInfo.defaultTarget := btb.io.read.defaultTarget
-  toId.predInfo.target        := btb.io.read.target
+  toId.prediction.branchInfo    := predictor.io.read.info
+  toId.prediction.jalrSrc       := rs1Addr
+  toId.prediction.brTake        := predictor.io.read.brTake
+  toId.prediction.defaultTarget := predictor.io.read.defaultTarget
+  toId.prediction.target        := predictor.io.read.target
 }
