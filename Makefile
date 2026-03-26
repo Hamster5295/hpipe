@@ -1,5 +1,5 @@
 PRJ = hpipe
-TARGET ?= hpipe.CPU
+TARGET ?= hpipe.HPipe
 
 MILL = ./mill
 JAVA = java

@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class CPUIO(implicit val p: Parameters) extends Bundle {
+class HPipeIO(implicit val p: Parameters) extends Bundle {
   val instFetch = new InstFetchIO
   val memLoad   = new MemLoadIO
   val memStore  = new MemStoreIO
@@ -14,8 +14,8 @@ class CPUIO(implicit val p: Parameters) extends Bundle {
   val debug = if (p.debug) Output(new DebugInfo) else null
 }
 
-class CPU(implicit val p: Parameters) extends Module {
-  val io = IO(new CPUIO)
+class HPipe(implicit val p: Parameters) extends Module {
+  val io = IO(new HPipeIO)
 
   val pipeIf  = Module(new PipeIf)
   val pipeId  = Module(new PipeId)
@@ -24,6 +24,7 @@ class CPU(implicit val p: Parameters) extends Module {
   val pipeWb  = Module(new PipeWb)
 
   val regFile = Module(new RegFile)
+  val csr     = Module(new Csr)
 
   // Ports
   io.instFetch <> pipeIf.io.fetch
@@ -35,6 +36,10 @@ class CPU(implicit val p: Parameters) extends Module {
   pipeId.io.rs2Read <> regFile.io.read(1)
   pipeIf.io.regRead <> regFile.io.read(2)
   regFile.io.write := pipeWb.io.regWrite
+
+  // CSR
+  pipeWb.io.csrRead <> csr.io.read(0)
+  pipeWb.io.csrWrite <> csr.io.write(0)
 
   // Feed Forward
   pipeIf.io.stall :=
@@ -88,9 +93,9 @@ class CPU(implicit val p: Parameters) extends Module {
   }
 }
 
-object CPU extends App {
+object HPipe extends App {
   Export(
-    new CPU()(new Parameters()),
+    new HPipe()(new Parameters()),
     "build",
     withOutputBuffer = false,
     withPathPrefix = false,
@@ -99,7 +104,7 @@ object CPU extends App {
 
 object CPUSim extends App {
   Export(
-    new CPU()(new Parameters(debug = true)),
+    new HPipe()(new Parameters(debug = true)),
     "sim/rtl",
     withOutputBuffer = false,
     withPathPrefix = false,
@@ -108,7 +113,7 @@ object CPUSim extends App {
 
 object CPUBackend extends App {
   Export(
-    new CPU()(new Parameters()),
+    new HPipe()(new Parameters()),
     "backend/rtl",
     Array( // Make yosys happy
       "--lowering-options=disallowLocalVariables,disallowPackedArrays",

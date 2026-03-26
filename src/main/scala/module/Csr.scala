@@ -59,6 +59,8 @@ class Csr(implicit val p: Parameters) extends Module {
 
   val csrs = Reg(new Csrs)
 
+  io.read.map(i => i.data := 0.U)
+
   io.read.map(csrs.read(_))
   io.write.map(csrs.write(_))
 }
