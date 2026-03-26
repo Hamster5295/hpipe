@@ -45,12 +45,15 @@ class PipeMem(implicit val p: Parameters) extends Module {
   val data = Mux(fromEx.uop.isLd, result, fromEx.data)
 
   val toWb = io.toWb
-  toWb.valid   := fromEx.valid
-  toWb.pc      := fromEx.pc
-  toWb.rd      := fromEx.rd
-  toWb.writeRd := fromEx.uop.writeRd
-  toWb.data    := data
-  toWb.ebreak  := fromEx.uop.isEBreak
+  toWb.valid    := fromEx.valid
+  toWb.pc       := fromEx.pc
+  toWb.rd       := fromEx.rd
+  toWb.writeRd  := fromEx.uop.writeRd
+  toWb.data     := data
+  toWb.isEBreak := fromEx.uop.isEBreak
+  toWb.isCsr    := fromEx.uop.isCsr
+  toWb.csr      := fromEx.csr
+  toWb.csrOp    := fromEx.funct
 
   val toId = io.feedForward
   toId.rd      := fromEx.rd
