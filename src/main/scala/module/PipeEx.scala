@@ -27,8 +27,8 @@ class PipeEx(implicit val p: Parameters) extends Module {
   ))
 
   val op = MuxIf(
-    (fromId.uop.isMem || fromId.uop.isJal) -> ADD,
-    fromId.uop.isBr                        -> opForBr,
+    (fromId.uop.isMem || fromId.uop.isJal || fromId.uop.isCsr) -> ADD,
+    fromId.uop.isBr                                            -> opForBr,
   )(fromId.funct.asTypeOf(ALUOp()))
 
   val aluInv = Mux(
@@ -91,6 +91,7 @@ class PipeEx(implicit val p: Parameters) extends Module {
   toMem.data  := result
   toMem.addr  := fromId.addr
   toMem.uop   := fromId.uop
+  toMem.csr   := fromId.csr
 
   // Feed Forward
   val toId = io.feedForward

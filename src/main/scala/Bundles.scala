@@ -52,6 +52,7 @@ class UOp(implicit val p: Parameters) extends Bundle {
   val isAluInv = Bool() // Is Invert op in ALU (for `sub` and `sra`)
   val isEBreak = Bool() // Is EBreak Inst
   val isMulDiv = Bool() // Is Mul || Div
+  val isCsr    = Bool()
 
   def isMem = isLd || isSt
 }
@@ -117,6 +118,7 @@ class Id2ExIO(implicit p: Parameters) extends PipeIO {
   val src1 = Word()
   val src2 = Word()
   val addr = Addr() // Branch Address (if any)
+  val csr  = CsrAddr()
 
   val funct = UInt(3.W)
   val uop   = new UOp()
@@ -131,6 +133,7 @@ class Ex2MemIO(implicit p: Parameters) extends PipeIO {
   val funct = UInt(3.W)
   val data  = Word()
   val addr  = Addr()
+  val csr   = CsrAddr()
 
   val uop = new UOp()
 }
@@ -141,17 +144,21 @@ class Mem2WbIO(implicit p: Parameters) extends PipeIO {
   val rd      = XRegAddr()
   val data    = Word()
 
-  val ebreak = Bool()
+  val isEBreak = Bool()
+
+  val isCsr = Bool()
+  val csr   = CsrAddr()
+  val csrOp = UInt(3.W)
 }
 
 // Enums
 
 object InstType extends ChiselEnum {
-  val Invalid, R, I, S, B, U, J, N = Value
+  val Invalid, R, I, S, B, U, J, Csr, N = Value
 }
 
 object Src1 extends ChiselEnum {
-  val Reg, PC, None = Value
+  val Reg, PC, Imm, None = Value
 }
 
 object Src2 extends ChiselEnum {
