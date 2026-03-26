@@ -36,7 +36,7 @@ make backend
 
 This Core implements a classical 5-stage pipelined CPU.  
 
-Currently it supports RV32IM, but more extensions are on the way.
+Currently it supports RV32IM_izcsr, but more extensions are on the way.
 
 
 ### IF & BTB
