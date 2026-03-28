@@ -43,9 +43,7 @@ volatile ee_s32 seed5_volatile = 0;
    time.h and windows.h definitions included.
 */
 CORETIMETYPE
-barebones_clock() {
-  return rtc_get();
-}
+barebones_clock() { return rtc_get(); }
 /* Define : TIMER_RES_DIVIDER
         Divider to trade off timer resolution and total time that can be
    measured.
@@ -54,7 +52,7 @@ barebones_clock() {
    does not occur. If there are issues with the return value overflowing,
    increase this value.
         */
-#define CLOCKS_PER_SEC 1000.
+#define CLOCKS_PER_SEC 100000000
 #define GETMYTIME(_t) (*_t = barebones_clock())
 #define MYTIMEDIFF(fin, ini) ((fin) - (ini))
 #define TIMER_RES_DIVIDER 1

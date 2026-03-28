@@ -4,6 +4,7 @@
 #include "peripheral.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <vector>
 
 extern "C" {
@@ -34,7 +35,7 @@ VTop *cpu;
 
 int cycles = 0;
 vector<size_t> bps(4, -1);
-bool halted = false;
+bool halted = false, shutdown = false;
 
 uint8_t mem[MEM_SIZE];
 
@@ -120,13 +121,13 @@ bool step(int n) {
     int cnt = 0;
     do {
       exec();
-      DBG("Step if 0x%08X", cpu->io_debug_pcIf);
       if (cnt++ >= MAX_CYCLE_PER_INST) {
         ERR("No valid inst retired aftere %d cycles, stopping",
             MAX_CYCLE_PER_INST);
         return false;
       }
     } while (!cpu->io_retire_valid);
+    DBG("Step Retring 0x%08X", cpu->io_retire_pc);
     DBG("Exec %d times", cnt);
   }
   return true;
@@ -165,9 +166,10 @@ void emu_run(char *file) {
   fseek(fp, 0L, SEEK_SET);
   fread(mem, size, 1, fp);
   INFO("Image Loaded");
+  fclose(fp);
 
   while (true) {
-    if (!step(1)) {
+    if (!step(1) || shutdown) {
       ret = 1;
       break;
     }
@@ -182,8 +184,11 @@ void emu_run(char *file) {
 gdb_action_t gdb_cont(void *args) {
   halted = false;
   DBG("GDB cont");
-  while (!halted) {
+  while (true) {
     if (!step(1))
+      break;
+
+    if (halted)
       break;
 
     if (try_trap())
@@ -351,7 +356,10 @@ struct target_ops emu_init(char *fst) {
   };
 }
 
+void emu_shutdown() { shutdown = true; }
+
 int emu_cleanup() {
+  halted = true;
 #ifdef ENABLE_TRACE
   ctx->timeInc(1);
   TRACE();

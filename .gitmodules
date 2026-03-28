@@ -13,3 +13,6 @@
 [submodule "sim/app/coremark/repo"]
 	path = sim/app/coremark/repo
 	url = git@github.com:eembc/coremark.git
+[submodule "sim/app/picolibc/repo"]
+	path = sim/app/picolibc/repo
+	url = git@github.com:picolibc/picolibc.git

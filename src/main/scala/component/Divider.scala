@@ -27,17 +27,18 @@ class NonRestoringDiv(width: Int) extends Module {
   val busy  = RegInit(false.B)
   val timer = RegZero(UInt(CLog2(width).W))
 
+  val fire = !busy && io.valid
+
   val dividedByZero = !io.divisor.orR
   val overflow      = io.dividend.msb() && io.divisor.andR && io.signed
-  val exception     = dividedByZero || overflow
+  val exception     = fire && (dividedByZero || overflow)
 
   val ending = timer === 1.U || exception
   val ended  = RegNext(ending)
 
-  val fire = !busy && io.valid
   timer := MuxIf(
-    fire  -> (width - 1).U,
-    ended -> 0.U,
+    fire                -> (width - 1).U,
+    (io.clear || ended) -> 0.U,
   )(timer - 1.U)
 
   busy := MuxIf(
@@ -78,7 +79,7 @@ class NonRestoringDiv(width: Int) extends Module {
     reg(width * 2 - 1, width),
   )
 
-  io.busy     := busy || fire && !ended && !exception
+  io.busy     := (busy || fire) && !ended && !exception
   io.quotient := MuxIf(
     overflow      -> io.dividend,
     dividedByZero -> Fill(width, 1.U(1.W)),
