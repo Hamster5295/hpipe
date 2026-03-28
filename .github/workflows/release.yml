@@ -28,7 +28,7 @@ jobs:
         mv build hpipe_${{ github.ref_name }}
         tar -cvzf hpipe_${{ github.ref_name }}.tar.gz hpipe_${{ github.ref_name }}
     - name: Test
-        make sim APP=rv-tests
+      run: make sim APP=rv-tests
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
