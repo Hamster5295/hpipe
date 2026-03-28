@@ -10,10 +10,8 @@ const char *HOST = "127.0.0.1:5555";
 
 void sig_handler(int sig) {
   if (sig == SIGINT) {
-    INFO("SIGINT recved, Emu Cleaning Up");
-    int ret = emu_cleanup();
-    INFO(ANSI_FG_BLUE "===================" ANSI_NONE);
-    exit(1);
+    INFO("SIGINT recved, Emu shutting down...");
+    emu_shutdown();
   }
 }
 

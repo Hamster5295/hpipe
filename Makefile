@@ -52,7 +52,7 @@ gdb-server:
 	@make -C sim wave
 
 gdb:
-	@riscv64-unknown-linux-gnu-gdb --command=script/sim.gdb
+	@riscv64-unknown-elf-gdb --command=script/sim.gdb sim/app/build/$(GDB)/$(GDB).elf
 
 init-backend:
 	@make -C backend init

@@ -43,14 +43,14 @@ $(LIBS):
 
 build: $(LIBS)
 	-@rm $(BIN)
-	@verilator --cc --build -j 0  \
-                                $(SRCS) \
-                                $(VFLAGS) \
-                                $(addprefix -LDFLAGS , $(LDFLAGS)) \
-                                $(addprefix -CFLAGS , $(CFLAGS)) \
-                                --top $(TOP) \
-                                --Mdir $(OBJ_DIR) \
-                                --exe -o $(abspath $(BIN))
+	@verilator --cc --build -j 0 				\
+		$(SRCS) 								\
+		$(VFLAGS) 								\
+		$(addprefix -LDFLAGS , $(LDFLAGS)) 		\
+		$(addprefix -CFLAGS , $(CFLAGS)) 		\
+		--top $(TOP) 							\
+		--Mdir $(OBJ_DIR) 						\
+		--exe -o $(abspath $(BIN))
 
 header: OBJ_DIR = $(BUILD_DIR)/obj/wave	
 header: VFLAGS += --trace-fst
