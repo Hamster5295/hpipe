@@ -60,10 +60,6 @@ header: build
 sim: build
 	@$(BIN) $(SIMFLAGS)
 
-# wave: OBJ_DIR = $(BUILD_DIR)/obj/wave
-# wave: VFLAGS += --trace-fst
-# wave: CFLAGS += $(addprefix -D,ENABLE_TRACE)
-# wave: sim
 wave: header sim
 
 clean:

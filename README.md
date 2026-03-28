@@ -23,7 +23,7 @@ Run with a GDB session
 make gdb-server
 
 # In another shell
-make gdb
+make gdb APP=rv-tests
 ```
 
 Run Backend Analysis
@@ -117,6 +117,7 @@ However, after M extension was implemented, the `yosys` takes too long to synthe
 - [ ] CSRs supporting M mode
 - [ ] L1 Cache & TLB
 - [ ] AXI Bus
+- [x] Coremark Bench
 
 ## ScreenShots
 1. HPipe under simulation, passing every isa test in `riscv-tests`
