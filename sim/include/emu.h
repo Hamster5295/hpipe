@@ -42,5 +42,6 @@
 struct target_ops emu_init(char *fst);
 void emu_run(char *file);
 int emu_cleanup();
+int emu_get_cycles();
 
 #endif

@@ -1,6 +1,7 @@
 #include "emu.h"
 #include "VTop.h"
 #include "debug.h"
+#include "peripheral.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <vector>
@@ -31,6 +32,7 @@ VerilatedFstC *tfp;
 VerilatedContext *ctx;
 VTop *cpu;
 
+int cycles = 0;
 vector<size_t> bps(4, -1);
 bool halted = false;
 
@@ -41,6 +43,11 @@ int ret = 0;
 uint32_t mem_addr_trans(uint32_t addr) { return addr - RESET_VECTOR; }
 
 uint32_t mem_read(uint32_t addr) {
+
+  if (is_peripheral(addr)) {
+    return peripheral_read(addr);
+  }
+
   uint32_t paddr = mem_addr_trans(addr);
   if (paddr >= MEM_SIZE) {
     ERR("Invalid memory read at 0x%08X: Out of range 0x%08X", addr,
@@ -57,6 +64,15 @@ uint32_t mem_read(uint32_t addr) {
 }
 
 void mem_write(uint32_t addr, uint32_t data, uint32_t mask) {
+
+  if (is_peripheral(addr)) {
+    for (int i = 0; i < 4; i++) {
+      if ((mask >> i) & 0x1)
+        peripheral_write(addr + i, 0xFF & (data >> i * 8));
+    }
+    return;
+  }
+
   uint32_t paddr = mem_addr_trans(addr);
 
   if (paddr >= MEM_SIZE) {
@@ -95,6 +111,8 @@ void exec() {
   cpu->eval();
   ctx->timeInc(1);
   TRACE();
+
+  cycles++;
 }
 
 bool step(int n) {
@@ -342,3 +360,5 @@ int emu_cleanup() {
 #endif
   return ret;
 }
+
+int emu_get_cycles() { return cycles; }

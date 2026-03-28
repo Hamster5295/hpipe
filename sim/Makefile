@@ -51,18 +51,24 @@ build: $(LIBS)
                                 --top $(TOP) \
                                 --Mdir $(OBJ_DIR) \
                                 --exe -o $(abspath $(BIN))
-	
+
+header: OBJ_DIR = $(BUILD_DIR)/obj/wave	
+header: VFLAGS += --trace-fst
+header: CFLAGS += $(addprefix -D,ENABLE_TRACE)
+header: build	
 
 sim: build
 	@$(BIN) $(SIMFLAGS)
 
-wave: OBJ_DIR = $(BUILD_DIR)/obj/wave
-wave: VFLAGS += --trace-fst
-wave: CFLAGS += $(addprefix -D,ENABLE_TRACE)
-wave: sim
+# wave: OBJ_DIR = $(BUILD_DIR)/obj/wave
+# wave: VFLAGS += --trace-fst
+# wave: CFLAGS += $(addprefix -D,ENABLE_TRACE)
+# wave: sim
+wave: header sim
 
 clean:
 	@rm -rf $(BUILD_DIR)
 	@rm -rf app/$(BUILD_DIR)
+	@rm -rf rtl/*
 
 .PHONY: build clean sim wave
