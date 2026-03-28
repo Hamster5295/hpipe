@@ -30,7 +30,7 @@ jobs:
       - name: Setup RISCV GNU Toolchain
         uses: Hamster5295/riscv-toolchain-setup@v1
         with:
-          version: 'latest'
+          version: '2026.03.28'
           arch: riscv64
           libc: elf
           compiler: gcc
