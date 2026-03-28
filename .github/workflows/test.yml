@@ -34,6 +34,6 @@ jobs:
           arch: riscv64
           libc: elf
           compiler: gcc
-          os: ubuntu-latest
+          os: ubuntu-24.04
       - name: mill Test
         run: make sim APP=rv-tests
