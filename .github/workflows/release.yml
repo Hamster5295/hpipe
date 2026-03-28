@@ -1,0 +1,37 @@
+name: rtl release
+
+on:
+ push:
+   tags:
+     - 'v*'
+jobs:
+ release:
+   runs-on: ubuntu-latest
+   steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Setup Verilator
+      run: |
+        sudo apt-get install verilator
+        verilator --version
+    - name: Setup RISCV GNU Toolchain
+      uses: imkiva/setup-riscv-gnu-toolchain@latest
+      with:
+        version: 'latest'
+        arch: riscv64
+        libc: elf
+        compiler: gcc
+        os: ubuntu-latest
+    - name: Build
+      run: |
+        make verilog
+        mv build hpipe_${{ github.ref_name }}
+        tar -cvzf hpipe_${{ github.ref_name }}.tar.gz hpipe_${{ github.ref_name }}
+    - name: Test
+        make sim APP=rv-tests
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        generate_release_notes: true
+        files: hpipe_${{ github.ref_name }}.tar.gz
+        token: ${{ secrets.RELEASE }}
