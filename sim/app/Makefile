@@ -21,11 +21,12 @@ OBJS      = $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 LINKAGE   = $(OBJS)
 LDSCRIPTS += ../linker.ld
 
-INC_PATH += include ../common/include
-INCFLAGS += $(addprefix -I, $(INC_PATH))
+INCS += include ../common/include
+INCFLAGS += $(addprefix -I, $(INCS))
 
 # General
-CFLAGS   += -O2 -MMD -Wall -Werror -g $(INCFLAGS) \
+OPTFLAGS += -O2
+CFLAGS   += $(OPTFLAGS) -MMD -Wall -Werror -g $(INCFLAGS) \
             -fno-asynchronous-unwind-tables -fno-builtin -fno-stack-protector \
             -Wno-main -U_FORTIFY_SOURCE -fvisibility=hidden
 CXXFLAGS +=  $(CFLAGS) -ffreestanding -fno-rtti -fno-exceptions

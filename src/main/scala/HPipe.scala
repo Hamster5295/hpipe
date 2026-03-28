@@ -102,7 +102,7 @@ object HPipe extends App {
   )
 }
 
-object CPUSim extends App {
+object HPipeSim extends App {
   Export(
     new HPipe()(new Parameters(debug = true)),
     "sim/rtl",
@@ -111,7 +111,7 @@ object CPUSim extends App {
   )
 }
 
-object CPUBackend extends App {
+object HPipeBackend extends App {
   Export(
     new HPipe()(new Parameters()),
     "backend/rtl",

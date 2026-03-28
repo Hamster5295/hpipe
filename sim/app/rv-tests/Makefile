@@ -26,7 +26,7 @@ $(ALL): %: Makefile-%
 
 .SECONDEXPANSION:  # this helps to call function in prerequisite
 Makefile-%: $$(call find_src,%)
-	@/bin/echo -e "TARGET = rv-$*\nSRCS = $<\nINC_PATH += $(shell pwd)/include \
+	@/bin/echo -e "TARGET = rv-$*\nSRCS = $<\nINCS += $(shell pwd)/include \
 		$(shell pwd)/repo/isa/macros/scalar \
 		$(shell pwd)/repo/env\ninclude ../Makefile" > $@
 	@make -s -f $@

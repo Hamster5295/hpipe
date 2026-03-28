@@ -70,3 +70,4 @@ backend: verilog-backend
 
 clean:
 	@make -C sim clean
+	@rm -rf build
