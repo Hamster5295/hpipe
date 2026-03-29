@@ -10,10 +10,10 @@ jobs:
    steps:
     - name: Checkout
       uses: actions/checkout@v6
-    - name: Setup Verilator
-      run: |
-        sudo apt-get install verilator
-        verilator --version
+      with:
+        submodules: 'recursive'
+    - name: Cache Scala
+      uses: coursier/cache-action@v6
     - name: Build
       run: |
         make verilog
