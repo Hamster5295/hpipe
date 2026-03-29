@@ -37,7 +37,7 @@ LDFLAGS  += -z noexecstack $(addprefix -T, $(LDSCRIPTS)) --gc-sections
 COMMON_CFLAGS := -fno-pic -mcmodel=medany -mstrict-align -march=rv32im_zicsr -mabi=ilp32
 CFLAGS        += $(COMMON_CFLAGS) -static
 ASFLAGS       += $(COMMON_CFLAGS) -O0
-LDFLAGS       += -melf32lriscv -nostdlib -L/opt/riscv/lib/gcc/riscv64-unknown-elf/15.1.0/rv32im/ilp32
+LDFLAGS       += -melf32lriscv -nostdlib -L$(RISCV_HOME)/lib/gcc/riscv64-unknown-elf/15.1.0/rv32im/ilp32
 
 # Emulator Specific
 CFLAGS    += -fdata-sections -ffunction-sections
