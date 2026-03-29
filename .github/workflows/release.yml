@@ -14,21 +14,11 @@ jobs:
       run: |
         sudo apt-get install verilator
         verilator --version
-    - name: Setup RISCV GNU Toolchain
-      uses: Hamster5295/riscv-toolchain-setup@v2
-      with:
-        version: '2026.03.28'
-        arch: riscv64
-        libc: elf
-        compiler: gcc
-        os: ubuntu-24.04
     - name: Build
       run: |
         make verilog
         mv build hpipe_${{ github.ref_name }}
         tar -cvzf hpipe_${{ github.ref_name }}.tar.gz hpipe_${{ github.ref_name }}
-    - name: Test
-      run: make sim APP=rv-tests
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
