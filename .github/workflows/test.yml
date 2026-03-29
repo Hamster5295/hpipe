@@ -28,7 +28,7 @@ jobs:
           sudo apt-get install verilator
           verilator --version
       - name: Setup RISCV GNU Toolchain
-        uses: Hamster5295/riscv-toolchain-setup@v1
+        uses: Hamster5295/riscv-toolchain-setup@v2
         with:
           version: '2026.03.28'
           arch: riscv64
