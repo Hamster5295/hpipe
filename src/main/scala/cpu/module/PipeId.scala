@@ -146,7 +146,7 @@ class PipeId(implicit val p: Parameters) extends Module {
   val addrType = result.get(-9)
 
   toEx.valid := io.fromIf.valid && valid
-  toEx.uop   := result.tail(9).asTypeOf(new UOp)
+  toEx.uop   := result.tail(9).asTypeOf(new Uop)
 
   // Regs & Imm
   toEx.rs1   := rs1Addr

@@ -43,7 +43,7 @@ class BranchFeedback(implicit val p: Parameters) extends Bundle {
   val callAddr = Addr()
 }
 
-class UOp(implicit val p: Parameters) extends Bundle {
+class Uop(implicit val p: Parameters) extends Bundle {
   val writeRd  = Bool() // Write data back to rf
   val isBr     = Bool() // Branch current pc
   val isLd     = Bool() // Load data in mem stage
@@ -121,7 +121,7 @@ class Id2ExIO(implicit p: Parameters) extends PipeIO {
   val csr  = CsrAddr()
 
   val funct = UInt(3.W)
-  val uop   = new UOp()
+  val uop   = new Uop()
 
   val predInfo = Output(new BranchPredictInfo())
 }
@@ -135,7 +135,7 @@ class Ex2MemIO(implicit p: Parameters) extends PipeIO {
   val addr  = Addr()
   val csr   = CsrAddr()
 
-  val uop = new UOp()
+  val uop = new Uop()
 }
 
 class Mem2WbIO(implicit p: Parameters) extends PipeIO {
@@ -144,7 +144,7 @@ class Mem2WbIO(implicit p: Parameters) extends PipeIO {
   val rd      = XRegAddr()
   val data    = Word()
 
-  val isEBreak = Bool()
+  val isEbreak = Bool()
 
   val isCsr = Bool()
   val csr   = CsrAddr()

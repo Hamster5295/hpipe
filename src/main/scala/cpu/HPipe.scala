@@ -11,7 +11,7 @@ class HPipeIO(implicit val p: Parameters) extends Bundle {
 
   val retire = Output(new RetireInfo)
 
-  val debug = if (p.debug) Output(new DebugInfo) else null
+  val debug = if (p.debug) Some(Output(new DebugInfo)) else None
 }
 
 class HPipe(implicit val p: Parameters) extends Module {
@@ -82,14 +82,15 @@ class HPipe(implicit val p: Parameters) extends Module {
   io.retire := pipeWb.io.retire
 
   // Debug
-  if (p.debug) {
-    io.debug.pcIf  := pipeIf.io.toId.pc
-    io.debug.pcId  := pipeId.io.toEx.pc
-    io.debug.pcEx  := pipeEx.io.toMem.pc
-    io.debug.pcMem := pipeMem.io.toWb.pc
-    io.debug.pcWb  := pipeWb.io.retire.pc
+  if (io.debug.isDefined) {
+    val dbg = io.debug.get
+    dbg.pcIf  := pipeIf.io.toId.pc
+    dbg.pcId  := pipeId.io.toEx.pc
+    dbg.pcEx  := pipeEx.io.toMem.pc
+    dbg.pcMem := pipeMem.io.toWb.pc
+    dbg.pcWb  := pipeWb.io.retire.pc
 
-    io.debug.regs := regFile.io.regs
+    dbg.regs := regFile.io.regs
   }
 }
 
