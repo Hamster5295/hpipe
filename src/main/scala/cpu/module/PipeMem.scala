@@ -50,7 +50,7 @@ class PipeMem(implicit val p: Parameters) extends Module {
   toWb.rd       := fromEx.rd
   toWb.writeRd  := fromEx.uop.writeRd
   toWb.data     := data
-  toWb.isEBreak := fromEx.uop.isEBreak
+  toWb.isEbreak := fromEx.uop.isEBreak
   toWb.isCsr    := fromEx.uop.isCsr
   toWb.csr      := fromEx.csr
   toWb.csrOp    := fromEx.funct
