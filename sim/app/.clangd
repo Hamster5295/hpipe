@@ -1,3 +1,2 @@
 CompileFlags:
-    Add: [-I/home/hamster/prj/hdl/hpipe/sim/app/common/include
-      ]
+  Add: [ -I./common/include ]
