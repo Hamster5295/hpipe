@@ -9,7 +9,7 @@ ALL ?= $(filter-out $(EXCLUDE_TEST),$(ORIGINAL_TEST))
 ALL_SRCS = $(foreach d,$(TEST_DIR),$(foreach f,$(ALL),$(wildcard $(d)/$(f).S)))
 
 RESULT = .result
-$(shell rm $(RESULT))
+$(shell rm -f $(RESULT))
 
 COLOR_RED   = \033[1;31m
 COLOR_GREEN = \033[1;32m
