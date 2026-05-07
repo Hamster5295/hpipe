@@ -1,3 +1,2 @@
 CompileFlags:
-    Add: [-I/home/hamster/prj/hdl/hpipe/sim/app/rv-tests/repo/env,
-      ]
+  Add: [ -I./repo/env ]
