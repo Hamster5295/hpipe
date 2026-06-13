@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class DividerIO(width: Int) extends Bundle {
+class IntDiv(width: Int) extends Bundle {
   val valid    = Input(Bool())
   val dividend = Input(UInt(width.W))
   val divisor  = Input(UInt(width.W))
@@ -16,11 +16,8 @@ class DividerIO(width: Int) extends Bundle {
   val remainder = Output(UInt(width.W))
 }
 
-import chisel3._
-import chisel3.util._
-
-class NonRestoringDiv(width: Int) extends Module {
-  val io = IO(new DividerIO(width))
+class IntNonRestoringDiv(width: Int) extends Module {
+  val io = IO(new IntDiv(width))
 
   val reg = RegZero(UInt((width * 2 + 1).W))
 

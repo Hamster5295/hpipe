@@ -11,7 +11,7 @@ import org.scalatest.matchers.must.Matchers
 
 class DividerSpec extends AnyFreeSpec with Matchers with ChiselSim {
 
-  def sim(width: Int) = Sim(new NonRestoringDiv(width)) { dut =>
+  def sim(width: Int) = Sim(new IntNonRestoringDiv(width)) { dut =>
     Test(s"UInt$width", dut) { dut =>
       dut.io.signed.poke(false)
       for (i <- 0 until 1024) {

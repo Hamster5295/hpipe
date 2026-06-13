@@ -20,7 +20,12 @@ class MulSpec extends AnyFreeSpec with Matchers with ChiselSim {
           val b = Fixed.uint(32)
           dut.io.a.poke(a)
           dut.io.b.poke(b)
+          dut.io.valid.poke(true.B)
           dut.clock.step()
+          dut.io.valid.poke(false.B)
+
+          while (dut.io.busy.peekBoolean()) dut.clock.step()
+
           dut.io.o.expect((a * b) & Fixed.mask(64))
         }
     }
@@ -33,7 +38,12 @@ class MulSpec extends AnyFreeSpec with Matchers with ChiselSim {
           val b = Fixed.sint(32)
           dut.io.a.poke(a)
           dut.io.b.poke(b)
+          dut.io.valid.poke(true.B)
           dut.clock.step()
+          dut.io.valid.poke(false.B)
+
+          while (dut.io.busy.peekBoolean()) dut.clock.step()
+
           dut.io.o.expect((a * b) & Fixed.mask(64))
         }
     }
