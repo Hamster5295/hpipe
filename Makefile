@@ -60,7 +60,7 @@ init-backend:
 
 verilog-backend:
 	@echo Exporting SystemVerilog for Backend Analysis...
-	@$(MILL) $(PRJ).runMain $(TARGET) --target-dir backend/rtl
+	@$(MILL) $(PRJ).runMain $(TARGET)Fpga --target-dir backend/rtl
 
 backend: verilog-backend
 	@echo Analysing backend...

@@ -54,17 +54,9 @@ class CSA(width: Int) extends Module {
   io.co := co.asUInt.tail(1)
 }
 
-class IntBoothMulIO(width: Int) extends Bundle {
-  val a       = Input(UInt(width.W))
-  val b       = Input(UInt(width.W))
-  val aSigned = Input(Bool())
-  val bSigned = Input(Bool())
-  val o       = Output(UInt((width * 2).W))
-}
 
-class IntBoothMul(width: Int) extends Module {
 
-  val io = IO(new IntBoothMulIO(width))
+class IntBoothMul(width: Int) extends IntMul(width) {
 
   val cnt = ((width + 1f) / 2).ceil.toInt
 
