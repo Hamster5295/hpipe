@@ -10,7 +10,7 @@ import CsrMode._
 
 case class CsrModel(addr: String, mode: CsrMode.Value, data: Data)
 
-class Csrs(implicit p: HPipeParameters) extends Bundle {
+class Csr(implicit p: HPipeParameters) extends Bundle {
 
   val mstatus = Word()
   val mie     = Word()
@@ -19,7 +19,7 @@ class Csrs(implicit p: HPipeParameters) extends Bundle {
   val mcause = Word()
   val mtval  = Word()
 
-  private val map = Seq(
+  private val csrList = Seq(
     CsrModel("x300", RW, mstatus),
     CsrModel("x304", RW, mie),
     CsrModel("x341", RW, mepc),
@@ -28,12 +28,12 @@ class Csrs(implicit p: HPipeParameters) extends Bundle {
   )
 
   def read(port: CsrReadPort): Unit =
-    map.map(model =>
+    csrList.map(model =>
       when(port.addr === model.addr.U)(port.data := model.data),
     )
 
   def write(port: CsrWritePort): Unit =
-    map.map(model =>
+    csrList.map(model =>
       if (model.mode == RW)
         when(port.addr === model.addr.U)(model.data := port.data),
     )
@@ -49,18 +49,22 @@ class CsrWritePort(implicit p: HPipeParameters) extends Bundle {
   val data = Input(Word())
 }
 
-class CsrIO(implicit val p: HPipeParameters) extends Bundle {
+class CsrFileIO(implicit val p: HPipeParameters) extends Bundle {
   val read  = Vec(1, new CsrReadPort)
   val write = Vec(1, new CsrWritePort)
+
+  val csr = Output(new Csr)
 }
 
-class Csr(implicit val p: HPipeParameters) extends Module {
-  val io = IO(new CsrIO)
+class CsrFile(implicit val p: HPipeParameters) extends Module {
+  val io = IO(new CsrFileIO)
 
-  val csrs = Reg(new Csrs)
+  val csr = Reg(new Csr)
 
   io.read.map(i => i.data := 0.U)
 
-  io.read.map(csrs.read(_))
-  io.write.map(csrs.write(_))
+  io.read.map(csr.read(_))
+  io.write.map(csr.write(_))
+
+  io.csr := csr
 }

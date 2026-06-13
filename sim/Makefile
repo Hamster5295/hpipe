@@ -1,6 +1,6 @@
 include lib/Makefile
 
-TOP = Top
+TOP = HPipe
 
 VERILATOR := verilator
 

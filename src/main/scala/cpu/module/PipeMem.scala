@@ -21,7 +21,7 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   io.busy := false.B
 
   // Load
-  io.memLoad.req  := fromEx.uop.isLd
+  io.memLoad.req  := fromEx.flags.isLd
   io.memLoad.addr := fromEx.addr
   val loaded = io.memLoad.data
   val result = MuxLookup(fromEx.funct, 0.U)(Seq(
@@ -33,7 +33,7 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   ))
 
   // Store
-  io.memStore.req  := fromEx.uop.isSt
+  io.memStore.req  := fromEx.flags.isSt
   io.memStore.addr := fromEx.addr
   io.memStore.data := fromEx.data
   io.memStore.mask := MuxLookup(fromEx.funct, 0.U)(Seq(
@@ -42,22 +42,22 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
     StoreOp.Word.asUInt -> "b1111".U,
   ))
 
-  val data = Mux(fromEx.uop.isLd, result, fromEx.data)
+  val data = Mux(fromEx.flags.isLd, result, fromEx.data)
 
   val toWb = io.toWb
   toWb.valid    := fromEx.valid
   toWb.pc       := fromEx.pc
   toWb.rd       := fromEx.rd
-  toWb.writeRd  := fromEx.uop.writeRd
+  toWb.writeRd  := fromEx.flags.writeRd
   toWb.data     := data
-  toWb.isEbreak := fromEx.uop.isEBreak
-  toWb.isCsr    := fromEx.uop.isCsr
+  toWb.isEbreak := fromEx.flags.isEBreak
+  toWb.isCsr    := fromEx.flags.isCsr
   toWb.csr      := fromEx.csr
   toWb.csrOp    := fromEx.funct
 
   val toId = io.feedForward
   toId.rd      := fromEx.rd
-  toId.isWrite := fromEx.uop.writeRd
-  toId.isLd    := fromEx.uop.isLd
+  toId.isWrite := fromEx.flags.writeRd
+  toId.isLd    := fromEx.flags.isLd
   toId.data    := data
 }

@@ -43,7 +43,7 @@ class BranchFeedback(implicit val p: HPipeParameters) extends Bundle {
   val callAddr = Addr()
 }
 
-class Uop(implicit val p: HPipeParameters) extends Bundle {
+class OpFlags(implicit val p: HPipeParameters) extends Bundle {
   val writeRd  = Bool() // Write data back to rf
   val isBr     = Bool() // Branch current pc
   val isLd     = Bool() // Load data in mem stage
@@ -121,7 +121,7 @@ class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val csr  = CsrAddr()
 
   val funct = UInt(3.W)
-  val uop   = new Uop()
+  val flags   = new OpFlags()
 
   val predInfo = Output(new BranchPredictInfo())
 }
@@ -135,7 +135,7 @@ class Ex2MemIO(implicit p: HPipeParameters) extends PipeIO {
   val addr  = Addr()
   val csr   = CsrAddr()
 
-  val uop = new Uop()
+  val flags = new OpFlags()
 }
 
 class Mem2WbIO(implicit p: HPipeParameters) extends PipeIO {
