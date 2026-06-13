@@ -7,7 +7,7 @@ import hammer._
 import hpipe.Insts._
 import hpipe.InstType._
 
-class PipeIdIO(implicit p: Parameters) extends StageIO {
+class PipeIdIO(implicit p: HPipeParameters) extends StageIO {
   val fromIf = Input(new If2IdIO)
   val toEx   = Output(new Id2ExIO)
 
@@ -20,7 +20,7 @@ class PipeIdIO(implicit p: Parameters) extends StageIO {
   val feedForward = Output(new FeedForward)
 }
 
-class PipeId(implicit val p: Parameters) extends Module {
+class PipeId(implicit val p: HPipeParameters) extends Module {
   val io = IO(new PipeIdIO)
 
   val toEx = io.toEx

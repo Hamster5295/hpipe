@@ -25,7 +25,7 @@ class NonRestoringDiv(width: Int) extends Module {
   val reg = RegZero(UInt((width * 2 + 1).W))
 
   val busy  = RegInit(false.B)
-  val timer = RegZero(UInt(CLog2(width).W))
+  val timer = RegZero(UInt(log2Ceil(width).W))
 
   val fire = !busy && io.valid
 

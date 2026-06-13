@@ -3,9 +3,9 @@ package hpipe
 import chisel3._
 import chisel3.util._
 
-class HPipeSocIO(implicit val p: Parameters) extends Bundle {}
+class HPipeSocIO(implicit val p: HPipeParameters) extends Bundle {}
 
-class HPipeSoc(implicit val p: Parameters) extends Module {
+class HPipeSoc(implicit val p: HPipeParameters) extends Module {
   val io = IO(new HPipeSocIO)
 
   val cpu = Module(new HPipe)

@@ -5,25 +5,25 @@ import chisel3.util._
 
 // Data Bundles
 
-class InstFetchIO(implicit val p: Parameters) extends Bundle {
+class InstFetchIO(implicit val p: HPipeParameters) extends Bundle {
   val addr = Output(Addr())
   val inst = Input(Inst())
 }
 
-class MemLoadIO(implicit val p: Parameters) extends Bundle {
+class MemLoadIO(implicit val p: HPipeParameters) extends Bundle {
   val req  = Output(Bool())
   val addr = Output(Addr())
   val data = Input(Word())
 }
 
-class MemStoreIO(implicit val p: Parameters) extends Bundle {
+class MemStoreIO(implicit val p: HPipeParameters) extends Bundle {
   val req  = Output(Bool())
   val addr = Output(Addr())
   val data = Output(Word())
   val mask = Output(UInt(4.W))
 }
 
-class FeedForward(implicit val p: Parameters) extends Bundle {
+class FeedForward(implicit val p: HPipeParameters) extends Bundle {
   val rd      = XRegAddr()
   val isWrite = Bool()
   val isLd    = Bool()
@@ -32,7 +32,7 @@ class FeedForward(implicit val p: Parameters) extends Bundle {
   def isValid(rs: UInt) = isWrite && rd.orR && (rs === rd)
 }
 
-class BranchFeedback(implicit val p: Parameters) extends Bundle {
+class BranchFeedback(implicit val p: HPipeParameters) extends Bundle {
   val info = new BranchInfo()
 
   val pc       = Addr()
@@ -43,7 +43,7 @@ class BranchFeedback(implicit val p: Parameters) extends Bundle {
   val callAddr = Addr()
 }
 
-class Uop(implicit val p: Parameters) extends Bundle {
+class Uop(implicit val p: HPipeParameters) extends Bundle {
   val writeRd  = Bool() // Write data back to rf
   val isBr     = Bool() // Branch current pc
   val isLd     = Bool() // Load data in mem stage
@@ -57,7 +57,7 @@ class Uop(implicit val p: Parameters) extends Bundle {
   def isMem = isLd || isSt
 }
 
-class BranchInfo(implicit val p: Parameters) extends Bundle {
+class BranchInfo(implicit val p: HPipeParameters) extends Bundle {
   val isJalr = Bool()
   val isJal  = Bool()
   val isBr   = Bool()
@@ -65,7 +65,7 @@ class BranchInfo(implicit val p: Parameters) extends Bundle {
   val isRet  = Bool()
 }
 
-class BranchPredictInfo(implicit val p: Parameters) extends Bundle {
+class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
   val branchInfo = new BranchInfo
 
   val jalrSrc = XRegAddr()
@@ -75,13 +75,13 @@ class BranchPredictInfo(implicit val p: Parameters) extends Bundle {
   val target        = Addr()
 }
 
-class RetireInfo(implicit val p: Parameters) extends Bundle {
+class RetireInfo(implicit val p: HPipeParameters) extends Bundle {
   val valid  = Bool()
   val pc     = Addr()
   val ebreak = Bool()
 }
 
-class DebugInfo(implicit val p: Parameters) extends Bundle {
+class DebugInfo(implicit val p: HPipeParameters) extends Bundle {
   val pcIf  = Addr()
   val pcId  = Addr()
   val pcEx  = Addr()
@@ -93,22 +93,22 @@ class DebugInfo(implicit val p: Parameters) extends Bundle {
 
 // Pipeline IOs
 
-class PipeIO(implicit val p: Parameters) extends Bundle {
+class PipeIO(implicit val p: HPipeParameters) extends Bundle {
   val valid = Output(Bool())
 }
 
-class StageIO(implicit val p: Parameters) extends Bundle {
+class StageIO(implicit val p: HPipeParameters) extends Bundle {
   val busy = Output(Bool())
 }
 
-class If2IdIO(implicit p: Parameters) extends PipeIO {
+class If2IdIO(implicit p: HPipeParameters) extends PipeIO {
   val inst = Inst()
   val pc   = Addr()
 
   val prediction = new BranchPredictInfo
 }
 
-class Id2ExIO(implicit p: Parameters) extends PipeIO {
+class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val pc = Addr()
 
   val rs1 = XRegAddr()
@@ -126,7 +126,7 @@ class Id2ExIO(implicit p: Parameters) extends PipeIO {
   val predInfo = Output(new BranchPredictInfo())
 }
 
-class Ex2MemIO(implicit p: Parameters) extends PipeIO {
+class Ex2MemIO(implicit p: HPipeParameters) extends PipeIO {
   val pc = Addr()
   val rd = XRegAddr()
 
@@ -138,7 +138,7 @@ class Ex2MemIO(implicit p: Parameters) extends PipeIO {
   val uop = new Uop()
 }
 
-class Mem2WbIO(implicit p: Parameters) extends PipeIO {
+class Mem2WbIO(implicit p: HPipeParameters) extends PipeIO {
   val pc      = Addr()
   val writeRd = Bool()
   val rd      = XRegAddr()

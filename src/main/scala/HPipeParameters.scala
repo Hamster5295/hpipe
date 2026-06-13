@@ -1,10 +1,12 @@
 package hpipe
 
 import chisel3._
+import chisel3.util.log2Ceil
+import chisel3.util.log2Up
 import hammer._
 
-class Parameters(
-    val debug: Boolean = false,
+case class HPipeParameters(
+    val Debug: Boolean = false,
 
     val XLEN: Int = 32,
 
@@ -14,43 +16,43 @@ class Parameters(
     val ResetVector: String = "x80000000",
 
     // Branch
-    val HistBuf:      HistBufferParameters = new HistBufferParameters,
+    val HistBuf:      HistBufferParameters = HistBufferParameters(),
     val RetAddrStack: RetAddrStackParameters = new RetAddrStackParameters,
 ) {
-  val XRegAddrWidth = CLog2(XLEN)
+  val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth
 }
 
-class HistBufferParameters(
+case class HistBufferParameters(
     val PCLen:      Int = 16,
     val Count:      Int = 16,
     val CnterWidth: Int = 2,
     val LRUWidth:   Int = 4,
 ) {
-  val PtrWidth = CLog2(Count)
+  val PtrWidth = log2Ceil(Count)
 }
 
-class RetAddrStackParameters(
+case class RetAddrStackParameters(
     val Depth: Int = 8,
     val PCLen: Int = 16,
 ) {
-  val PtrWidth = CLog2(Depth)
+  val PtrWidth = log2Ceil(Depth)
 }
 
 object Addr {
-  def apply()(implicit p: Parameters) = UInt(p.AddrWidth.W)
+  def apply()(implicit p: HPipeParameters) = UInt(p.AddrWidth.W)
 }
 
 object Inst {
-  def apply()(implicit p: Parameters) = UInt(p.InstWidth.W)
+  def apply()(implicit p: HPipeParameters) = UInt(p.InstWidth.W)
 }
 
 object Word {
-  def apply()(implicit p: Parameters) = UInt(p.DataWidth.W)
+  def apply()(implicit p: HPipeParameters) = UInt(p.DataWidth.W)
 }
 
 object XRegAddr {
-  def apply()(implicit p: Parameters) = UInt(p.XRegAddrWidth.W)
+  def apply()(implicit p: HPipeParameters) = UInt(p.XRegAddrWidth.W)
 }
 
 object CsrAddr {

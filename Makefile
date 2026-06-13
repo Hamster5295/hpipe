@@ -16,7 +16,7 @@ APP_ELF = sim/app/build/$(APP)/$(APP).elf
 
 verilog:
 	@echo Exporting SystemVerilog...
-	@$(MILL) $(PRJ).runMain $(TARGET)
+	@$(MILL) $(PRJ).runMain $(TARGET) --target-dir build
 
 test-all:
 	@echo Conducting all Tests..
@@ -26,7 +26,7 @@ test:
 	@echo Conducting Test for $(TEST_TARGET)
 	@$(MILL) $(PRJ).test.testOnly $(TEST_TARGET) -v
 
-vcd:
+test-wave:
 	@mkdir -p $(TEST_DIR)
 	@rm -rf $(TEST_TARGET_DIR)
 	@echo Conducting Test for $(TEST_TARGET) with Vcd
@@ -40,7 +40,7 @@ lint:
 
 verilog-sim:
 	@echo Exporting SystemVerilog for Simulation...
-	@$(MILL) $(PRJ).runMain $(TARGET)Sim
+	@$(MILL) $(PRJ).runMain $(TARGET)Debug --target-dir sim/rtl
 
 sim: verilog-sim
 	@make -C $(APP_DIR) sim
@@ -60,7 +60,7 @@ init-backend:
 
 verilog-backend:
 	@echo Exporting SystemVerilog for Backend Analysis...
-	@$(MILL) $(PRJ).runMain $(TARGET)Backend
+	@$(MILL) $(PRJ).runMain $(TARGET) --target-dir backend/rtl
 
 backend: verilog-backend
 	@echo Analysing backend...
