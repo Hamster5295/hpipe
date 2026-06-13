@@ -146,7 +146,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   val addrType = result.get(-9)
 
   toEx.valid := io.fromIf.valid && valid
-  toEx.uop   := result.tail(9).asTypeOf(new Uop)
+  toEx.flags   := result.tail(9).asTypeOf(new OpFlags)
 
   // Regs & Imm
   toEx.rs1   := rs1Addr
@@ -220,6 +220,6 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   val ff = io.feedForward
   ff.rd      := io.toEx.rd
   ff.isLd    := 0.U // Dont Care
-  ff.isWrite := io.toEx.uop.writeRd
+  ff.isWrite := io.toEx.flags.writeRd
   ff.data    := 0.U // Dont Care
 }

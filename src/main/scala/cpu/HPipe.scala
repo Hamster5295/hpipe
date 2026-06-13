@@ -24,7 +24,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   val pipeWb  = Module(new PipeWb)
 
   val regFile = Module(new RegFile)
-  val csr     = Module(new Csr)
+  val csr     = Module(new CsrFile)
 
   // Ports
   io.instFetch <> pipeIf.io.fetch

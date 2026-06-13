@@ -1,5 +1,5 @@
 #include "emu.h"
-#include "VTop.h"
+#include "VHPipe.h"
 #include "debug.h"
 #include "peripheral.h"
 #include <stdint.h>
@@ -31,7 +31,7 @@ VerilatedFstC *tfp;
 
 // Internal states
 VerilatedContext *ctx;
-VTop *cpu;
+VHPipe *cpu;
 
 int cycles = 0;
 vector<size_t> bps(4, -1);
@@ -321,7 +321,7 @@ size_t gdb_get_reg_bytes(int regno __attribute__((unused))) { return 4; }
 
 struct target_ops emu_init(char *fst) {
   ctx = new VerilatedContext;
-  cpu = new VTop(ctx);
+  cpu = new VHPipe(ctx);
 
 #ifdef ENABLE_TRACE
   tfp = new VerilatedFstC;
