@@ -11,4 +11,5 @@ class IntFpgaMul(width: Int) extends IntMul(width) {
   val res = RegNext(a * b)
 
   io.o := Mux(io.aSigned ^ io.bSigned, ~res + 1.U, res)
+  io.busy := io.valid
 }

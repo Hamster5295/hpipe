@@ -24,15 +24,12 @@ class MulDivUnit(implicit val p: HPipeParameters) extends Module {
   val isRem      = io.op.msb() && io.op(1)
   val isSigned   = io.op.in(DIV.asUInt, REM.asUInt)
 
-  val mul     = Module(if (p.Fpga) new IntFpgaMul(32) else new IntBoothMul(32))
+  val mul = Module(if (p.Fpga) new IntFpgaMul(32) else new IntBoothMul(32))
+  mul.io.valid   := io.valid && isMul
   mul.io.a       := io.src1
   mul.io.b       := io.src2
   mul.io.aSigned := io.op.in(MUL.asUInt, MULH.asUInt, MULHSU.asUInt)
   mul.io.bSigned := io.op.in(MUL.asUInt, MULH.asUInt)
-//   val mulResult = RegNext(mul.io.o)
-  val mulResult = mul.io.o
-
-  val mulBusy = RegNext(isMul && io.valid)
 
   val div = Module(new NonRestoringDiv(32))
   div.io.dividend := io.src1
@@ -44,7 +41,7 @@ class MulDivUnit(implicit val p: HPipeParameters) extends Module {
   io.result := MuxIf(
     isRem      -> div.io.remainder,
     isDiv      -> div.io.quotient,
-    isMulUpper -> mulResult.head(p.DataWidth),
-  )(mulResult.end(p.DataWidth))
-  io.busy := Mux(isMul, isMul && ~mulBusy, div.io.busy)
+    isMulUpper -> mul.io.o.head(p.DataWidth),
+  )(mul.io.o.end(p.DataWidth))
+  io.busy := Mux(isMul, mul.io.busy, div.io.busy)
 }
