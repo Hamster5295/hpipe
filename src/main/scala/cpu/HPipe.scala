@@ -134,3 +134,8 @@ object HPipe extends App {
 object HPipeDebug extends App {
   Export(new HPipe()(HPipeParameters(Debug = true)), args)
 }
+
+
+object HPipeFpga extends App {
+  Export(new HPipe()(HPipeParameters(Fpga = true)), args)
+}

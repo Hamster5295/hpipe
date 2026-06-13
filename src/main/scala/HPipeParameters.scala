@@ -7,6 +7,7 @@ import hammer._
 
 case class HPipeParameters(
     val Debug: Boolean = false,
+    val Fpga: Boolean = false,
 
     val XLEN: Int = 32,
 

@@ -47,7 +47,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
       aluInv: Boolean,
       ebreak: Boolean,
 
-      mext: Boolean,
+      m: Boolean,
       csr:  Boolean,
   ) =
     BitPat(
@@ -63,7 +63,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
         ++ s"${if (jal) 1 else 0}"
         ++ s"${if (aluInv) 1 else 0}"
         ++ s"${if (ebreak) 1 else 0}"
-        ++ s"${if (mext) 1 else 0}"
+        ++ s"${if (m) 1 else 0}"
         ++ s"${if (csr) 1 else 0}",
     )
 

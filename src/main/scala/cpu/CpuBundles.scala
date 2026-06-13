@@ -130,11 +130,11 @@ class DebugInfo(implicit val p: HPipeParameters) extends Bundle {
 // Pipeline IOs
 
 class PipeIO(implicit val p: HPipeParameters) extends Bundle {
-  val valid = Output(Bool())
+  val valid = Bool()
 }
 
 class StageIO(implicit val p: HPipeParameters) extends Bundle {
-  val busy = Output(Bool())
+  val busy = Bool()
 }
 
 class If2IdIO(implicit p: HPipeParameters) extends PipeIO {
@@ -159,7 +159,7 @@ class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val funct = UInt(3.W)
   val flags = new OpFlags()
 
-  val predInfo = Output(new BranchPredictInfo())
+  val predInfo = new BranchPredictInfo()
 }
 
 class Ex2MemIO(implicit p: HPipeParameters) extends PipeIO {
