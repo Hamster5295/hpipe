@@ -90,4 +90,6 @@ class IntBoothMul(width: Int) extends IntMul(width) {
   adder.io.b := queue.dequeue()
   adder.io.c := false.B
   io.o       := adder.io.o
+
+  io.busy := false.B
 }
