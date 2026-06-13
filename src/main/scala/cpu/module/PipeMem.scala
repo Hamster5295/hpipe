@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class PipeMemIO(implicit p: Parameters) extends StageIO {
+class PipeMemIO(implicit p: HPipeParameters) extends StageIO {
   val memLoad  = new MemLoadIO
   val memStore = new MemStoreIO
 
@@ -14,7 +14,7 @@ class PipeMemIO(implicit p: Parameters) extends StageIO {
   val feedForward = new FeedForward
 }
 
-class PipeMem(implicit val p: Parameters) extends Module {
+class PipeMem(implicit val p: HPipeParameters) extends Module {
   val io     = IO(new PipeMemIO)
   val fromEx = io.fromEx
 

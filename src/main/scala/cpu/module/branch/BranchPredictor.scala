@@ -6,7 +6,7 @@ import hammer._
 import hammer.model.Fixed
 import os.Source.WritableSource
 
-class BranchReadPort(implicit val p: Parameters) extends Bundle {
+class BranchReadPort(implicit val p: HPipeParameters) extends Bundle {
   val pc            = Input(Addr())
   val defaultTarget = Input(Addr())
   val brAddr        = Input(Addr())
@@ -18,7 +18,7 @@ class BranchReadPort(implicit val p: Parameters) extends Bundle {
   val brTake = Output(Bool())
 }
 
-class BranchWritePort(implicit val p: Parameters) extends Bundle {
+class BranchWritePort(implicit val p: HPipeParameters) extends Bundle {
   val info = Input(new BranchInfo)
 
   val pc       = Input(Addr())
@@ -26,12 +26,12 @@ class BranchWritePort(implicit val p: Parameters) extends Bundle {
   val callAddr = Input(Addr())
 }
 
-class BranchPredictorIO(implicit val p: Parameters) extends Bundle {
+class BranchPredictorIO(implicit val p: HPipeParameters) extends Bundle {
   val read  = new BranchReadPort
   val write = new BranchWritePort
 }
 
-class BranchPredictor(implicit val p: Parameters) extends Module {
+class BranchPredictor(implicit val p: HPipeParameters) extends Module {
   val io = IO(new BranchPredictorIO)
 
   val hist = Module(new HistBuffer)

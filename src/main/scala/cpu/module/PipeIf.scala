@@ -6,7 +6,7 @@ import chisel3.util.experimental.decode._
 import hammer._
 import hpipe.Insts._
 
-class PipeIfIO(implicit p: Parameters) extends StageIO {
+class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
   val fetch   = new InstFetchIO
   val regRead = Flipped(new RegFileReadPort)
 
@@ -20,7 +20,7 @@ class PipeIfIO(implicit p: Parameters) extends StageIO {
   val stall = Input(Bool())
 }
 
-class PipeIf(implicit val p: Parameters) extends Module {
+class PipeIf(implicit val p: HPipeParameters) extends Module {
   val io = IO(new PipeIfIO)
 
   io.busy := false.B

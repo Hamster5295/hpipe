@@ -4,24 +4,24 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class RegFileReadPort(implicit val p: Parameters) extends Bundle {
+class RegFileReadPort(implicit val p: HPipeParameters) extends Bundle {
   val addr = Input(XRegAddr())
   val data = Output(Word())
 }
 
-class RegFileWritePort(implicit val p: Parameters) extends Bundle {
+class RegFileWritePort(implicit val p: HPipeParameters) extends Bundle {
   val addr = Input(XRegAddr())
   val data = Input(Word())
 }
 
-class RegFileIO(implicit val p: Parameters) extends Bundle {
+class RegFileIO(implicit val p: HPipeParameters) extends Bundle {
   val read  = Vec(3, new RegFileReadPort)
   val write = new RegFileWritePort
 
   val regs = Output(Vec(p.XLEN - 1, Word()))
 }
 
-class RegFile(implicit val p: Parameters) extends Module {
+class RegFile(implicit val p: HPipeParameters) extends Module {
   val io   = IO(new RegFileIO)
   val regs = RegZero(Vec(p.XLEN - 1, Word()))
 

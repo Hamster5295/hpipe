@@ -5,13 +5,13 @@ import chisel3.util._
 import hammer._
 
 trait HasRetAddrStackParameter {
-  implicit val p: Parameters
+  implicit val p: HPipeParameters
   val config = p.RetAddrStack
 }
 
-class RetAddrStackIO(implicit p: Parameters) extends BranchPredictorIO
+class RetAddrStackIO(implicit p: HPipeParameters) extends BranchPredictorIO
 
-class RetAddrStack(implicit val p: Parameters) extends Module
+class RetAddrStack(implicit val p: HPipeParameters) extends Module
     with HasRetAddrStackParameter {
   val io = IO(new RetAddrStackIO)
 

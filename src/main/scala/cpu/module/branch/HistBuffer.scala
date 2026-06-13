@@ -5,9 +5,9 @@ import chisel3.util._
 import hammer._
 import hammer.model._
 
-class HistBufferIO(implicit p: Parameters) extends BranchPredictorIO
+class HistBufferIO(implicit p: HPipeParameters) extends BranchPredictorIO
 
-class HistBuffer(implicit val p: Parameters) extends Module {
+class HistBuffer(implicit val p: HPipeParameters) extends Module {
   val conf = p.HistBuf
 
   val io = IO(new HistBufferIO)
@@ -42,12 +42,13 @@ class HistBuffer(implicit val p: Parameters) extends Module {
 
   // LRU Calculations for write pointer
   val lruIdx =
-    entryUsedValues.withIndex(conf.PtrWidth).reduceTree { (l, r) =>
-      val width = l.data.getWidth + 1
-      val cmp   =
-        UIntCLA(width)(l.data.pad(width), ~r.data.pad(width), 1.B).msb(1)
-      Mux(cmp, r, l)
-    }.idx
+    entryUsedValues.withIndex(conf.PtrWidth).treeReduce {
+      (_, l, r) =>
+        val width = l.bits.getWidth + 1
+        val cmp   =
+          UIntCLA(width)(l.bits.pad(width), ~r.bits.pad(width), 1.B).msb(1)
+        Mux(cmp, r, l)
+    }.index
 
   entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
     case (((valid, tag), cnter), idx) =>

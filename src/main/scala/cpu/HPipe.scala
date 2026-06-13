@@ -4,17 +4,17 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class HPipeIO(implicit val p: Parameters) extends Bundle {
+class HPipeIO(implicit val p: HPipeParameters) extends Bundle {
   val instFetch = new InstFetchIO
   val memLoad   = new MemLoadIO
   val memStore  = new MemStoreIO
 
   val retire = Output(new RetireInfo)
 
-  val debug = if (p.debug) Some(Output(new DebugInfo)) else None
+  val debug = if (p.Debug) Some(Output(new DebugInfo)) else None
 }
 
-class HPipe(implicit val p: Parameters) extends Module {
+class HPipe(implicit val p: HPipeParameters) extends Module {
   val io = IO(new HPipeIO)
 
   val pipeIf  = Module(new PipeIf)
@@ -95,32 +95,9 @@ class HPipe(implicit val p: Parameters) extends Module {
 }
 
 object HPipe extends App {
-  Export(
-    new HPipe()(new Parameters()),
-    "build",
-    withOutputBuffer = false,
-    withPathPrefix = false,
-  )
+  Export(new HPipe()(HPipeParameters()), args)
 }
 
-object HPipeSim extends App {
-  Export(
-    new HPipe()(new Parameters(debug = true)),
-    "sim/rtl",
-    withOutputBuffer = false,
-    withPathPrefix = false,
-  )
-}
-
-object HPipeBackend extends App {
-  Export(
-    new HPipe()(new Parameters()),
-    "backend/rtl",
-    Array( // Make yosys happy
-      "--lowering-options=disallowLocalVariables,disallowPackedArrays",
-    ),
-    withOutputBuffer = false,
-    withPathPrefix = false,
-    splitVerilog = false,
-  )
+object HPipeDebug extends App {
+  Export(new HPipe()(HPipeParameters(Debug = true)), args)
 }

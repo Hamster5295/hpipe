@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class PipeWbIO(implicit p: Parameters) extends StageIO {
+class PipeWbIO(implicit p: HPipeParameters) extends StageIO {
   val fromMem  = Input(new Mem2WbIO)
   val regWrite = Flipped(new RegFileWritePort)
 
@@ -14,7 +14,7 @@ class PipeWbIO(implicit p: Parameters) extends StageIO {
   val retire = Output(new RetireInfo)
 }
 
-class PipeWb(implicit val p: Parameters) extends Module {
+class PipeWb(implicit val p: HPipeParameters) extends Module {
   val io      = IO(new PipeWbIO)
   val fromMem = io.fromMem
 

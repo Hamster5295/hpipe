@@ -6,7 +6,7 @@ import hammer._
 import hpipe.ALUOp._
 import hpipe.BranchOp._
 
-class PipeExIO(implicit p: Parameters) extends StageIO {
+class PipeExIO(implicit p: HPipeParameters) extends StageIO {
   val fromId = Input(new Id2ExIO)
   val toMem  = Output(new Ex2MemIO)
 
@@ -14,7 +14,7 @@ class PipeExIO(implicit p: Parameters) extends StageIO {
   val branch      = Output(new BranchFeedback)
 }
 
-class PipeEx(implicit val p: Parameters) extends Module {
+class PipeEx(implicit val p: HPipeParameters) extends Module {
   val io     = IO(new PipeExIO)
   val fromId = io.fromId
 

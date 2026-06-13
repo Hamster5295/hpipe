@@ -10,7 +10,7 @@ import CsrMode._
 
 case class CsrModel(addr: String, mode: CsrMode.Value, data: Data)
 
-class Csrs(implicit p: Parameters) extends Bundle {
+class Csrs(implicit p: HPipeParameters) extends Bundle {
 
   val mstatus = Word()
   val mie     = Word()
@@ -39,22 +39,22 @@ class Csrs(implicit p: Parameters) extends Bundle {
     )
 }
 
-class CsrReadPort(implicit p: Parameters) extends Bundle {
+class CsrReadPort(implicit p: HPipeParameters) extends Bundle {
   val addr = Input(CsrAddr())
   val data = Output(Word())
 }
 
-class CsrWritePort(implicit p: Parameters) extends Bundle {
+class CsrWritePort(implicit p: HPipeParameters) extends Bundle {
   val addr = Input(CsrAddr())
   val data = Input(Word())
 }
 
-class CsrIO(implicit val p: Parameters) extends Bundle {
+class CsrIO(implicit val p: HPipeParameters) extends Bundle {
   val read  = Vec(1, new CsrReadPort)
   val write = Vec(1, new CsrWritePort)
 }
 
-class Csr(implicit val p: Parameters) extends Module {
+class Csr(implicit val p: HPipeParameters) extends Module {
   val io = IO(new CsrIO)
 
   val csrs = Reg(new Csrs)
