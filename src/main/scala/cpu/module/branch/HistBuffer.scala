@@ -25,12 +25,10 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
     )),
   )
   val entryCnterValues = VecInit(entryCnters.map(i => i.io.value))
+
   // How long since this entry last used?
   val entryUseds = Seq.fill(conf.Count)(
-    Module(SaturateCounter(
-      conf.LRUWidth,
-      0,
-    )),
+    Module(SaturateCounter(conf.LRUWidth, 0)),
   )
   val entryUsedValues = VecInit(entryUseds.map(i => i.io.value))
 
@@ -39,6 +37,10 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
   val wmatches =
     VecInit(entryTags.map(i => i === write.pc.end(conf.PCLen)))
   val wmatched = wmatches.asUInt.orR
+
+  // We write empty entries first
+  val hasEmpty = ~entryValids.asUInt.orR
+  val emptyIdx = PriorityEncoder(entryValids.asUInt)
 
   // LRU Calculations for write pointer
   val lruIdx =
@@ -50,14 +52,16 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
         Mux(cmp, r, l)
     }.index
 
+    val writeIdx = Mux(hasEmpty, emptyIdx, lruIdx)
+
   entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
     case (((valid, tag), cnter), idx) =>
 
       // We need to override entry when:
       // 1. The write signal is valid (a branch inst is executed)
       // 2. No previous entry matches the branch PC
-      // 3. This entry is the least recently used one
-      val canOverride = write.info.isBr && !wmatched && lruIdx === idx.U
+      // 3. This entry is targeted by id calculated above (empty first, lsu when all full)
+      val canOverride = write.info.isBr && !wmatched && writeIdx === idx.U
       valid := valid | canOverride
 
       tag := Mux(
