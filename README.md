@@ -97,7 +97,21 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 ## PPA
 
-All characteristics were estimated using [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
+### FPGA
+
+Characteristics were estimated using Xilinx part `xc7z020clg484-1`
+
+- Power = 2260mW
+- Clock Freq = 75MHz
+- Utilization
+  - LUT = 3858
+  - FF  = 2563
+  - DSP = 4
+
+
+### ASIC
+
+Characteristics were estimated using [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
 
 - Power = 7444mW
 - Clock Freq = 685.184MHz
@@ -105,7 +119,7 @@ All characteristics were estimated using [icsprout55](https://github.com/openeco
 
 The analysis above was taken under `v0.1.3`. 
 
-However, after M extension was implemented, the `yosys` takes too long to synthesis, so no valid backend report was created.
+However, after M extension was implemented, the `yosys` takes too long to synthesis, so no valid backend report was created then.
 
 
 ## Road Map
