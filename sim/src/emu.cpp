@@ -366,6 +366,12 @@ int emu_cleanup() {
   tfp->flush();
   tfp->close();
 #endif
+
+  long csr_cycle = (cpu->io_debug_csr_cycleh << 32) | cpu->io_debug_csr_cycle;
+  long csr_instret =
+      (cpu->io_debug_csr_instreth << 32) | cpu->io_debug_csr_instret;
+  INFO(ANSI_FG_WHITE "Inst per Cycle = %d / %d = %f" ANSI_NONE, csr_instret,
+       csr_cycle, (float)csr_instret / csr_cycle);
   return ret;
 }
 

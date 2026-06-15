@@ -24,7 +24,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   val pipeWb  = Module(new PipeWb)
 
   val regFile = Module(new RegFile)
-  val csr     = Module(new CsrFile)
+  val csrFile = Module(new CsrFile)
 
   // Ports
   io.instFetch <> pipeIf.io.fetch
@@ -38,8 +38,10 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   regFile.io.write := pipeWb.io.regWrite
 
   // CSR
-  pipeWb.io.csrRead <> csr.io.read(0)
-  pipeWb.io.csrWrite <> csr.io.write(0)
+  pipeWb.io.csrRead <> csrFile.io.read(0)
+  pipeWb.io.csrWrite <> csrFile.io.write(0)
+
+  csrFile.io.retireValid := pipeWb.io.retire.valid
 
   // Feed Forward
   pipeIf.io.stall :=
@@ -124,6 +126,8 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
     dbg.regInfo.t4   := regFile.io.regs(28)
     dbg.regInfo.t5   := regFile.io.regs(29)
     dbg.regInfo.t6   := regFile.io.regs(30)
+
+    dbg.csr := csrFile.io.csr
   }
 }
 
@@ -134,7 +138,6 @@ object HPipe extends App {
 object HPipeDebug extends App {
   Export(new HPipe()(HPipeParameters(Debug = true)), args)
 }
-
 
 object HPipeFpga extends App {
   Export(new HPipe()(HPipeParameters(Fpga = true)), args)
