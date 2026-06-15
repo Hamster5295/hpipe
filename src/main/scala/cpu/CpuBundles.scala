@@ -125,6 +125,8 @@ class DebugInfo(implicit val p: HPipeParameters) extends Bundle {
 
   val regs    = Vec(31, Word())
   val regInfo = new DebugRegFile
+
+  val csr = new Csr
 }
 
 // Pipeline IOs
