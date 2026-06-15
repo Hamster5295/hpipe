@@ -31,7 +31,7 @@ class IntNonRestoringDiv(width: Int) extends Module {
   val exception     = fire && (dividedByZero || overflow)
 
   val ending = timer === 1.U || exception
-  val ended  = RegNext(ending)
+  val ended  = RegNext(RegNext(ending))
 
   timer := MuxIf(
     fire                -> (width - 1).U,
@@ -76,15 +76,15 @@ class IntNonRestoringDiv(width: Int) extends Module {
     reg(width * 2 - 1, width),
   )
 
-  io.busy     := (busy || fire) && !ended && !exception
-  io.quotient := MuxIf(
+  io.busy     := (busy || fire) && !ended && RegNext(!exception)
+  io.quotient := RegNext(MuxIf(
     overflow      -> io.dividend,
     dividedByZero -> Fill(width, 1.U(1.W)),
     sign          -> (~quo +% 1.U),
-  )(quo)
-  io.remainder := MuxIf(
+  )(quo))
+  io.remainder := RegNext(MuxIf(
     overflow                         -> 0.U,
     dividedByZero                    -> io.dividend,
     (io.signed && io.dividend.msb()) -> (~rem +% 1.U),
-  )(rem)
+  )(rem))
 }
