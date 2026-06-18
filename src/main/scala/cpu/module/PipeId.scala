@@ -45,10 +45,11 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
       st:     Boolean,
       jal:    Boolean,
       aluInv: Boolean,
+      ecall:  Boolean,
       ebreak: Boolean,
 
-      m: Boolean,
-      csr:  Boolean,
+      m:   Boolean,
+      csr: Boolean,
   ) =
     BitPat(
       s"b1" // Inst is valid
@@ -62,6 +63,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
         ++ s"${if (st) 1 else 0}"
         ++ s"${if (jal) 1 else 0}"
         ++ s"${if (aluInv) 1 else 0}"
+        ++ s"${if (ecall) 1 else 0}"
         ++ s"${if (ebreak) 1 else 0}"
         ++ s"${if (m) 1 else 0}"
         ++ s"${if (csr) 1 else 0}",
@@ -75,63 +77,63 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
 // format: off
 
       // I
-      LUI    -> parse(U,   Src1.None, Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      AUIPC  -> parse(U,   Src1.PC,   Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      JAL    -> parse(J,   Src1.PC,   Src2.Four, F, T, F, F, F, T, F, F, F, F),
-      JALR   -> parse(I,   Src1.PC,   Src2.Four, T, T, F, F, F, T, F, F, F, F),
-      BEQ    -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F),
-      BNE    -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F),
-      BLT    -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F),
-      BGE    -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F),
-      BLTU   -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F),
-      BGEU   -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F),
-      LB     -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F),
-      LH     -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F),
-      LW     -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F),
-      LBU    -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F),
-      LHU    -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F),
-      SB     -> parse(S,   Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F, F),
-      SH     -> parse(S,   Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F, F),
-      SW     -> parse(S,   Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F, F),
-      ADDI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      SLTI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      SLTIU  -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      XORI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      ORI    -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      ANDI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      SLLI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      SRLI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F),
-      SRAI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, T, F, F, F),
-      ADD    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F),
-      SUB    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, T, F, F, F),
-      SLL    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F),
-      SLT    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F),
-      SLTU   -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F),
-      XOR    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F),
-      SRL    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F),
-      SRA    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, T, F, F, F),
-      OR     -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F),
-      AND    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F),
-//    ECALL  -> parse(N,   Src1.None, Src2.None, F, F, F, F, F, F, F, F, F, F),
-      EBREAK -> parse(N,   Src1.None, Src2.None, F, F, F, F, F, F, F, T, F, F),
+      LUI    -> parse(U,   Src1.None, Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      AUIPC  -> parse(U,   Src1.PC,   Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      JAL    -> parse(J,   Src1.PC,   Src2.Four, F, T, F, F, F, T, F, F, F, F, F),
+      JALR   -> parse(I,   Src1.PC,   Src2.Four, T, T, F, F, F, T, F, F, F, F, F),
+      BEQ    -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F, F),
+      BNE    -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F, F),
+      BLT    -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F, F),
+      BGE    -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F, F),
+      BLTU   -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F, F),
+      BGEU   -> parse(B,   Src1.Reg,  Src2.Reg,  F, F, T, F, F, F, F, F, F, F, F),
+      LB     -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F, F),
+      LH     -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F, F),
+      LW     -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F, F),
+      LBU    -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F, F),
+      LHU    -> parse(I,   Src1.None, Src2.Reg,  T, T, F, T, F, F, F, F, F, F, F),
+      SB     -> parse(S,   Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F, F, F),
+      SH     -> parse(S,   Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F, F, F),
+      SW     -> parse(S,   Src1.None, Src2.Reg,  T, F, F, F, T, F, F, F, F, F, F),
+      ADDI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      SLTI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      SLTIU  -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      XORI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      ORI    -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      ANDI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      SLLI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      SRLI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, F, F, F, F, F),
+      SRAI   -> parse(I,   Src1.Reg,  Src2.Imm,  F, T, F, F, F, F, T, F, F, F, F),
+      ADD    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F, F),
+      SUB    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, T, F, F, F, F),
+      SLL    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F, F),
+      SLT    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F, F),
+      SLTU   -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F, F),
+      XOR    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F, F),
+      SRL    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F, F),
+      SRA    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, T, F, F, F, F),
+      OR     -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F, F),
+      AND    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, F, F),
+      ECALL  -> parse(N,   Src1.None, Src2.None, F, F, F, F, F, F, F, T, F, F, F),
+      EBREAK -> parse(N,   Src1.None, Src2.None, F, F, F, F, F, F, F, F, T, F, F),
 
       // M Extension
-      MUL    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T, F),
-      MULH   -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T, F),
-      MULHSU -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T, F),
-      MULHU  -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T, F),
-      DIV    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T, F),
-      DIVU   -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T, F),
-      REM    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T, F),
-      REMU   -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, T, F),
+      MUL    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, T, F),
+      MULH   -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, T, F),
+      MULHSU -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, T, F),
+      MULHU  -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, T, F),
+      DIV    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, T, F),
+      DIVU   -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, T, F),
+      REM    -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, T, F),
+      REMU   -> parse(R,   Src1.Reg,  Src2.Reg,  F, T, F, F, F, F, F, F, F, T, F),
 
       // IZCsr
-      CSRRW  -> parse(Csr, Src1.Reg,  Src2.None, F, T, F, F, F, F, F, F, F, T),
-      CSRRS  -> parse(Csr, Src1.Reg,  Src2.None, F, T, F, F, F, F, F, F, F, T),
-      CSRRC  -> parse(Csr, Src1.None, Src2.None, F, T, F, F, F, F, F, F, F, T),
-      CSRRWI -> parse(Csr, Src1.Imm,  Src2.None, F, T, F, F, F, F, F, F, F, T),
-      CSRRSI -> parse(Csr, Src1.Imm,  Src2.None, F, T, F, F, F, F, F, F, F, T),
-      CSRRCI -> parse(Csr, Src1.None, Src2.None, F, T, F, F, F, F, F, F, F, T),
+      CSRRW  -> parse(Csr, Src1.Reg,  Src2.None, F, T, F, F, F, F, F, F, F, F, T),
+      CSRRS  -> parse(Csr, Src1.Reg,  Src2.None, F, T, F, F, F, F, F, F, F, F, T),
+      CSRRC  -> parse(Csr, Src1.None, Src2.None, F, T, F, F, F, F, F, F, F, F, T),
+      CSRRWI -> parse(Csr, Src1.Imm,  Src2.None, F, T, F, F, F, F, F, F, F, F, T),
+      CSRRSI -> parse(Csr, Src1.Imm,  Src2.None, F, T, F, F, F, F, F, F, F, F, T),
+      CSRRCI -> parse(Csr, Src1.None, Src2.None, F, T, F, F, F, F, F, F, F, F, T),
 
 // format: on
     ),
@@ -146,7 +148,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   val addrType = result.get(-9)
 
   toEx.valid := io.fromIf.valid && valid
-  toEx.flags   := result.tail(9).asTypeOf(new OpFlags)
+  toEx.flags := result.tail(9).asTypeOf(new OpFlags)
 
   // Regs & Imm
   toEx.rs1   := rs1Addr

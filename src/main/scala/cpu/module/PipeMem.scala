@@ -50,6 +50,7 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   toWb.rd       := fromEx.rd
   toWb.writeRd  := fromEx.flags.writeRd
   toWb.data     := data
+  toWb.isECall  := fromEx.flags.isECall
   toWb.isEbreak := fromEx.flags.isEBreak
   toWb.isCsr    := fromEx.flags.isCsr
   toWb.csr      := fromEx.csr

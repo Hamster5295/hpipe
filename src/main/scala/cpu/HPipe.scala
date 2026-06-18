@@ -38,10 +38,10 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   regFile.io.write := pipeWb.io.regWrite
 
   // CSR
-  pipeWb.io.csrRead <> csrFile.io.read(0)
-  pipeWb.io.csrWrite <> csrFile.io.write(0)
+  pipeWb.io.csrRead <> csrFile.io.reads(0)
+  pipeWb.io.csrWrite <> csrFile.io.writes(0)
 
-  csrFile.io.retireValid := pipeWb.io.retire.valid
+  csrFile.io.retire := pipeWb.io.retire
 
   // Feed Forward
   pipeIf.io.stall :=
