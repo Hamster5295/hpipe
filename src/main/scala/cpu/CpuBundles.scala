@@ -50,6 +50,7 @@ class OpFlags(implicit val p: HPipeParameters) extends Bundle {
   val isSt     = Bool() // Store data in mem stage
   val isJal    = Bool() // Is JAL (get PC+4 and use it for wb)
   val isAluInv = Bool() // Is Invert op in ALU (for `sub` and `sra`)
+  val isECall  = Bool() // Is ECall Inst
   val isEBreak = Bool() // Is EBreak Inst
   val isMulDiv = Bool() // Is Mul || Div
   val isCsr    = Bool()
@@ -78,6 +79,7 @@ class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
 class RetireInfo(implicit val p: HPipeParameters) extends Bundle {
   val valid  = Bool()
   val pc     = Addr()
+  val ecall  = Bool()
   val ebreak = Bool()
 }
 
@@ -182,6 +184,7 @@ class Mem2WbIO(implicit p: HPipeParameters) extends PipeIO {
   val rd      = XRegAddr()
   val data    = Word()
 
+  val isECall = Bool()
   val isEbreak = Bool()
 
   val isCsr = Bool()

@@ -37,5 +37,6 @@ class PipeWb(implicit val p: HPipeParameters) extends Module {
   val retire = io.retire
   retire.valid  := fromMem.valid
   retire.pc     := fromMem.pc
+  retire.ecall  := fromMem.isECall
   retire.ebreak := fromMem.isEbreak
 }
