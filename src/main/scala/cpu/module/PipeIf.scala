@@ -100,7 +100,11 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   // 2. An inst in EX stage feeds forward, but it's a ld inst
   val rs1Valid = !rs1InId && !(rs1InEx && ffEx.gpr.bits.isLd)
 
-  val brAddr = UIntCLA(32)(Mux(isJalr, rs1, pc), imm, 0.B).end(32)
+  val brAddr = {
+    val base = Mux(isJalr, rs1, pc)
+    if (p.Fpga) (base +% imm).end(32)
+    else UIntCLA(32)(base, imm, 0.B).end(32)
+  }
 
   val predictor = Module(new BranchPredictor)
   val read      = predictor.io.read
