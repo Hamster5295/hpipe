@@ -11,7 +11,7 @@ class PipeMemIO(implicit p: HPipeParameters) extends StageIO {
   val fromEx = Input(new Ex2MemIO)
   val toWb   = Output(new Mem2WbIO)
 
-  val feedForward = new FeedForward
+  val feedForward = new DestInfo
 }
 
 class PipeMem(implicit val p: HPipeParameters) extends Module {

@@ -11,11 +11,11 @@ class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
   val regRead = Flipped(new RegFileReadPort)
 
   val toId   = Output(new If2IdIO)
-  val fromEx = Input(new BranchFeedback)
+  val fromEx = Input(new BranchInfo)
 
-  val feedForwardMem = Input(new FeedForward)
-  val feedForwardEx  = Input(new FeedForward)
-  val feedForwardId  = Input(new FeedForward)
+  val feedForwardMem = Input(new DestInfo)
+  val feedForwardEx  = Input(new DestInfo)
+  val feedForwardId  = Input(new DestInfo)
 
   val stall = Input(Bool())
 }
@@ -112,7 +112,7 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   read.rs1Valid := rs1Valid
 
   val write = predictor.io.write
-  write.info     := io.fromEx.info
+  write.info     := io.fromEx.flags
   write.pc       := io.fromEx.pc
   write.brTake   := io.fromEx.brTake
   write.callAddr := io.fromEx.callAddr
@@ -130,7 +130,7 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   toId.pc    := pc
   toId.inst  := io.fetch.inst
 
-  toId.prediction.branchInfo    := predictor.io.read.info
+  toId.prediction.flags    := predictor.io.read.info
   toId.prediction.jalrSrc       := rs1Addr
   toId.prediction.brTake        := predictor.io.read.brTake
   toId.prediction.defaultTarget := predictor.io.read.defaultTarget
