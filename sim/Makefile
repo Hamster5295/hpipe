@@ -32,10 +32,9 @@ VFLAGS += --no-timing		# handle #x delays
 LDFLAGS += $(addprefix -L, $(abspath $(LIB_DIR)))
 LDFLAGS += $(addprefix -l, "gdbstub")
 
-CSRCS = $(shell find -L src -name "*.c") 
-CXXSRCS = $(shell find -L src -name "*.cpp")
+CSRCS = $(shell find -L src -name "*.c") $(shell find -L src -name "*.cpp")
 VSRCS = $(shell find -L rtl -name "*.sv")
-SRCS = $(VSRCS) $(CSRCS) $(CXXSRCS)	
+SRCS = $(VSRCS) $(CSRCS)
 
 $(LIBS): 
 	@make -C $(LIB) $(lastword $(subst /, ,$@))

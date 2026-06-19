@@ -7,7 +7,7 @@ import hammer._
 
 case class HPipeParameters(
     val Debug: Boolean = false,
-    val Fpga: Boolean = false,
+    val Fpga:  Boolean = false,
 
     val XLEN: Int = 32,
 
@@ -18,7 +18,7 @@ case class HPipeParameters(
 
     // Branch
     val HistBuf:      HistBufferParameters = HistBufferParameters(),
-    val RetAddrStack: RetAddrStackParameters = new RetAddrStackParameters,
+    val RetAddrStack: RetAddrStackParameters = RetAddrStackParameters(),
 ) {
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth
@@ -52,10 +52,25 @@ object Word {
   def apply()(implicit p: HPipeParameters) = UInt(p.DataWidth.W)
 }
 
+object Mask {
+  def apply()(implicit p: HPipeParameters) = UInt((p.DataWidth / 4).W)
+}
+
 object XRegAddr {
   def apply()(implicit p: HPipeParameters) = UInt(p.XRegAddrWidth.W)
 }
 
 object CsrAddr {
   def apply() = UInt(12.W) // 12 is specified by
+
+  val MSTATUS = "x300".U
+  val MTVEC   = "x305".U
+  val MEPC    = "x341".U
+  val MCAUSE  = "x342".U
+  val MTVAL   = "x343".U
+
+  val CYCLE    = "xC00".U
+  val INSTRET  = "xC02".U
+  val CYCLEH   = "xC80".U
+  val INSTRETH = "xC82".U
 }

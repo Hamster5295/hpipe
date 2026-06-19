@@ -20,24 +20,28 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
 
   // ALU Op when inst is BR
   val opForBr = MuxLookup(fromId.funct, SLT)(Seq(
-    EQ.asUInt  -> ADD,
-    NE.asUInt  -> ADD,
+    EQ.asUInt  -> XOR,
+    NE.asUInt  -> XOR,
+    LT.asUInt  -> SLT,
+    GE.asUInt  -> SLT,
     LTU.asUInt -> SLTU,
     GEU.asUInt -> SLTU,
   ))
 
   val op = MuxIf(
-    (fromId.flags.isMem || fromId.flags.isJal || fromId.flags.isCsr) -> ADD,
-    fromId.flags.isBr                                            -> opForBr,
+    (fromId.flags.isMem || fromId.flags.jal || fromId.flags.csr) -> ADD,
+    fromId.flags.br                                              -> opForBr,
   )(fromId.funct.asTypeOf(ALUOp()))
 
   val aluInv = Mux(
-    fromId.flags.isBr,
-    MuxLookup(fromId.funct, fromId.flags.isAluInv)(Seq(
-      EQ.asUInt -> 1.B,
-      NE.asUInt -> 1.B,
+    fromId.flags.br,
+    MuxLookup(fromId.funct, fromId.flags.aluInv)(Seq(
+      LT.asUInt  -> 1.B,
+      GE.asUInt  -> 1.B,
+      LTU.asUInt -> 1.B,
+      GEU.asUInt -> 1.B,
     )),
-    fromId.flags.isAluInv,
+    fromId.flags.aluInv,
   )
 
   // ALU
@@ -52,22 +56,36 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   mdu.io.src1  := fromId.src1
   mdu.io.src2  := fromId.src2
   mdu.io.op    := fromId.funct
-  mdu.io.valid := fromId.flags.isMulDiv
+  mdu.io.valid := fromId.flags.muldiv
+
+  // csr
+  val csrResult = Mux(
+    fromId.funct === "b010".U,
+    fromId.src1 | fromId.csrSrc,
+    fromId.src1,
+  )
+
+  val result = MuxIf(
+    fromId.flags.csr    -> fromId.csrSrc,
+    fromId.flags.muldiv -> mdu.io.result,
+  )(alu.io.result)
 
   // Branch
+  val aluResult = alu.io.result
+
   val pred   = io.fromId.predInfo
-  val brTake = fromId.flags.isBr && MuxLookup(fromId.funct, false.B)(Seq(
-    EQ.asUInt  -> (!alu.io.result.orR),
-    NE.asUInt  -> (alu.io.result.orR),
-    LT.asUInt  -> (alu.io.result === 1.U),
-    GE.asUInt  -> (alu.io.result === 0.U),
-    LTU.asUInt -> (alu.io.result === 1.U),
-    GEU.asUInt -> (alu.io.result === 0.U),
+  val brTake = fromId.flags.br && MuxLookup(fromId.funct, false.B)(Seq(
+    EQ.asUInt  -> !aluResult.orR,
+    NE.asUInt  -> aluResult.orR,
+    LT.asUInt  -> aluResult(0),
+    GE.asUInt  -> !aluResult(0),
+    LTU.asUInt -> aluResult(0),
+    GEU.asUInt -> !aluResult(0),
   ))
   val brMiss   = brTake ^ pred.brTake
   val jalrMiss = !(fromId.addr === pred.target)
 
-  io.branch.flags     := pred.flags
+  io.branch.flags    := pred.flags
   io.branch.pc       := fromId.pc
   io.branch.redirect :=
     !pred.flags.isJal && // Jal always goes to the correct branch
@@ -80,25 +98,28 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   io.branch.brTake   := brTake
   io.branch.callAddr := alu.io.result // CALL will always take the alu result
 
-  val result = Mux(fromId.flags.isMulDiv, mdu.io.result, alu.io.result)
-
   // To Mem
   val toMem = io.toMem
-  toMem.valid := fromId.valid
-  toMem.pc    := fromId.pc
-  toMem.rd    := fromId.rd
-  toMem.funct := fromId.funct
-  toMem.data  := result
-  toMem.addr  := fromId.addr
+  toMem.valid   := fromId.valid
+  toMem.pc      := fromId.pc
+  toMem.rd      := fromId.rd
+  toMem.funct   := fromId.funct
+  toMem.data    := result
+  toMem.addr    := fromId.addr
   toMem.flags   := fromId.flags
-  toMem.csr   := fromId.csr
+  toMem.csrAddr := fromId.csrAddr
+  toMem.csrData := csrResult
 
   // Feed Forward
   val toId = io.feedForward
-  toId.rd      := fromId.rd
-  toId.isWrite := fromId.flags.writeRd
-  toId.isLd    := fromId.flags.isLd
-  toId.data    := result
+  toId.gpr.valid     := fromId.flags.writeRd && fromId.rd.orR
+  toId.gpr.bits.addr := fromId.rd
+  toId.gpr.bits.data := result
+  toId.gpr.bits.isLd := fromId.flags.ld
 
-  io.busy := Mux(fromId.flags.isMulDiv, mdu.io.busy, false.B)
+  toId.csr.valid     := fromId.flags.csr && fromId.csrAddr.orR
+  toId.csr.bits.addr := fromId.csrAddr
+  toId.csr.bits.data := csrResult
+
+  io.busy := Mux(fromId.flags.muldiv, mdu.io.busy, false.B)
 }

@@ -21,8 +21,8 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   io.busy := false.B
 
   // Load
-  io.memLoad.req  := fromEx.flags.isLd
-  io.memLoad.addr := fromEx.addr
+  io.memLoad.req.valid := fromEx.flags.ld
+  io.memLoad.req.addr  := fromEx.addr
   val loaded = io.memLoad.data
   val result = MuxLookup(fromEx.funct, 0.U)(Seq(
     LoadOp.Byte.asUInt  -> SignExt(loaded.end(8), 32),
@@ -33,32 +33,34 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   ))
 
   // Store
-  io.memStore.req  := fromEx.flags.isSt
-  io.memStore.addr := fromEx.addr
-  io.memStore.data := fromEx.data
-  io.memStore.mask := MuxLookup(fromEx.funct, 0.U)(Seq(
+  io.memStore.req.valid := fromEx.flags.st
+  io.memStore.req.addr  := fromEx.addr
+  io.memStore.req.data  := fromEx.data
+  io.memStore.req.mask  := MuxLookup(fromEx.funct, 0.U)(Seq(
     StoreOp.Byte.asUInt -> "b0001".U,
     StoreOp.Half.asUInt -> "b0011".U,
     StoreOp.Word.asUInt -> "b1111".U,
   ))
 
-  val data = Mux(fromEx.flags.isLd, result, fromEx.data)
+  val data = Mux(fromEx.flags.ld, result, fromEx.data)
 
   val toWb = io.toWb
-  toWb.valid    := fromEx.valid
-  toWb.pc       := fromEx.pc
-  toWb.rd       := fromEx.rd
-  toWb.writeRd  := fromEx.flags.writeRd
-  toWb.data     := data
-  toWb.isECall  := fromEx.flags.isECall
-  toWb.isEbreak := fromEx.flags.isEBreak
-  toWb.isCsr    := fromEx.flags.isCsr
-  toWb.csr      := fromEx.csr
-  toWb.csrOp    := fromEx.funct
+  toWb.valid   := fromEx.valid
+  toWb.pc      := fromEx.pc
+  toWb.rd      := fromEx.rd
+  toWb.writeRd := fromEx.flags.writeRd
+  toWb.data    := data
+  toWb.csrAddr := fromEx.csrAddr
+  toWb.csrData := fromEx.csrData
+  toWb.flags   := fromEx.flags
 
   val toId = io.feedForward
-  toId.rd      := fromEx.rd
-  toId.isWrite := fromEx.flags.writeRd
-  toId.isLd    := fromEx.flags.isLd
-  toId.data    := data
+  toId.gpr.valid := fromEx.flags.writeRd && fromEx.rd.orR
+  toId.gpr.bits.addr := fromEx.rd
+  toId.gpr.bits.data := data
+  toId.gpr.bits.isLd := fromEx.flags.ld
+
+  toId.csr.valid := fromEx.flags.csr && fromEx.csrAddr.orR
+  toId.csr.bits.addr := fromEx.csrAddr
+  toId.csr.bits.data := fromEx.csrData
 }
