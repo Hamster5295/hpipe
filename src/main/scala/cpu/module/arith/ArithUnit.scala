@@ -32,7 +32,10 @@ class ArithUnit(implicit val p: HPipeParameters) extends Module {
     ),
   )
 
-  val add = UIntCLA(33)(src1, Mux(sub, ~src2, src2), sub).end(33)
+  val add =
+    if (p.Fpga) (SignExt(src1, 33) + SignExt(Mux(sub, ~src2, src2), 33)).end(33)
+    else UIntCLA(33)(src1, Mux(sub, ~src2, src2), sub).end(33)
+
   val sll = io.src1 << io.src2.end(5)
   val srl = io.src1 >> io.src2.end(5)
   val sra = (Fill(32, src1.msb(1)) ## io.src1) >> io.src2.end(5)

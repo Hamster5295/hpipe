@@ -97,12 +97,12 @@ void exec() {
   if (cpu->io_instFetch_addr >= 0x80000000)
     cpu->io_instFetch_inst = mem_read(cpu->io_instFetch_addr);
 
-  if (cpu->io_memLoad_req)
-    cpu->io_memLoad_data = mem_read(cpu->io_memLoad_addr);
+  if (cpu->io_memLoad_req_valid)
+    cpu->io_memLoad_data = mem_read(cpu->io_memLoad_req_addr);
 
-  if (cpu->io_memStore_req)
-    mem_write(cpu->io_memStore_addr, cpu->io_memStore_data,
-              cpu->io_memStore_mask);
+  if (cpu->io_memStore_req_valid)
+    mem_write(cpu->io_memStore_req_addr, cpu->io_memStore_req_data,
+              cpu->io_memStore_req_mask);
 
   cpu->eval();
   ctx->timeInc(1);
@@ -134,7 +134,7 @@ bool step(int n) {
 }
 
 bool try_trap() {
-  if (cpu->io_retire_ebreak) {
+  if (cpu->io_retire_flags_ebreak) {
     if (cpu->io_debug_regs_9) {
       ret = 1;
       ERR("Simulation FAILED at 0x%08X", cpu->io_retire_pc);
@@ -207,7 +207,7 @@ gdb_action_t gdb_cont(void *args) {
 gdb_action_t gdb_stepi(void *args) {
   DBG("GDB step");
   step(1);
-  if (cpu->io_retire_ebreak) {
+  if (cpu->io_retire_flags_ebreak) {
     INFO("Hit EBREAK, shutting down...");
     return ACT_SHUTDOWN;
   }
@@ -370,7 +370,7 @@ int emu_cleanup() {
   long csr_cycle = (cpu->io_debug_csr_cycleh << 32) | cpu->io_debug_csr_cycle;
   long csr_instret =
       (cpu->io_debug_csr_instreth << 32) | cpu->io_debug_csr_instret;
-  INFO(ANSI_FG_WHITE "Inst per Cycle = %d / %d = %f" ANSI_NONE, csr_instret,
+  INFO(ANSI_FG_WHITE "Inst per Cycle = %ld / %ld = %f" ANSI_NONE, csr_instret,
        csr_cycle, (float)csr_instret / csr_cycle);
   return ret;
 }

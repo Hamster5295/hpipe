@@ -38,7 +38,8 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   regFile.io.write := pipeWb.io.regWrite
 
   // CSR
-  pipeWb.io.csrRead <> csrFile.io.reads(0)
+  pipeIf.io.csr := csrFile.io.csr
+  pipeId.io.csrRead <> csrFile.io.reads(0)
   pipeWb.io.csrWrite <> csrFile.io.writes(0)
 
   csrFile.io.retire := pipeWb.io.retire
@@ -58,26 +59,33 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   val branch = pipeEx.io.branch
   pipeIf.io.fromEx := branch
 
+  // Interrupt
+  val interrupt = pipeWb.io.retire.valid && pipeWb.io.retire.flags.ecall
+  pipeIf.io.interrupt := interrupt
+
+  io.memStore.req.valid :=
+    Mux(interrupt, false.B, pipeMem.io.memStore.req.valid)
+
   // Pipeline
   pipeId.io.fromIf := RegFlush(
     pipeIf.io.toId,
     !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeId.io.busy,
-    pipeIf.io.busy || branch.redirect,
+    pipeIf.io.busy || branch.redirect || interrupt,
   )
   pipeEx.io.fromId := RegFlush(
     pipeId.io.toEx,
     !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy,
-    pipeId.io.busy || branch.redirect,
+    pipeId.io.busy || branch.redirect || interrupt,
   )
   pipeMem.io.fromEx := RegFlush(
     pipeEx.io.toMem,
     !pipeWb.io.busy && !pipeMem.io.busy,
-    pipeEx.io.busy,
+    pipeEx.io.busy || interrupt,
   )
   pipeWb.io.fromMem := RegFlush(
     pipeMem.io.toWb,
     !pipeWb.io.busy,
-    pipeMem.io.busy,
+    pipeMem.io.busy || interrupt,
   )
 
   // Retire Observation

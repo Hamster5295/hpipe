@@ -10,41 +10,60 @@ class InstFetchIO(implicit val p: HPipeParameters) extends Bundle {
   val inst = Input(Inst())
 }
 
+class MemLoadReq(implicit p: HPipeParameters) extends Bundle {
+  val valid = Bool()
+  val addr  = Addr()
+}
+
+class MemStoreReq(implicit p: HPipeParameters) extends Bundle {
+  val valid = Bool()
+  val addr  = Addr()
+  val data  = Word()
+  val mask  = Mask()
+}
+
 class MemLoadIO(implicit val p: HPipeParameters) extends Bundle {
-  val req  = Output(Bool())
-  val addr = Output(Addr())
+  val req  = Output(new MemLoadReq)
   val data = Input(Word())
 }
 
 class MemStoreIO(implicit val p: HPipeParameters) extends Bundle {
-  val req  = Output(Bool())
-  val addr = Output(Addr())
-  val data = Output(Word())
-  val mask = Output(UInt(4.W))
+  val req = Output(new MemStoreReq)
+}
+
+class GprDestInfo(implicit p: HPipeParameters) extends Bundle {
+  val addr = XRegAddr()
+  val data = Word()
+  val isLd = Bool()
+}
+
+class CsrDestInfo(implicit p: HPipeParameters) extends Bundle {
+  val addr = CsrAddr()
+  val data = Word()
 }
 
 class DestInfo(implicit val p: HPipeParameters) extends Bundle {
-  val rd      = XRegAddr()
-  val isWrite = Bool()
-  val isLd    = Bool()
-  val data    = Word()
+  val gpr = Valid(new GprDestInfo)
+  val csr = Valid(new CsrDestInfo)
 
-  def isValid(rs: UInt) = isWrite && rd.orR && (rs === rd)
+  def gprMatch(addr: UInt) = gpr.valid && gpr.bits.addr === addr
+  def csrMatch(addr: UInt) = csr.valid && csr.bits.addr === addr
 }
 
 class OpFlags(implicit val p: HPipeParameters) extends Bundle {
-  val writeRd  = Bool() // Write data back to rf
-  val isBr     = Bool() // Branch current pc
-  val isLd     = Bool() // Load data in mem stage
-  val isSt     = Bool() // Store data in mem stage
-  val isJal    = Bool() // Is JAL (get PC+4 and use it for wb)
-  val isAluInv = Bool() // Is Invert op in ALU (for `sub` and `sra`)
-  val isECall  = Bool() // Is ECall Inst
-  val isEBreak = Bool() // Is EBreak Inst
-  val isMulDiv = Bool() // Is Mul || Div
-  val isCsr    = Bool()
+  val writeRd = Bool() // Write data back to rf
+  val br      = Bool() // Branch current pc
+  val ld      = Bool() // Load data in mem stage
+  val st      = Bool() // Store data in mem stage
+  val jal     = Bool() // Is JAL (get PC+4 and use it for wb)
+  val aluInv  = Bool() // Is Invert op in ALU (for `sub` and `sra`)
+  val ecall   = Bool() // Is ECall Inst
+  val ebreak  = Bool() // Is EBreak Inst
+  val mret    = Bool() // Is MRet Inst
+  val muldiv  = Bool() // Is Mul || Div
+  val csr     = Bool()
 
-  def isMem = isLd || isSt
+  def isMem = ld || st
 }
 
 class BranchInfo(implicit val p: HPipeParameters) extends Bundle {
@@ -77,10 +96,9 @@ class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class RetireInfo(implicit val p: HPipeParameters) extends Bundle {
-  val valid  = Bool()
-  val pc     = Addr()
-  val ecall  = Bool()
-  val ebreak = Bool()
+  val valid = Bool()
+  val pc    = Addr()
+  val flags = new OpFlags
 }
 
 class DebugRegFile(implicit p: HPipeParameters) extends Bundle {
@@ -155,10 +173,11 @@ class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val rs2 = XRegAddr()
   val rd  = XRegAddr()
 
-  val src1 = Word()
-  val src2 = Word()
-  val addr = Addr() // Branch Address (if any)
-  val csr  = CsrAddr()
+  val src1    = Word()
+  val src2    = Word()
+  val addr    = Addr() // Branch Address (if any)
+  val csrAddr = CsrAddr()
+  val csrSrc  = Word()
 
   val funct = UInt(3.W)
   val flags = new OpFlags()
@@ -170,10 +189,11 @@ class Ex2MemIO(implicit p: HPipeParameters) extends PipeIO {
   val pc = Addr()
   val rd = XRegAddr()
 
-  val funct = UInt(3.W)
-  val data  = Word()
-  val addr  = Addr()
-  val csr   = CsrAddr()
+  val funct   = UInt(3.W)
+  val data    = Word()
+  val addr    = Addr()
+  val csrAddr = CsrAddr()
+  val csrData = Word()
 
   val flags = new OpFlags()
 }
@@ -184,12 +204,10 @@ class Mem2WbIO(implicit p: HPipeParameters) extends PipeIO {
   val rd      = XRegAddr()
   val data    = Word()
 
-  val isECall = Bool()
-  val isEbreak = Bool()
+  val csrAddr = CsrAddr()
+  val csrData = Word()
 
-  val isCsr = Bool()
-  val csr   = CsrAddr()
-  val csrOp = UInt(3.W)
+  val flags = new OpFlags()
 }
 
 // Enums

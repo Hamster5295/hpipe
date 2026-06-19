@@ -10,9 +10,11 @@ TEST_TARGET ?= $(TARGET)Spec
 TEST_NAME = $(lastword $(subst ., ,$(TEST_TARGET)))
 TEST_TARGET_DIR = $(TEST_DIR)/$(TEST_NAME)
 
+SIM_DIR = sim
+
 APP ?= dummy
-APP_DIR = sim/app/$(APP)
-APP_ELF = sim/app/build/$(APP)/$(APP).elf
+APP_DIR = $(SIM_DIR)/app/$(APP)
+APP_ELF = $(SIM_DIR)/app/build/$(APP)/$(APP).elf
 
 verilog:
 	@echo Exporting SystemVerilog...
@@ -48,8 +50,11 @@ sim: verilog-sim
 wave: verilog-sim
 	@make -C $(APP_DIR) wave
 
+header: verilog-sim
+	@make -C $(SIM_DIR) header
+
 gdb-server:
-	@make -C sim wave
+	@make -C $(SIM_DIR) wave
 
 gdb:
 	@make -C $(APP_DIR) image
