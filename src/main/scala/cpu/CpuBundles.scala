@@ -23,24 +23,13 @@ class MemStoreIO(implicit val p: HPipeParameters) extends Bundle {
   val mask = Output(UInt(4.W))
 }
 
-class FeedForward(implicit val p: HPipeParameters) extends Bundle {
+class DestInfo(implicit val p: HPipeParameters) extends Bundle {
   val rd      = XRegAddr()
   val isWrite = Bool()
   val isLd    = Bool()
   val data    = Word()
 
   def isValid(rs: UInt) = isWrite && rd.orR && (rs === rd)
-}
-
-class BranchFeedback(implicit val p: HPipeParameters) extends Bundle {
-  val info = new BranchInfo()
-
-  val pc       = Addr()
-  val redirect = Bool()
-  val target   = Addr()
-
-  val brTake   = Bool()
-  val callAddr = Addr()
 }
 
 class OpFlags(implicit val p: HPipeParameters) extends Bundle {
@@ -59,6 +48,17 @@ class OpFlags(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class BranchInfo(implicit val p: HPipeParameters) extends Bundle {
+  val flags = new BranchFlags()
+
+  val pc       = Addr()
+  val redirect = Bool()
+  val target   = Addr()
+
+  val brTake   = Bool()
+  val callAddr = Addr()
+}
+
+class BranchFlags(implicit val p: HPipeParameters) extends Bundle {
   val isJalr = Bool()
   val isJal  = Bool()
   val isBr   = Bool()
@@ -67,7 +67,7 @@ class BranchInfo(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
-  val branchInfo = new BranchInfo
+  val flags = new BranchFlags
 
   val jalrSrc = XRegAddr()
   val brTake  = Bool()

@@ -10,8 +10,8 @@ class PipeExIO(implicit p: HPipeParameters) extends StageIO {
   val fromId = Input(new Id2ExIO)
   val toMem  = Output(new Ex2MemIO)
 
-  val feedForward = Output(new FeedForward)
-  val branch      = Output(new BranchFeedback)
+  val feedForward = Output(new DestInfo)
+  val branch      = Output(new BranchInfo)
 }
 
 class PipeEx(implicit val p: HPipeParameters) extends Module {
@@ -67,13 +67,13 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   val brMiss   = brTake ^ pred.brTake
   val jalrMiss = !(fromId.addr === pred.target)
 
-  io.branch.info     := pred.branchInfo
+  io.branch.flags     := pred.flags
   io.branch.pc       := fromId.pc
   io.branch.redirect :=
-    !pred.branchInfo.isJal && // Jal always goes to the correct branch
-      ((brMiss && pred.branchInfo.isBr) || (jalrMiss && pred.branchInfo.isJalr))
+    !pred.flags.isJal && // Jal always goes to the correct branch
+      ((brMiss && pred.flags.isBr) || (jalrMiss && pred.flags.isJalr))
   io.branch.target := Mux(
-    (pred.branchInfo.isBr && brTake) || pred.branchInfo.isJalr,
+    (pred.flags.isBr && brTake) || pred.flags.isJalr,
     fromId.addr,
     pred.defaultTarget,
   )

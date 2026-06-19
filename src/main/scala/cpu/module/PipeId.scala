@@ -11,13 +11,13 @@ class PipeIdIO(implicit p: HPipeParameters) extends StageIO {
   val fromIf = Input(new If2IdIO)
   val toEx   = Output(new Id2ExIO)
 
-  val fromEx  = Input(new FeedForward)
-  val fromMem = Input(new FeedForward)
+  val fromEx  = Input(new DestInfo)
+  val fromMem = Input(new DestInfo)
 
   val rs1Read = Flipped(new RegFileReadPort)
   val rs2Read = Flipped(new RegFileReadPort)
 
-  val feedForward = Output(new FeedForward)
+  val feedForward = Output(new DestInfo)
 }
 
 class PipeId(implicit val p: HPipeParameters) extends Module {

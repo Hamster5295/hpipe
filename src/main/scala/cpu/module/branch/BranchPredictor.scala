@@ -11,7 +11,7 @@ class BranchReadPort(implicit val p: HPipeParameters) extends Bundle {
   val defaultTarget = Input(Addr())
   val brAddr        = Input(Addr())
 
-  val info     = Input(new BranchInfo)
+  val info     = Input(new BranchFlags)
   val rs1Valid = Input(Bool())
 
   val target = Output(Addr())
@@ -23,7 +23,7 @@ class BranchWritePort(implicit val p: HPipeParameters) extends Bundle {
   val brTake   = Input(Bool())
   val callAddr = Input(Addr())
 
-  val info = Input(new BranchInfo)
+  val info = Input(new BranchFlags)
 }
 
 class BranchPredictorIO(implicit val p: HPipeParameters) extends Bundle {
