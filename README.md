@@ -101,11 +101,11 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 Characteristics were estimated using Xilinx part `xc7z020clg484-1`
 
-- Power = 2260mW
-- Clock Freq = 75MHz
+- Power = 2330mW
+- Clock Freq = 86MHz
 - Utilization
-  - LUT = 3858
-  - FF  = 2563
+  - LUT = 4051
+  - FF  = 2735
   - DSP = 4
 
 
@@ -128,7 +128,7 @@ However, after M extension was implemented, the `yosys` takes too long to synthe
 - [x] RV32M extension  
 - [x] Yosys-based backend analysis
 - [x] Branch Prediction & Optimized Branch Penalty
-- [ ] CSRs supporting M mode
+- [x] CSRs supporting M mode
 - [ ] L1 Cache & TLB
 - [ ] AXI Bus
 - [x] Coremark Bench
