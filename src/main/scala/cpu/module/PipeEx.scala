@@ -18,31 +18,13 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   val io     = IO(new PipeExIO)
   val fromId = io.fromId
 
-  // ALU Op when inst is BR
-  val opForBr = MuxLookup(fromId.funct, SLT)(Seq(
-    EQ.asUInt  -> XOR,
-    NE.asUInt  -> XOR,
-    LT.asUInt  -> SLT,
-    GE.asUInt  -> SLT,
-    LTU.asUInt -> SLTU,
-    GEU.asUInt -> SLTU,
-  ))
-
+  // ALU op: ADD for mem/jal (address computation), funct for arithmetic.
+  // Branch & CSR results are unused (brTake is direct, CSR uses csrSrc).
   val op = MuxIf(
-    (fromId.flags.isMem || fromId.flags.jal || fromId.flags.csr) -> ADD,
-    fromId.flags.br                                              -> opForBr,
+    (fromId.flags.isMem || fromId.flags.jal) -> ADD,
   )(fromId.funct.asTypeOf(ALUOp()))
 
-  val aluInv = Mux(
-    fromId.flags.br,
-    MuxLookup(fromId.funct, fromId.flags.aluInv)(Seq(
-      LT.asUInt  -> 1.B,
-      GE.asUInt  -> 1.B,
-      LTU.asUInt -> 1.B,
-      GEU.asUInt -> 1.B,
-    )),
-    fromId.flags.aluInv,
-  )
+  val aluInv = fromId.flags.aluInv
 
   // ALU
   val alu = Module(new ArithUnit)
@@ -69,17 +51,18 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
     fromId.flags.muldiv -> mdu.io.result,
   )(alu.io.result)
 
-  // Branch
-  val aluResult = alu.io.result
-
-  val pred   = io.fromId.predInfo
+  // Branch - dedicated comparators bypass ALU for shorter critical path
+  val pred = io.fromId.predInfo
+  val brEq  = fromId.src1 === fromId.src2
+  val brLt  = fromId.src1.asSInt < fromId.src2.asSInt
+  val brLtu = fromId.src1 < fromId.src2
   val brTake = fromId.flags.br && MuxLookup(fromId.funct, false.B)(Seq(
-    EQ.asUInt  -> !aluResult.orR,
-    NE.asUInt  -> aluResult.orR,
-    LT.asUInt  -> aluResult(0),
-    GE.asUInt  -> !aluResult(0),
-    LTU.asUInt -> aluResult(0),
-    GEU.asUInt -> !aluResult(0),
+    EQ.asUInt  -> brEq,
+    NE.asUInt  -> !brEq,
+    LT.asUInt  -> brLt,
+    GE.asUInt  -> !brLt,
+    LTU.asUInt -> brLtu,
+    GEU.asUInt -> !brLtu,
   ))
   val brMiss   = brTake ^ pred.brTake
   val jalrMiss = !(fromId.addr === pred.target)
