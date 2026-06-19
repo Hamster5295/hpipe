@@ -59,11 +59,10 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   mdu.io.valid := fromId.flags.muldiv
 
   // csr
-  val csrResult = Mux(
-    fromId.funct === "b010".U,
-    fromId.src1 | fromId.csrSrc,
-    fromId.src1,
-  )
+  val csrResult = MuxIf(
+    fromId.flags.mret -> ("b1_1000_1000".U ## fromId.csrSrc(7) ## "b000".U),
+    (fromId.funct === "b010".U) -> (fromId.src1 | fromId.csrSrc),
+  )(fromId.src1)
 
   val result = MuxIf(
     fromId.flags.csr    -> fromId.csrSrc,

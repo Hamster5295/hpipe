@@ -139,7 +139,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
       CSRRCI -> parse(Csr, Src1.None, Src2.None, F, T, F, F, F, F, F, F, F, F, F, T),
 
       // Trap Return
-      MRET   -> parse(N,   Src1.None, Src2.None, F, F, F, F, F, F, F, F, F, T, F, F),
+      MRET   -> parse(N,   Src1.None, Src2.None, F, F, F, F, F, F, F, F, F, T, F, T),
 
 // format: on
     ),
@@ -224,7 +224,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   toEx.addr := Mux(addrType, rs1, io.fromIf.pc) +% imm
 
   // Csr
-  val csrAddr = inst.head(12)
+  val csrAddr = Mux(toEx.flags.mret, CsrAddr.MSTATUS, inst.head(12))
   io.csrRead.addr := csrAddr
 
   val csrSrc = MuxIf(
