@@ -16,3 +16,6 @@
 [submodule "backend/asic/pdk/icsprout55"]
 	path = backend/asic/pdk/icsprout55
 	url = https://github.com/openecos-projects/icsprout55-pdk.git
+[submodule "sim/app/linux/buildroot"]
+	path = sim/app/linux/buildroot
+	url = https://gitlab.com/buildroot.org/buildroot.git
