@@ -148,5 +148,19 @@ object HPipeDebug extends App {
 }
 
 object HPipeFpga extends App {
-  Export(new HPipe()(HPipeParameters(Fpga = true)), args)
+  Export(
+    new HPipe()(HPipeParameters(Fpga = true)),
+    args,
+    Array("-lowering-options=mitigateVivadoArrayIndexConstPropBug"),
+  )
+}
+
+object HPipeAsic extends App {
+  Export(
+    new HPipe()(HPipeParameters(Fpga = true)),
+    args,
+    Array(
+      "-lowering-options=disallowLocalVariables,disallowPackedArrays",
+    ),
+  )
 }
