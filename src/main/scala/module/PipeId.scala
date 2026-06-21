@@ -152,10 +152,10 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   val src1     = Src1.safe(result.get(-5, -6))._1
   val src2     = Src2.safe(result.get(-7, -8))._1
   val addrType = result.get(-9)
+  val flags    = result.tail(9).asTypeOf(new OpFlags)
 
-  toEx.valid := io.fromIf.valid && valid
-  toEx.flags := result.tail(9).asTypeOf(new OpFlags)
-
+  toEx.valid := io.fromIf.valid
+  toEx.flags := flags
   // Regs & Imm
   toEx.rs1   := rs1Addr
   toEx.rs2   := rs2Addr
@@ -224,7 +224,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   toEx.addr := Mux(addrType, rs1, io.fromIf.pc) +% imm
 
   // Csr
-  val csrAddr = Mux(toEx.flags.mret, CsrAddr.MSTATUS, inst.head(12))
+  val csrAddr = Mux(flags.mret, CsrAddr.MSTATUS, inst.head(12))
   io.csrRead.addr := csrAddr
 
   val csrSrc = MuxIf(
@@ -235,17 +235,27 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   toEx.csrAddr := csrAddr
   toEx.csrSrc  := csrSrc
 
+  // Exception
+  val excp = io.toEx.exception
+
+  val ecall       = flags.ecall
+  val invalidInst = !valid
+  val hasExcp     = ecall || invalidInst
+
+  excp.valid := hasExcp
+  excp.cause := Mux1H(Seq(ecall -> 13.U, invalidInst -> 2.U, !hasExcp -> 0.U))
+
   // Valid & Ready
   io.busy := ldUseStall
 
   // Feed forward to IF (BTB)
   val ff = io.feedForward
-  ff.gpr.valid     := toEx.flags.writeRd
+  ff.gpr.valid     := flags.writeRd
   ff.gpr.bits.addr := toEx.rd
   ff.gpr.bits.data := DontCare
   ff.gpr.bits.isLd := DontCare
 
-  ff.csr.valid     := toEx.flags.csr
+  ff.csr.valid     := flags.csr
   ff.csr.bits.addr := toEx.csrAddr
   ff.csr.bits.data := DontCare
 }

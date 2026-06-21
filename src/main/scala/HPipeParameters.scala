@@ -6,8 +6,8 @@ import chisel3.util.log2Up
 import hammer._
 
 case class HPipeParameters(
-    val Debug: Boolean = false,
-    val Fpga:  Boolean = false,
+    val Debug:         Boolean = false,
+    val UseArithMacro: Boolean = false,
 
     val XLEN: Int = 32,
 
@@ -15,6 +15,9 @@ case class HPipeParameters(
     val DataWidth: Int = 32,
 
     val ResetVector: String = "x80000000",
+
+    // Supported ISA Extensions
+    val ExtC: Boolean = false,
 
     // Branch
     val HistBuf:      HistBufferParameters = HistBufferParameters(),

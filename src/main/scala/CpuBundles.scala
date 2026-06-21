@@ -96,9 +96,18 @@ class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class RetireInfo(implicit val p: HPipeParameters) extends Bundle {
+  val valid     = Bool()
+  val pc        = Addr()
+  val exception = new ExceptionInfo
+
+  val ebreak = Bool()
+
+  def trap = valid && exception.valid
+}
+
+class ExceptionInfo(implicit p: HPipeParameters) extends Bundle {
   val valid = Bool()
-  val pc    = Addr()
-  val flags = new OpFlags
+  val cause = Word()
 }
 
 class DebugRegFile(implicit p: HPipeParameters) extends Bundle {
@@ -182,7 +191,8 @@ class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val funct = UInt(3.W)
   val flags = new OpFlags()
 
-  val predInfo = new BranchPredictInfo()
+  val exception = new ExceptionInfo
+  val predInfo  = new BranchPredictInfo
 }
 
 class Ex2MemIO(implicit p: HPipeParameters) extends PipeIO {
@@ -195,19 +205,20 @@ class Ex2MemIO(implicit p: HPipeParameters) extends PipeIO {
   val csrAddr = CsrAddr()
   val csrData = Word()
 
-  val flags = new OpFlags()
+  val flags     = new OpFlags()
+  val exception = new ExceptionInfo
 }
 
 class Mem2WbIO(implicit p: HPipeParameters) extends PipeIO {
-  val pc      = Addr()
-  val writeRd = Bool()
-  val rd      = XRegAddr()
-  val data    = Word()
+  val pc   = Addr()
+  val rd   = XRegAddr()
+  val data = Word()
 
   val csrAddr = CsrAddr()
   val csrData = Word()
 
-  val flags = new OpFlags()
+  val flags     = new OpFlags()
+  val exception = new ExceptionInfo
 }
 
 // Enums

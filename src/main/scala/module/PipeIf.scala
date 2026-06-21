@@ -17,8 +17,8 @@ class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
   val feedForwardEx  = Input(new DestInfo)
   val feedForwardId  = Input(new DestInfo)
 
-  val stall     = Input(Bool())
-  val interrupt = Input(Bool())
+  val stall = Input(Bool())
+  val trap  = Input(Bool())
 
   val csr = Input(new Csr)
 }
@@ -102,7 +102,7 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
 
   val brAddr = {
     val base = Mux(isJalr, rs1, pc)
-    if (p.Fpga) (base +% imm).end(32)
+    if (p.UseArithMacro) (base +% imm).end(32)
     else UIntCLA(32)(base, imm, 0.B).end(32)
   }
 
@@ -141,8 +141,8 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   val mepcValid = !mepcInId
 
   val nextpc = MuxIf(
-    // We don't need feed-forward here, as interrupt will flush everything
-    io.interrupt           -> io.csr.mtvec,
+    // We don't need feed-forward here, as trap will flush everything
+    io.trap                -> io.csr.mtvec,
     (isMRet && !mepcValid) -> pc,
     isMRet                 -> mepc,
     io.stall               -> pc,

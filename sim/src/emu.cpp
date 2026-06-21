@@ -134,7 +134,7 @@ bool step(int n) {
 }
 
 bool try_trap() {
-  if (cpu->io_retire_flags_ebreak) {
+  if (cpu->io_retire_ebreak) {
     if (cpu->io_debug_regs_9) {
       ret = 1;
       ERR("Simulation FAILED at 0x%08X", cpu->io_retire_pc);
@@ -207,7 +207,7 @@ gdb_action_t gdb_cont(void *args) {
 gdb_action_t gdb_stepi(void *args) {
   DBG("GDB step");
   step(1);
-  if (cpu->io_retire_flags_ebreak) {
+  if (cpu->io_retire_ebreak) {
     INFO("Hit EBREAK, shutting down...");
     return ACT_SHUTDOWN;
   }
