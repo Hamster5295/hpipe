@@ -341,8 +341,14 @@ hs_err_pid*
 
 .vscode
 .metals
-sim/rtl
-backend/rtl
 .clangd
 
+# generated rtl
+sim/rtl
+backend/**/rtl
+
+# reports
+report/
+
+# vivado
 vivado/

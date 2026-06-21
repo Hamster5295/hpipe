@@ -1,4 +1,4 @@
-TOP = Top
+TOP = HPipe
 PDK = icsprout55
 
 BUILD_DIR = build
@@ -6,7 +6,7 @@ SYN_DIR = $(BUILD_DIR)/syn
 STA_DIR = $(BUILD_DIR)/sta
 
 VSRCS = $(shell find rtl -name "*.sv")
-NETLIST = $(SYN_DIR)/Top.netlist.v
+NETLIST = $(SYN_DIR)/HPipe.netlist.v
 
 DEFAULT_GOAL := all
 
@@ -16,8 +16,8 @@ init:
 	@tar -xvjf iEDA.tar.bz2
 	@mv iEDA script/iEDA
 	@rm iEDA.tar.bz2
-# 	@echo Downloading icsprout55 pdk...
-# 	@make -C pdk/icsprout55 unzip
+	@echo Initializing PDK...
+	@$(MAKE) -C pdk/icsprout55 unzip
 
 syn: $(NETLIST)
 $(NETLIST):
