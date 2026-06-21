@@ -1,5 +1,8 @@
 open_project hpipe.xpr
+
 synth_design -top HPipe
-report_timing -nworst 20 > ../reports/timing.rpt
-report_utilization > ../reports/util.rpt
-report_power > ../reports/power.rpt
+
+report_timing -sort_by group -max_paths 256 -path_type summary -file ../report/timing.summary.rpt
+report_timing -sort_by group -nworst 20 -file ../report/timing.rpt
+report_utilization -file ../report/util.rpt
+report_power -file ../report/power.rpt
