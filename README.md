@@ -101,11 +101,11 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 Characteristics were estimated using Xilinx part `xc7z020clg484-1`
 
-- Power = 2330mW
-- Clock Freq = 86MHz
+- Power = 2590mW
+- Clock Freq = 121.5MHz (Constrained under 100MHz)
 - Utilization
-  - LUT = 4051
-  - FF  = 2735
+  - LUT = 3985
+  - FF  = 2725
   - DSP = 4
 
 

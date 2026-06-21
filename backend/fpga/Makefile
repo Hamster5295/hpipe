@@ -2,7 +2,7 @@ VIVADO ?= vivado
 
 init:
 	@mkdir -p vivado
-	@mkdir -p reports
+	@mkdir -p report
 	@cd vivado && $(VIVADO) -mode batch -source ../script/init.tcl
 
 run:
