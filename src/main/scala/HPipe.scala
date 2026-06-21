@@ -59,33 +59,33 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   val branch = pipeEx.io.branch
   pipeIf.io.fromEx := branch
 
-  // Interrupt
-  val interrupt = pipeWb.io.retire.valid && pipeWb.io.retire.flags.ecall
-  pipeIf.io.interrupt := interrupt
+  // Trap
+  val trap = pipeWb.io.retire.trap
+  pipeIf.io.trap := trap
 
   io.memStore.req.valid :=
-    Mux(interrupt, false.B, pipeMem.io.memStore.req.valid)
+    Mux(trap, false.B, pipeMem.io.memStore.req.valid)
 
   // Pipeline
   pipeId.io.fromIf := RegFlush(
     pipeIf.io.toId,
     !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeId.io.busy,
-    pipeIf.io.busy || branch.redirect || interrupt,
+    pipeIf.io.busy || branch.redirect || trap,
   )
   pipeEx.io.fromId := RegFlush(
     pipeId.io.toEx,
     !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy,
-    pipeId.io.busy || branch.redirect || interrupt,
+    pipeId.io.busy || branch.redirect || trap,
   )
   pipeMem.io.fromEx := RegFlush(
     pipeEx.io.toMem,
     !pipeWb.io.busy && !pipeMem.io.busy,
-    pipeEx.io.busy || interrupt,
+    pipeEx.io.busy || trap,
   )
   pipeWb.io.fromMem := RegFlush(
     pipeMem.io.toWb,
     !pipeWb.io.busy,
-    pipeMem.io.busy || interrupt,
+    pipeMem.io.busy || trap,
   )
 
   // Retire Observation
@@ -149,7 +149,7 @@ object HPipeDebug extends App {
 
 object HPipeFpga extends App {
   Export(
-    new HPipe()(HPipeParameters(Fpga = true)),
+    new HPipe()(HPipeParameters(UseArithMacro = true)),
     args,
     Array("-lowering-options=mitigateVivadoArrayIndexConstPropBug"),
   )
@@ -157,7 +157,7 @@ object HPipeFpga extends App {
 
 object HPipeAsic extends App {
   Export(
-    new HPipe()(HPipeParameters(Fpga = true)),
+    new HPipe()(HPipeParameters(UseArithMacro = true)),
     args,
     Array(
       "-lowering-options=disallowLocalVariables,disallowPackedArrays",

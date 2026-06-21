@@ -106,17 +106,21 @@ class CsrFile(implicit val p: HPipeParameters) extends Module {
 
   // mstatus
   csr.mstatus := Mux(
-    io.retire.flags.ecall,
+    io.retire.trap,
     "b1_1000".U ## csr.mstatus(3) ## "b000_0000".U, // MPIE = previous MIE
     csr.mstatus,
   )
 
   // mepc
-  csr.mepc := Mux(io.retire.flags.ecall, io.retire.pc, csr.mepc)
+  csr.mepc := Mux(io.retire.trap, io.retire.pc, csr.mepc)
 
   // mcause
   csr.mcause :=
-    Mux(io.retire.flags.ecall, 11.U, csr.mcause) // 11 - ecall from M mode
+    Mux(
+      io.retire.trap,
+      io.retire.exception.cause,
+      csr.mcause,
+    ) // 11 - ecall from M mode
 
   // cycle
   val cycleLong = (csr.cycleh ## csr.cycle) +% 1.U

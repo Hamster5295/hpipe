@@ -52,10 +52,10 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   )(alu.io.result)
 
   // Branch - dedicated comparators bypass ALU for shorter critical path
-  val pred = io.fromId.predInfo
-  val brEq  = fromId.src1 === fromId.src2
-  val brLt  = fromId.src1.asSInt < fromId.src2.asSInt
-  val brLtu = fromId.src1 < fromId.src2
+  val pred   = io.fromId.predInfo
+  val brEq   = fromId.src1 === fromId.src2
+  val brLt   = fromId.src1.asSInt < fromId.src2.asSInt
+  val brLtu  = fromId.src1 < fromId.src2
   val brTake = fromId.flags.br && MuxLookup(fromId.funct, false.B)(Seq(
     EQ.asUInt  -> brEq,
     NE.asUInt  -> !brEq,
@@ -79,6 +79,15 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   )
   io.branch.brTake   := brTake
   io.branch.callAddr := alu.io.result // CALL will always take the alu result
+
+  // Exception
+  val excp = io.toMem.exception
+
+  val brMisaligned =
+    fromId.flags.br && io.branch.target.end(if (p.ExtC) 1 else 2).orR
+
+  excp.valid := fromId.exception.valid | brMisaligned
+  excp.cause := Mux(brMisaligned, 0.U, fromId.exception.cause)
 
   // To Mem
   val toMem = io.toMem

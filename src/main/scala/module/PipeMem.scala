@@ -45,22 +45,16 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   val data = Mux(fromEx.flags.ld, result, fromEx.data)
 
   val toWb = io.toWb
-  toWb.valid   := fromEx.valid
-  toWb.pc      := fromEx.pc
-  toWb.rd      := fromEx.rd
-  toWb.writeRd := fromEx.flags.writeRd
-  toWb.data    := data
-  toWb.csrAddr := fromEx.csrAddr
-  toWb.csrData := fromEx.csrData
-  toWb.flags   := fromEx.flags
+  toWb      := fromEx
+  toWb.data := data
 
   val toId = io.feedForward
-  toId.gpr.valid := fromEx.flags.writeRd && fromEx.rd.orR
+  toId.gpr.valid     := fromEx.flags.writeRd && fromEx.rd.orR
   toId.gpr.bits.addr := fromEx.rd
   toId.gpr.bits.data := data
   toId.gpr.bits.isLd := fromEx.flags.ld
 
-  toId.csr.valid := fromEx.flags.csr && fromEx.csrAddr.orR
+  toId.csr.valid     := fromEx.flags.csr && fromEx.csrAddr.orR
   toId.csr.bits.addr := fromEx.csrAddr
   toId.csr.bits.data := fromEx.csrData
 }

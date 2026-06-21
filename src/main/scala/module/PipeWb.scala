@@ -19,14 +19,15 @@ class PipeWb(implicit val p: HPipeParameters) extends Module {
 
   io.busy := false.B
 
-  io.regWrite.addr := Mux(fromMem.writeRd, fromMem.rd, 0.U)
+  io.regWrite.addr := Mux(fromMem.flags.writeRd, fromMem.rd, 0.U)
   io.regWrite.data := fromMem.data
 
   io.csrWrite.addr := Mux(fromMem.flags.csr, fromMem.csrAddr, 0.U)
   io.csrWrite.data := fromMem.csrData
 
   val retire = io.retire
-  retire.valid := fromMem.valid
-  retire.pc    := fromMem.pc
-  retire.flags := fromMem.flags
+  retire.valid     := fromMem.valid
+  retire.pc        := fromMem.pc
+  retire.exception := fromMem.exception
+  retire.ebreak    := fromMem.flags.ebreak
 }
