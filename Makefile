@@ -10,11 +10,10 @@ TEST_TARGET ?= $(TARGET)Spec
 TEST_NAME = $(lastword $(subst ., ,$(TEST_TARGET)))
 TEST_TARGET_DIR = $(TEST_DIR)/$(TEST_NAME)
 
-SIM_DIR = sim
+BACKEND_DIR = backend
 
-APP ?= dummy
-APP_DIR = $(SIM_DIR)/app/$(APP)
-APP_ELF = $(SIM_DIR)/app/build/$(APP)/$(APP).elf
+
+# Generate / Tests
 
 verilog:
 	@echo Exporting SystemVerilog...
@@ -40,40 +39,73 @@ format:
 lint:
 	@$(JAVA) -jar src/main/resources/scalastyle -c .scalastyle.xml src
 
+
+# Simulation with Verilator
+
+SIM_DIR = sim
+
+APP ?= dummy
+APP_DIR = $(SIM_DIR)/app/$(APP)
+APP_ELF = $(SIM_DIR)/app/build/$(APP)/$(APP).elf
+
+
 verilog-sim:
 	@echo Exporting SystemVerilog for Simulation...
 	@$(MILL) $(PRJ).runMain $(TARGET)Debug --target-dir sim/rtl
 
 sim: verilog-sim
-	@make -C $(APP_DIR) sim
+	@$(MAKE) -C $(APP_DIR) sim
 
 wave: verilog-sim
-	@make -C $(APP_DIR) wave
+	@$(MAKE) -C $(APP_DIR) wave
 
 header: verilog-sim
-	@make -C $(SIM_DIR) header
+	@$(MAKE) -C $(SIM_DIR) header
 
 gdb-server:
-	@make -C $(SIM_DIR) wave
+	@$(MAKE) -C $(SIM_DIR) wave
 
 gdb:
-	@make -C $(APP_DIR) image
+	@$(MAKE) -C $(APP_DIR) image
 	@riscv64-unknown-elf-gdb --command=script/sim.gdb sim/app/build/$(APP)/$(APP).elf
 
-init-backend:
-	@make -C backend init
 
-verilog-backend:
-	@echo Exporting SystemVerilog for Backend Analysis...
-	@$(MILL) $(PRJ).runMain $(TARGET)Fpga --target-dir backend/rtl
+# FPGA Analysis
 
-backend: verilog-backend
+FPGA_DIR = $(BACKEND_DIR)/fpga
+
+verilog-fpga:
+	@echo Exporting SystemVerilog for FPGA Analysis...
+	@$(MILL) $(PRJ).runMain $(TARGET)Fpga --target-dir $(FPGA_DIR)/rtl
+
+init-fpga: verilog-fpga
+	@$(MAKE) -C $(FPGA_DIR) init
+
+fpga: verilog-fpga
+	@$(MAKE) -C $(FPGA_DIR) run
+
+
+# ASIC Analysis
+
+ASIC_DIR = $(BACKEND_DIR)/asic
+
+init-asic:
+	@$(MAKE) -C $(ASIC_DIR) init
+
+verilog-asic:
+	@echo Exporting SystemVerilog for ASIC Analysis...
+	@$(MILL) $(PRJ).runMain $(TARGET)Asic --target-dir $(ASIC_DIR)/rtl
+
+asic: verilog-asic
 	@echo Analysing backend...
-	@make -C backend all
+	@$(MAKE) -C $(ASIC_DIR) all
 	@echo 
 	@echo Backend Analysis Completed
-	@echo Reports available at 'backend/build'
+	@echo Reports available at '$(ASIC_DIR)/build'
+
+
+# Clean up
 
 clean:
-	@make -C sim clean
+	@$(MAKE) -C sim clean
 	@rm -rf build
