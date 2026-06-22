@@ -26,8 +26,9 @@ class PipeWb(implicit val p: HPipeParameters) extends Module {
   io.csrWrite.data := fromMem.csrData
 
   val retire = io.retire
-  retire.valid     := fromMem.valid
-  retire.pc        := fromMem.pc
-  retire.exception := fromMem.exception
-  retire.ebreak    := fromMem.flags.ebreak
+  retire.valid           := fromMem.valid
+  retire.pc              := fromMem.pc
+  retire.exception       := fromMem.exception
+  retire.exception.valid := fromMem.exception.valid && fromMem.valid
+  retire.ebreak          := fromMem.flags.ebreak
 }
