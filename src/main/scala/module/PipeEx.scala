@@ -21,7 +21,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   // ALU op: ADD for mem/jal (address computation), funct for arithmetic.
   // Branch & CSR results are unused (brTake is direct, CSR uses csrSrc).
   val op = MuxIf(
-    (fromId.flags.isMem || fromId.flags.jal) -> ADD,
+    (fromId.flags.isMem || fromId.flags.jal) -> Add,
   )(fromId.funct.asTypeOf(ALUOp()))
 
   val aluInv = fromId.flags.aluInv
