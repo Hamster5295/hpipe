@@ -26,12 +26,6 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
   )
   val entryCnterValues = VecInit(entryCnters.map(i => i.io.value))
 
-  // How long since this entry last used?
-//   val entryUseds = Seq.fill(conf.Count)(
-//     Module(SaturateCounter(conf.LruWidth, 0)),
-//   )
-//   val entryUsedValues = VecInit(entryUseds.map(i => i.io.value))
-
   // Read
   val read     = io.read
   val rmatches =
@@ -39,12 +33,12 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
   val rmatched = rmatches.asUInt.orR
 
   val ridx = PriorityEncoder(rmatches.asUInt)
+  read.brTake := read.info.isBr && rmatched && entryCnterValues(ridx).msb()
   read.target := Mux(
-    read.info.isBr && rmatched && entryCnterValues(ridx).msb(),
+    read.brTake,
     read.brAddr,
     io.read.defaultTarget,
   )
-  read.brTake := read.info.isBr && rmatched && entryCnterValues(ridx).msb()
 
   val plru = Module(new PseudoLruSelector(conf.Count))
   plru.io.hitValid := rmatched

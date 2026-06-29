@@ -70,8 +70,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   io.branch.flags    := pred.flags
   io.branch.pc       := fromId.pc
   io.branch.redirect :=
-    !pred.flags.isJal && // Jal always goes to the correct branch
-      ((brMiss && pred.flags.isBr) || (jalrMiss && pred.flags.isJalr))
+      (brMiss && pred.flags.isBr) || (jalrMiss && pred.flags.isJalr)
   io.branch.target := Mux(
     (pred.flags.isBr && brTake) || pred.flags.isJalr,
     fromId.addr,

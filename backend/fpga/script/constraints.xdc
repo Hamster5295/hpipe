@@ -1,1 +1,1 @@
-create_clock -name clock -period 3.33 [get_ports clock]
+create_clock -name clock -period 7 [get_ports clock]
