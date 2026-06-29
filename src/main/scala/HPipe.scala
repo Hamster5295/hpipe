@@ -135,6 +135,9 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
     dbg.regInfo.t5   := regFile.io.regs(29)
     dbg.regInfo.t6   := regFile.io.regs(30)
 
+    dbg.branch     := branch.flags.isBr || branch.flags.isJalr
+    dbg.branchMiss := branch.redirect
+
     dbg.csr := csrFile.io.csr
   }
 }
