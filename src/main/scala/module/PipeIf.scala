@@ -90,15 +90,13 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   val rs1InMem = ffMem.gprMatch(rs1Addr)
 
   val rs1 = MuxIf(
-    rs1InEx  -> ffEx.gpr.bits.data,
+    // Here we ignore feedback from ex stage as timing is not sufficient
+    // This has little influence on branch miss rate
     rs1InMem -> ffMem.gpr.bits.data,
   )(io.regRead.data)
 
   // RS1 should be valid for JALR to take branch
-  // Invalid cases:
-  // 1. An inst in ID stage will write to rs1, but ID stage doesn't calculate
-  // 2. An inst in EX stage feeds forward, but it's a ld inst
-  val rs1Valid = !rs1InId && !(rs1InEx && ffEx.gpr.bits.isLd)
+  val rs1Valid = !rs1InId && !rs1InEx
 
   val brAddr = {
     val base = Mux(isJalr, rs1, pc)
@@ -124,7 +122,8 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   read.rs1Valid := rs1Valid
 
   val write  = predictor.io.write
-  val branch = RegNext(io.fromEx)
+//   val branch = RegNext(io.fromEx)
+  val branch = io.fromEx
   write.info     := branch.flags
   write.pc       := branch.pc
   write.brTake   := branch.brTake

@@ -26,6 +26,7 @@ class MulDivUnit(implicit val p: HPipeParameters) extends Module {
 
   val mul = Module(if (p.UseArithMacro) new IntFpgaMul(32) else new IntBoothMul(32))
   mul.io.valid   := io.valid && isMul
+  mul.io.clear   := ~io.valid
   mul.io.a       := io.src1
   mul.io.b       := io.src2
   mul.io.aSigned := io.op.in(MUL.asUInt, MULH.asUInt, MULHSU.asUInt)

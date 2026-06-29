@@ -6,6 +6,7 @@ import chisel3.util._
 class IntMulIO(width: Int) extends Bundle {
   val valid = Input(Bool())
   val busy  = Output(Bool())
+  val clear = Input(Bool())
 
   val a       = Input(UInt(width.W))
   val b       = Input(UInt(width.W))
