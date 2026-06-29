@@ -239,11 +239,11 @@ object Src2 extends ChiselEnum {
 }
 
 object ALUOp extends ChiselEnum {
-  val ADD, SLL, SLT, SLTU, XOR, SRX, OR, AND = Value
+  val Add, Sll, Slt, Sltu, Xor, Srx, Or, And = Value
 }
 
 object MulDivOp extends ChiselEnum {
-  val MUL, MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU = Value
+  val Mul, Mulh, Mulhsu, Mulhu, Div, Divu, Rem, Remu = Value
 }
 
 object LoadOp extends ChiselEnum {

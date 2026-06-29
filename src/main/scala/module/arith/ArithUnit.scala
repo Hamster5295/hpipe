@@ -18,7 +18,7 @@ class ArithUnitIO(implicit val p: HPipeParameters) extends Bundle {
 class ArithUnit(implicit val p: HPipeParameters) extends Module {
   val io = IO(new ArithUnitIO)
 
-  val unsigned = io.op === SLTU
+  val unsigned = io.op === Sltu
 
   // Sign ext
   val src1 = Mux(unsigned, 0.B, io.src1.msb()) ## io.src1
@@ -26,9 +26,9 @@ class ArithUnit(implicit val p: HPipeParameters) extends Module {
 
   val sub = MuxLookup(io.op, false.B)(
     Seq(
-      ADD  -> io.inv,
-      SLT  -> true.B,
-      SLTU -> true.B,
+      Add  -> io.inv,
+      Slt  -> true.B,
+      Sltu -> true.B,
     ),
   )
 
@@ -45,14 +45,14 @@ class ArithUnit(implicit val p: HPipeParameters) extends Module {
 
   io.result := MuxLookup(io.op, 0.U)(
     Seq(
-      ADD  -> add,
-      SLL  -> sll.end(32),
-      SLT  -> add.msb(),
-      SLTU -> add.msb(),
-      XOR  -> xor,
-      SRX  -> Mux(io.inv, sra, srl),
-      OR   -> or,
-      AND  -> and,
+      Add  -> add,
+      Sll  -> sll.end(32),
+      Slt  -> add.msb(),
+      Sltu -> add.msb(),
+      Xor  -> xor,
+      Srx  -> Mux(io.inv, sra, srl),
+      Or   -> or,
+      And  -> and,
     ),
   )
 }

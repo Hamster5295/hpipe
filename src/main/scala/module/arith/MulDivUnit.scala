@@ -19,18 +19,18 @@ class MulDivUnit(implicit val p: HPipeParameters) extends Module {
   val io = IO(new MulDivUnitIO)
 
   val isMul      = ~io.op.msb()
-  val isMulUpper = io.op.in(MULH.asUInt, MULHU.asUInt, MULHSU.asUInt)
+  val isMulUpper = io.op.in(Mulh.asUInt, Mulhu.asUInt, Mulhsu.asUInt)
   val isDiv      = io.op.msb() && ~io.op(1)
   val isRem      = io.op.msb() && io.op(1)
-  val isSigned   = io.op.in(DIV.asUInt, REM.asUInt)
+  val isSigned   = io.op.in(Div.asUInt, Rem.asUInt)
 
   val mul = Module(if (p.UseArithMacro) new IntFpgaMul(32) else new IntBoothMul(32))
   mul.io.valid   := io.valid && isMul
   mul.io.clear   := ~io.valid
   mul.io.a       := io.src1
   mul.io.b       := io.src2
-  mul.io.aSigned := io.op.in(MUL.asUInt, MULH.asUInt, MULHSU.asUInt)
-  mul.io.bSigned := io.op.in(MUL.asUInt, MULH.asUInt)
+  mul.io.aSigned := io.op.in(Mul.asUInt, Mulh.asUInt, Mulhsu.asUInt)
+  mul.io.bSigned := io.op.in(Mul.asUInt, Mulh.asUInt)
 
   val div = Module(new IntNonRestoringDiv(32))
   div.io.dividend := io.src1

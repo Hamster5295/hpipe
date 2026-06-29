@@ -37,23 +37,4 @@ class RegFile(implicit val p: HPipeParameters) extends Module {
 
   io.read.map(r => when(r.addr === io.write.addr)(r.data := io.write.data))
   io.read.map(r => when(!r.addr.orR)(r.data := 0.U))
-
-//   io.read.map(i => i.data := 0.U)
-//   io.read.map { i =>
-//     when(i.addr === 0.U) {
-//       i.data := 0.U
-//     }
-//   }
-
-//   regs.zipWithIndex.map { case (reg, idx) =>
-//     val addr = (idx + 1).U
-//     io.read.map { i =>
-//       when(i.addr === addr) {
-//         i.data := Mux(passthroughs(i), io.write.data, reg)
-//       }
-//     }
-//     when(io.write.addr === addr) {
-//       reg := io.write.data
-//     }
-//   }
 }
