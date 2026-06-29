@@ -2,7 +2,6 @@ package hpipe
 
 import chisel3._
 import chisel3.util.log2Ceil
-import chisel3.util.log2Up
 import hammer._
 
 case class HPipeParameters(
