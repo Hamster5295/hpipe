@@ -32,10 +32,10 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   pipeMem.io.memStore <> io.memStore
 
   // RegFile
-  pipeId.io.rs1Read <> regFile.io.read(0)
-  pipeId.io.rs2Read <> regFile.io.read(1)
-  pipeIf.io.regRead <> regFile.io.read(2)
-  regFile.io.write := pipeWb.io.regWrite
+  pipeId.io.rs1Read <> regFile.io.reads(0)
+  pipeId.io.rs2Read <> regFile.io.reads(1)
+  pipeIf.io.regRead <> regFile.io.reads(2)
+  regFile.io.writes := pipeWb.io.regWrite
 
   // CSR
   pipeIf.io.csr := csrFile.io.csr
