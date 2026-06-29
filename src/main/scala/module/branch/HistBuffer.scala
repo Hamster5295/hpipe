@@ -31,9 +31,15 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
   val rmatches =
     VecInit(entryTags.map(i => i === read.pc.end(conf.PCLen)))
   val rmatched = rmatches.asUInt.orR
+  
+  val rdata    = VecInit(rmatches.zip(entryCnterValues).map { case (v, cnter) =>
+    v ## cnter
+  }).withIndex(log2Ceil(conf.Count)).treeReduce((_, l, r) =>
+    Mux(l.bits.msb(), l, r),
+  )
+  val ridx = rdata.index
 
-  val ridx = PriorityEncoder(rmatches.asUInt)
-  read.brTake := read.info.isBr && rmatched && entryCnterValues(ridx).msb()
+  read.brTake := read.info.isBr && rmatched && rdata.bits.msb(1)
   read.target := Mux(
     read.brTake,
     read.brAddr,

@@ -112,11 +112,11 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 Characteristics were estimated using Xilinx part `xc7a200t`
 
-- Power = 2590mW
-- Clock Freq = 121.5MHz (Constrained under 100MHz)
+- Power = 2810mW
+- Clock Freq = 144.9MHz
 - Utilization
-  - LUT = 3985
-  - FF  = 2725
+  - LUT = 3639
+  - FF  = 3026
   - DSP = 4
 
 
