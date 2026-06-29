@@ -123,11 +123,12 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
       && !inst(31, 20).orR)
   read.rs1Valid := rs1Valid
 
-  val write = predictor.io.write
-  write.info     := io.fromEx.flags
-  write.pc       := io.fromEx.pc
-  write.brTake   := io.fromEx.brTake
-  write.callAddr := io.fromEx.callAddr
+  val write  = predictor.io.write
+  val branch = RegNext(io.fromEx)
+  write.info     := branch.flags
+  write.pc       := branch.pc
+  write.brTake   := branch.brTake
+  write.callAddr := branch.callAddr
 
   val mepcInId  = ffId.csrMatch(CsrAddr.MEPC)
   val mepcInEx  = ffEx.csrMatch(CsrAddr.MEPC)

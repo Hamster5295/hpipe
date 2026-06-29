@@ -27,54 +27,10 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
   val entryCnterValues = VecInit(entryCnters.map(i => i.io.value))
 
   // How long since this entry last used?
-  val entryUseds = Seq.fill(conf.Count)(
-    Module(SaturateCounter(conf.LruWidth, 0)),
-  )
-  val entryUsedValues = VecInit(entryUseds.map(i => i.io.value))
-
-  // Write
-  val write    = io.write
-  val wmatches =
-    VecInit(entryTags.map(i => i === write.pc.end(conf.PCLen)))
-  val wmatched = wmatches.asUInt.orR
-
-  // We write empty entries first
-  val hasEmpty = ~entryValids.asUInt.andR
-  val emptyIdx = PriorityEncoder(~entryValids.asUInt)
-
-  // LRU Calculations for write pointer
-  val lruIdx =
-    entryUsedValues.withIndex(conf.PtrWidth).treeReduce {
-      (_, l, r) =>
-        val width = l.bits.getWidth + 1
-        val cmp   =
-          UIntCLA(width)(l.bits.pad(width), ~r.bits.pad(width), 1.B).msb(1)
-        Mux(cmp, r, l)
-    }.index
-
-  val writeIdx = Mux(hasEmpty, emptyIdx, lruIdx)
-
-  entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
-    case (((valid, tag), cnter), idx) =>
-
-      // We need to override entry when:
-      // 1. The write signal is valid (a branch inst is executed)
-      // 2. No previous entry matches the branch PC
-      // 3. This entry is targeted by id calculated above (empty first, lsu when all full)
-      val canOverride = write.info.isBr && !wmatched && writeIdx === idx.U
-      valid := valid | canOverride
-
-      tag := Mux(
-        canOverride,
-        write.pc.end(conf.PCLen),
-        tag,
-      )
-
-      cnter.io.enable   := (valid && wmatches(idx)) || canOverride
-      cnter.io.op       := write.brTake
-      cnter.io.set      := canOverride
-      cnter.io.setValue := 0.U
-  }
+//   val entryUseds = Seq.fill(conf.Count)(
+//     Module(SaturateCounter(conf.LruWidth, 0)),
+//   )
+//   val entryUsedValues = VecInit(entryUseds.map(i => i.io.value))
 
   // Read
   val read     = io.read
@@ -90,12 +46,45 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
   )
   read.brTake := read.info.isBr && rmatched && entryCnterValues(ridx).msb()
 
-  entryUseds.zipWithIndex.map {
-    case (used, idx) =>
-      used.io.enable   := true.B
-      used.io.op       := true.B
-      used.io.set      := rmatches(idx)
-      used.io.setValue := 0.U
+  val plru = Module(new PseudoLruSelector(conf.Count))
+  plru.io.hitValid := rmatched
+  plru.io.hitIndex := ridx
+
+  // Write
+  val write    = io.write
+  val wmatches =
+    VecInit(entryTags.map(i => i === write.pc.end(conf.PCLen)))
+  val wmatched = wmatches.asUInt.orR
+
+  // We write empty entries first
+  val hasEmpty = ~entryValids.asUInt.andR
+  val emptyIdx = PriorityEncoder(~entryValids.asUInt)
+
+  val replaceValid = write.info.isBr && !wmatched
+  plru.io.replaceValid := replaceValid
+
+  val writeIdx = Mux(hasEmpty, emptyIdx, plru.io.replaceIndex)
+
+  entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
+    case (((valid, tag), cnter), idx) =>
+
+      // We need to replace entry when:
+      // 1. The write signal is valid (a branch inst is executed)
+      // 2. No previous entry matches the branch PC
+      // 3. This entry is targeted by id calculated above (empty first, lsu when all full)
+      val canReplace = replaceValid && writeIdx === idx.U
+      valid := valid | canReplace
+
+      tag := Mux(
+        canReplace,
+        write.pc.end(conf.PCLen),
+        tag,
+      )
+
+      cnter.io.enable   := (valid && wmatches(idx)) || canReplace
+      cnter.io.op       := write.brTake
+      cnter.io.set      := canReplace
+      cnter.io.setValue := 0.U
   }
 
 }
