@@ -155,6 +155,9 @@ class DebugInfo(implicit val p: HPipeParameters) extends Bundle {
   val regs    = Vec(31, Word())
   val regInfo = new DebugRegFile
 
+  val branch     = Bool()
+  val branchMiss = Bool()
+
   val csr = new Csr
 }
 

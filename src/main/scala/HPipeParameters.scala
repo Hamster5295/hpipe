@@ -29,9 +29,9 @@ case class HPipeParameters(
 
 case class HistBufferParameters(
     val PCLen:      Int = 16,
-    val Count:      Int = 16,
+    val Count:      Int = 32,
     val CnterWidth: Int = 2,
-    val LRUWidth:   Int = 4,
+    val LruWidth:   Int = 8,
 ) {
   val PtrWidth = log2Ceil(Count)
 }

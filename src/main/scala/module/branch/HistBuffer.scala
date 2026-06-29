@@ -28,7 +28,7 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
 
   // How long since this entry last used?
   val entryUseds = Seq.fill(conf.Count)(
-    Module(SaturateCounter(conf.LRUWidth, 0)),
+    Module(SaturateCounter(conf.LruWidth, 0)),
   )
   val entryUsedValues = VecInit(entryUseds.map(i => i.io.value))
 
@@ -39,8 +39,8 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
   val wmatched = wmatches.asUInt.orR
 
   // We write empty entries first
-  val hasEmpty = ~entryValids.asUInt.orR
-  val emptyIdx = PriorityEncoder(entryValids.asUInt)
+  val hasEmpty = ~entryValids.asUInt.andR
+  val emptyIdx = PriorityEncoder(~entryValids.asUInt)
 
   // LRU Calculations for write pointer
   val lruIdx =
@@ -52,7 +52,7 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
         Mux(cmp, r, l)
     }.index
 
-    val writeIdx = Mux(hasEmpty, emptyIdx, lruIdx)
+  val writeIdx = Mux(hasEmpty, emptyIdx, lruIdx)
 
   entryValids.zip(entryTags).zip(entryCnters).zipWithIndex.map {
     case (((valid, tag), cnter), idx) =>
@@ -72,7 +72,7 @@ class HistBuffer(implicit val p: HPipeParameters) extends Module {
 
       cnter.io.enable   := (valid && wmatches(idx)) || canOverride
       cnter.io.op       := write.brTake
-      cnter.io.set      := false.B
+      cnter.io.set      := canOverride
       cnter.io.setValue := 0.U
   }
 

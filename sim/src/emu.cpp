@@ -33,7 +33,7 @@ VerilatedFstC *tfp;
 VerilatedContext *ctx;
 VHPipe *cpu;
 
-int cycles = 0;
+int cycles = 0, branch = 0, branchMiss = 0;
 vector<size_t> bps(4, -1);
 bool halted = false, shutdown = false;
 
@@ -107,6 +107,11 @@ void exec() {
   cpu->eval();
   ctx->timeInc(1);
   TRACE();
+
+  if (cpu->io_debug_branch)
+    branch++;
+  if (cpu->io_debug_branchMiss)
+    branchMiss++;
 
   cpu->clock = 1;
   cpu->eval();
@@ -372,6 +377,8 @@ int emu_cleanup() {
       (cpu->io_debug_csr_instreth << 32) | cpu->io_debug_csr_instret;
   INFO(ANSI_FG_WHITE "Inst per Cycle = %ld / %ld = %f" ANSI_NONE, csr_instret,
        csr_cycle, (float)csr_instret / csr_cycle);
+  INFO(ANSI_FG_WHITE "Branch Miss    = %ld / %ld = %f" ANSI_NONE, branchMiss,
+       branch, (float)branchMiss / branch);
   return ret;
 }
 
