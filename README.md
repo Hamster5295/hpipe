@@ -26,10 +26,19 @@ make gdb-server
 make gdb APP=rv-tests
 ```
 
-Run Backend Analysis
+Run Backend Analysis:
+
+Use vivado to run a FPGA synthesis and get reports
 ```bash
-make init-backend # This only need to run once
-make backend
+make init-fpga # This only need to run once
+make fpga
+```
+
+Use yosys-based tools to run a ASIC synthesis and get reports
+```bash
+make init-asic # This only need to run once
+               # Might require a really long time as PDK will be downloaded
+make asic
 ```
 
 ## Architecture
@@ -41,7 +50,7 @@ Currently it supports RV32IM_izcsr, but more extensions are on the way.
 
 ### IF & BTB
 
-The IF stage involves a 16-entry BTB with 2-bit saturation counters for each entry, adopting **LR** substitution strategy.
+The IF stage involves a 16-entry BTB with 2-bit saturation counters for each entry, adopting **PLRU** substitution strategy.
 
 The Penalty of branch miss is **2 cycles**.
 
@@ -58,6 +67,8 @@ The EX stage currently uses **Carry Lookahead Adder**, **Radix-4 Booth Multiplie
 - The **Carry Lookahead Adder** implements a *group-of-4* hierarchy, i.e. at most 4 adders shares a **Carry Lookahead Unit**
 - The **Radix-4 Booth Multiplier** currently produces result in 1 cycle, which might have impact on frequency
 - The **Non-restoring remainder Divider** requires 32 cycles for a normal divide operation
+
+Note that DSP Macros are used when specified `Fpga = true` in parameters
 
 
 ### MEM
@@ -99,7 +110,7 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 ### FPGA
 
-Characteristics were estimated using Xilinx part `xc7z020clg484-1`
+Characteristics were estimated using Xilinx part `xc7a200t`
 
 - Power = 2590mW
 - Clock Freq = 121.5MHz (Constrained under 100MHz)
