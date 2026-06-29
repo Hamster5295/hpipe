@@ -11,13 +11,13 @@ class IntFpgaMul(width: Int) extends IntMul(width) {
 
   val res = RegNext(a * b)
 
-  io.o := Mux(io.aSigned ^ io.bSigned, ~res + 1.U, res)
+  io.o := RegNext(Mux(io.aSigned ^ io.bSigned, ~res + 1.U, res))
 
   val cnter = RegZero(UInt(2.W))
   io.busy := cnter.orR
 
   cnter := MuxIf(
     io.clear -> 0.U,
-    io.valid -> 2.U,
+    io.valid -> 3.U,
   )(cnter - 1.U)
 }
