@@ -10,6 +10,8 @@ class PipeExIO(implicit p: HPipeParameters) extends StageIO {
   val fromId = Input(new Id2ExIO)
   val toMem  = Output(new Ex2MemIO)
 
+  val csrTransform = Flipped(new CsrTransformPort)
+
   val feedForward = Output(new DestInfo)
   val branch      = Output(new BranchInfo)
 }
@@ -41,10 +43,15 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   mdu.io.valid := fromId.flags.muldiv
 
   // csr
-  val csrResult = MuxIf(
+  val csrTr   = io.csrTransform
+  val csrData = MuxIf(
     fromId.flags.mret -> ("b1_1000_1000".U ## fromId.csrSrc(7) ## "b000".U),
     (fromId.funct === "b010".U) -> (fromId.src1 | fromId.csrSrc),
   )(fromId.src1)
+
+  csrTr.addr := fromId.csrAddr
+  csrTr.data := csrData
+  val csrResult = csrTr.result
 
   val result = MuxIf(
     fromId.flags.csr    -> fromId.csrSrc,
@@ -70,7 +77,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   io.branch.flags    := pred.flags
   io.branch.pc       := fromId.pc
   io.branch.redirect :=
-      (brMiss && pred.flags.isBr) || (jalrMiss && pred.flags.isJalr)
+    (brMiss && pred.flags.isBr) || (jalrMiss && pred.flags.isJalr)
   io.branch.target := Mux(
     (pred.flags.isBr && brTake) || pred.flags.isJalr,
     fromId.addr,

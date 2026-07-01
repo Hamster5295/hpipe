@@ -40,6 +40,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   // CSR
   pipeIf.io.csr := csrFile.io.csr
   pipeId.io.csrRead <> csrFile.io.reads(0)
+  pipeEx.io.csrTransform <> csrFile.io.transforms(0)
   pipeWb.io.csrWrite <> csrFile.io.writes(0)
 
   csrFile.io.retire := pipeWb.io.retire
