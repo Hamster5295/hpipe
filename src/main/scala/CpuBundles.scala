@@ -60,6 +60,7 @@ class OpFlags(implicit val p: HPipeParameters) extends Bundle {
   val ecall   = Bool() // Is ECall Inst
   val ebreak  = Bool() // Is EBreak Inst
   val mret    = Bool() // Is MRet Inst
+  
   val muldiv  = Bool() // Is Mul || Div
   val csr     = Bool()
 
