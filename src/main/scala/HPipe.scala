@@ -19,6 +19,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
 
   val pipeIf  = Module(new PipeIf)
   val pipeId  = Module(new PipeId)
+  val pipeSg  = Module(new PipeSg)
   val pipeEx  = Module(new PipeEx)
   val pipeMem = Module(new PipeMem)
   val pipeWb  = Module(new PipeWb)
@@ -32,14 +33,14 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   pipeMem.io.memStore <> io.memStore
 
   // RegFile
-  pipeId.io.rs1Read <> regFile.io.reads(0)
-  pipeId.io.rs2Read <> regFile.io.reads(1)
+  pipeSg.io.rs1Read <> regFile.io.reads(0)
+  pipeSg.io.rs2Read <> regFile.io.reads(1)
   pipeIf.io.regRead <> regFile.io.reads(2)
   regFile.io.writes := pipeWb.io.regWrite
 
   // CSR
   pipeIf.io.csr := csrFile.io.csr
-  pipeId.io.csrRead <> csrFile.io.reads(0)
+  pipeSg.io.csrRead <> csrFile.io.reads(0)
   pipeEx.io.csrTransform <> csrFile.io.transforms(0)
   pipeWb.io.csrWrite <> csrFile.io.writes(0)
 
@@ -47,14 +48,15 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
 
   // Feed Forward
   pipeIf.io.stall :=
-    pipeWb.io.busy || pipeMem.io.busy || pipeEx.io.busy || pipeId.io.busy
+    pipeWb.io.busy || pipeMem.io.busy || pipeEx.io.busy || pipeSg.io.busy || pipeId.io.busy
 
   pipeIf.io.feedForwardId  := pipeId.io.feedForward
+  pipeIf.io.feedForwardSg  := pipeSg.io.feedForward
   pipeIf.io.feedForwardEx  := pipeEx.io.feedForward
   pipeIf.io.feedForwardMem := pipeMem.io.feedForward
 
-  pipeId.io.fromEx  := pipeEx.io.feedForward
-  pipeId.io.fromMem := pipeMem.io.feedForward
+  pipeSg.io.feedForwardEx  := pipeEx.io.feedForward
+  pipeSg.io.feedForwardMem := pipeMem.io.feedForward
 
   // Branch
   val branch = pipeEx.io.branch
@@ -70,13 +72,19 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   // Pipeline
   pipeId.io.fromIf := RegFlush(
     pipeIf.io.toId,
-    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeId.io.busy,
+    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeSg.io.busy &&
+      !pipeId.io.busy,
     pipeIf.io.busy || branch.redirect || trap,
   )
-  pipeEx.io.fromId := RegFlush(
-    pipeId.io.toEx,
-    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy,
+  pipeSg.io.fromId := RegFlush(
+    pipeId.io.toSg,
+    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeSg.io.busy,
     pipeId.io.busy || branch.redirect || trap,
+  )
+  pipeEx.io.fromSg := RegFlush(
+    pipeSg.io.toEx,
+    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy,
+    pipeSg.io.busy || branch.redirect || trap,
   )
   pipeMem.io.fromEx := RegFlush(
     pipeEx.io.toMem,
@@ -96,7 +104,8 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   if (io.debug.isDefined) {
     val dbg = io.debug.get
     dbg.pcIf  := pipeIf.io.toId.pc
-    dbg.pcId  := pipeId.io.toEx.pc
+    dbg.pcId  := pipeId.io.toSg.pc
+    dbg.pcSg  := pipeSg.io.toEx.pc
     dbg.pcEx  := pipeEx.io.toMem.pc
     dbg.pcMem := pipeMem.io.toWb.pc
     dbg.pcWb  := pipeWb.io.retire.pc

@@ -15,6 +15,7 @@ class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
 
   val feedForwardMem = Input(new DestInfo)
   val feedForwardEx  = Input(new DestInfo)
+  val feedForwardSg  = Input(new DestInfo)
   val feedForwardId  = Input(new DestInfo)
 
   val stall = Input(Bool())
@@ -82,10 +83,12 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   io.regRead.addr := rs1Addr
 
   val ffId  = io.feedForwardId
+  val ffSg  = io.feedForwardSg
   val ffEx  = io.feedForwardEx
   val ffMem = io.feedForwardMem
 
   val rs1InId  = ffId.gprMatch(rs1Addr)
+  val rs1InSg  = ffSg.gprMatch(rs1Addr)
   val rs1InEx  = ffEx.gprMatch(rs1Addr)
   val rs1InMem = ffMem.gprMatch(rs1Addr)
 
@@ -96,7 +99,7 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   )(io.regRead.data)
 
   // RS1 should be valid for JALR to take branch
-  val rs1Valid = !rs1InId && !rs1InEx
+  val rs1Valid = !rs1InId && !rs1InEx && !rs1InSg
 
   val brAddr = {
     val base = Mux(isJalr, rs1, pc)
@@ -122,7 +125,6 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   read.rs1Valid := rs1Valid
 
   val write  = predictor.io.write
-//   val branch = RegNext(io.fromEx)
   val branch = io.fromEx
   write.info     := branch.flags
   write.pc       := branch.pc
