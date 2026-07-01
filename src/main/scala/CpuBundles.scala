@@ -60,9 +60,9 @@ class OpFlags(implicit val p: HPipeParameters) extends Bundle {
   val ecall   = Bool() // Is ECall Inst
   val ebreak  = Bool() // Is EBreak Inst
   val mret    = Bool() // Is MRet Inst
-  
-  val muldiv  = Bool() // Is Mul || Div
-  val csr     = Bool()
+
+  val muldiv = Bool() // Is Mul || Div
+  val csr    = Bool()
 
   def isMem = ld || st
 }
@@ -149,6 +149,7 @@ class DebugRegFile(implicit p: HPipeParameters) extends Bundle {
 class DebugInfo(implicit val p: HPipeParameters) extends Bundle {
   val pcIf  = Addr()
   val pcId  = Addr()
+  val pcSg  = Addr()
   val pcEx  = Addr()
   val pcMem = Addr()
   val pcWb  = Addr()
@@ -191,6 +192,40 @@ class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val addr    = Addr() // Branch Address (if any)
   val csrAddr = CsrAddr()
   val csrSrc  = Word()
+
+  val funct = UInt(3.W)
+  val flags = new OpFlags()
+
+  val exception = new ExceptionInfo
+  val predInfo  = new BranchPredictInfo
+}
+
+class Id2SgIO(implicit p: HPipeParameters) extends PipeIO {
+  val pc = Addr()
+
+  val rs1Addr = XRegAddr()
+  val rs2Addr = XRegAddr()
+  val rdAddr  = XRegAddr()
+  val csrAddr = CsrAddr()
+
+  val decoded = new DecodeResult
+
+  val exception = new ExceptionInfo
+  val predInfo  = new BranchPredictInfo
+}
+
+class Sg2ExIO(implicit p: HPipeParameters) extends PipeIO {
+  val pc = Addr()
+
+  val rs1Addr = XRegAddr()
+  val rs2Addr = XRegAddr()
+  val rdAddr  = XRegAddr()
+  val csrAddr = CsrAddr()
+
+  val src1   = Word()
+  val src2   = Word()
+  val addr   = Addr() // Branch Address (if any)
+  val csrSrc = Word()
 
   val funct = UInt(3.W)
   val flags = new OpFlags()

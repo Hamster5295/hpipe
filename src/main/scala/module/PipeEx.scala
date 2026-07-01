@@ -7,7 +7,7 @@ import hpipe.ALUOp._
 import hpipe.BranchOp._
 
 class PipeExIO(implicit p: HPipeParameters) extends StageIO {
-  val fromId = Input(new Id2ExIO)
+  val fromSg = Input(new Sg2ExIO)
   val toMem  = Output(new Ex2MemIO)
 
   val csrTransform = Flipped(new CsrTransformPort)
@@ -18,7 +18,7 @@ class PipeExIO(implicit p: HPipeParameters) extends StageIO {
 
 class PipeEx(implicit val p: HPipeParameters) extends Module {
   val io     = IO(new PipeExIO)
-  val fromId = io.fromId
+  val fromId = io.fromSg
 
   // ALU op: ADD for mem/jal (address computation), funct for arithmetic.
   // Branch & CSR results are unused (brTake is direct, CSR uses csrSrc).
@@ -59,7 +59,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   )(alu.io.result)
 
   // Branch - dedicated comparators bypass ALU for shorter critical path
-  val pred   = io.fromId.predInfo
+  val pred   = io.fromSg.predInfo
   val brEq   = fromId.src1 === fromId.src2
   val brLt   = fromId.src1.asSInt < fromId.src2.asSInt
   val brLtu  = fromId.src1 < fromId.src2
@@ -99,7 +99,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   val toMem = io.toMem
   toMem.valid   := fromId.valid
   toMem.pc      := fromId.pc
-  toMem.rd      := fromId.rd
+  toMem.rd      := fromId.rdAddr
   toMem.funct   := fromId.funct
   toMem.data    := result
   toMem.addr    := fromId.addr
@@ -109,8 +109,8 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
 
   // Feed Forward
   val toId = io.feedForward
-  toId.gpr.valid     := fromId.flags.writeRd && fromId.rd.orR
-  toId.gpr.bits.addr := fromId.rd
+  toId.gpr.valid     := fromId.flags.writeRd && fromId.rdAddr.orR
+  toId.gpr.bits.addr := fromId.rdAddr
   toId.gpr.bits.data := result
   toId.gpr.bits.isLd := fromId.flags.ld
 
