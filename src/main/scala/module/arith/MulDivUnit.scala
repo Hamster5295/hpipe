@@ -32,7 +32,7 @@ class MulDivUnit(implicit val p: HPipeParameters) extends Module {
   mul.io.aSigned := io.op.in(Mul.asUInt, Mulh.asUInt, Mulhsu.asUInt)
   mul.io.bSigned := io.op.in(Mul.asUInt, Mulh.asUInt)
 
-  val div = Module(new IntNonRestoringDiv(32))
+  val div = Module(new IntNonRestoringDiv(32, p.UseArithMacro))
   div.io.dividend := io.src1
   div.io.divisor  := io.src2
   div.io.signed   := isSigned

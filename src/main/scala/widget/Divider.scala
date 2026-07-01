@@ -16,7 +16,7 @@ class IntDiv(width: Int) extends Bundle {
   val remainder = Output(UInt(width.W))
 }
 
-class IntNonRestoringDiv(width: Int) extends Module {
+class IntNonRestoringDiv(width: Int, useMacro: Boolean) extends Module {
   val io = IO(new IntDiv(width))
 
   val reg = RegZero(UInt((width * 2 + 1).W))
@@ -72,7 +72,8 @@ class IntNonRestoringDiv(width: Int) extends Module {
   val quo  = reg.end(width)
   val rem  = Mux(
     reg.msb(),
-    UIntCLA(width, 4)(reg(width * 2 - 1, width), divisorAbs, 0.B),
+    if (useMacro) reg(width * 2 - 1, width) + divisorAbs
+    else UIntCLA(width, 4)(reg(width * 2 - 1, width), divisorAbs, 0.B),
     reg(width * 2 - 1, width),
   )
 
