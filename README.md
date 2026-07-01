@@ -43,7 +43,7 @@ make asic
 
 ## Architecture
 
-This Core implements a classical 5-stage pipelined CPU.  
+This Core implements a 6-stage pipelined CPU.  
 
 Currently it supports RV32IM_izcsr, but more extensions are on the way.
 
@@ -58,6 +58,15 @@ The Penalty of branch miss is **2 cycles**.
 ### ID
 
 The ID stage decodes each instruction into uops that determines the behavour of EX and MEM stages.
+
+
+### SG
+
+The SG stage differs HPipe from classical 5-stage CPUs.  
+
+SG is short of "Source Generation", at which stage would the oprands for EX and MEM stages be generated through either reading `RegFile`, `CsrFile` or receiving from Feed-Forwards.
+
+This stage is introduced as timing is not sufficient for `Decoder` and Source Generation to work in the same stage.
 
 
 ### EX
@@ -85,13 +94,13 @@ The WB stage signals whether a valid instruction is retired.
 
 There're 2 primary paths to forward:
 
-1. ID
+1. SG
 
-The ID stage requires up-to-date source data (`rs1` & `rs2`). Thus, if `rs1` or `rs2` will be written by the instructions executing in EX or MEM stage, the dest data should be forwarded to ID.
+The SG stage requires up-to-date source data (`rs1` & `rs2`). Thus, if `rs1` or `rs2` will be written by the instructions executing in EX or MEM stage, the dest data should be forwarded to SG.
 
-- EX -> ID: No stalls/bubbles required
-- MEM -> ID: No stalls/bubbles required
-- EX(needs MEM) -> ID: 1 cycle's stall
+- EX -> SG: No stalls/bubbles required
+- MEM -> SG: No stalls/bubbles required
+- EX(needs MEM) -> SG: 1 cycle's stall
 
 
 2. IF
@@ -101,9 +110,9 @@ The IF stage requires `rs1` to generate the address of `JALR` to predict jump lo
 If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes branch; otherwise, BTB won't predict, as dest pc is not known for now.
 
 - ID -> IF: Will not predict
-- EX -> IF: Predict
+- SG -> IF: Will not predict
+- EX -> IF: Will not predict (Even though it can, this is for performance consideration)
 - MEM -> IF: Predict
-- EX(needs MEM) -> IF: Will not predict
 
 
 ## PPA
