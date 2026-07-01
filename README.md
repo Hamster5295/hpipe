@@ -112,11 +112,11 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 Characteristics were estimated using Xilinx part `xc7a200t`
 
-- Power = 2810mW
-- Clock Freq = 144.9MHz
+- Power = 431mW
+- Clock Freq = 151.5MHz
 - Utilization
-  - LUT = 3639
-  - FF  = 3026
+  - LUT = 3533
+  - FF  = 3205
   - DSP = 4
 
 
@@ -124,7 +124,7 @@ Characteristics were estimated using Xilinx part `xc7a200t`
 
 Characteristics were estimated using [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
 
-- Power = 7444mW
+- Power = 744.4mW
 - Clock Freq = 685.184MHz
 - Area = 30881.2nm2
 
