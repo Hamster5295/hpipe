@@ -18,52 +18,52 @@ class PipeExIO(implicit p: HPipeParameters) extends StageIO {
 
 class PipeEx(implicit val p: HPipeParameters) extends Module {
   val io     = IO(new PipeExIO)
-  val fromId = io.fromSg
+  val fromSg = io.fromSg
 
   // ALU op: ADD for mem/jal (address computation), funct for arithmetic.
   // Branch & CSR results are unused (brTake is direct, CSR uses csrSrc).
   val op = MuxIf(
-    (fromId.flags.isMem || fromId.flags.jal) -> Add,
-  )(fromId.funct.asTypeOf(ALUOp()))
+    (fromSg.flags.isMem || fromSg.flags.jal) -> Add,
+  )(fromSg.funct.asTypeOf(ALUOp()))
 
-  val aluInv = fromId.flags.aluInv
+  val aluInv = fromSg.flags.aluInv
 
   // ALU
   val alu = Module(new ArithUnit)
-  alu.io.src1 := fromId.src1
-  alu.io.src2 := fromId.src2
+  alu.io.src1 := fromSg.src1
+  alu.io.src2 := fromSg.src2
   alu.io.op   := op
   alu.io.inv  := aluInv
 
   // Mul & Div
   val mdu = Module(new MulDivUnit)
-  mdu.io.src1  := fromId.src1
-  mdu.io.src2  := fromId.src2
-  mdu.io.op    := fromId.funct
-  mdu.io.valid := fromId.flags.muldiv
+  mdu.io.src1  := fromSg.src1
+  mdu.io.src2  := fromSg.src2
+  mdu.io.op    := fromSg.funct
+  mdu.io.valid := fromSg.flags.muldiv
 
   // csr
   val csrTr   = io.csrTransform
   val csrData = MuxIf(
-    fromId.flags.mret -> ("b1_1000_1000".U ## fromId.csrSrc(7) ## "b000".U),
-    (fromId.funct === "b010".U) -> (fromId.src1 | fromId.csrSrc),
-  )(fromId.src1)
+    fromSg.flags.mret -> ("b1_1000_1000".U ## fromSg.csrSrc(7) ## "b000".U),
+    (fromSg.funct === "b010".U) -> (fromSg.src1 | fromSg.csrSrc),
+  )(fromSg.src1)
 
-  csrTr.addr := fromId.csrAddr
+  csrTr.addr := fromSg.csrAddr
   csrTr.data := csrData
   val csrResult = csrTr.result
 
   val result = MuxIf(
-    fromId.flags.csr    -> fromId.csrSrc,
-    fromId.flags.muldiv -> mdu.io.result,
+    fromSg.flags.csr    -> fromSg.csrSrc,
+    fromSg.flags.muldiv -> mdu.io.result,
   )(alu.io.result)
 
   // Branch - dedicated comparators bypass ALU for shorter critical path
   val pred   = io.fromSg.predInfo
-  val brEq   = fromId.src1 === fromId.src2
-  val brLt   = fromId.src1.asSInt < fromId.src2.asSInt
-  val brLtu  = fromId.src1 < fromId.src2
-  val brTake = fromId.flags.br && MuxLookup(fromId.funct, false.B)(Seq(
+  val brEq   = fromSg.src1 === fromSg.src2
+  val brLt   = fromSg.src1.asSInt < fromSg.src2.asSInt
+  val brLtu  = fromSg.src1 < fromSg.src2
+  val brTake = fromSg.flags.br && MuxLookup(fromSg.funct, false.B)(Seq(
     EQ.asUInt  -> brEq,
     NE.asUInt  -> !brEq,
     LT.asUInt  -> brLt,
@@ -72,15 +72,15 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
     GEU.asUInt -> !brLtu,
   ))
   val brMiss   = brTake ^ pred.brTake
-  val jalrMiss = !(fromId.addr === pred.target)
+  val jalrMiss = !(fromSg.addr === pred.target)
 
   io.branch.flags    := pred.flags
-  io.branch.pc       := fromId.pc
+  io.branch.pc       := fromSg.pc
   io.branch.redirect :=
     (brMiss && pred.flags.isBr) || (jalrMiss && pred.flags.isJalr)
   io.branch.target := Mux(
     (pred.flags.isBr && brTake) || pred.flags.isJalr,
-    fromId.addr,
+    fromSg.addr,
     pred.defaultTarget,
   )
   io.branch.brTake   := brTake
@@ -90,33 +90,33 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   val excp = io.toMem.exception
 
   val brMisaligned =
-    fromId.flags.br && io.branch.target.end(if (p.ExtC) 1 else 2).orR
+    fromSg.flags.br && io.branch.target.end(if (p.ExtC) 1 else 2).orR
 
-  excp.valid := fromId.exception.valid | brMisaligned
-  excp.cause := Mux(brMisaligned, 0.U, fromId.exception.cause)
+  excp.valid := fromSg.exception.valid | brMisaligned
+  excp.cause := Mux(brMisaligned, 0.U, fromSg.exception.cause)
 
   // To Mem
   val toMem = io.toMem
-  toMem.valid   := fromId.valid
-  toMem.pc      := fromId.pc
-  toMem.rd      := fromId.rdAddr
-  toMem.funct   := fromId.funct
+  toMem.valid   := fromSg.valid
+  toMem.pc      := fromSg.pc
+  toMem.rd      := fromSg.rdAddr
+  toMem.funct   := fromSg.funct
   toMem.data    := result
-  toMem.addr    := fromId.addr
-  toMem.flags   := fromId.flags
-  toMem.csrAddr := fromId.csrAddr
+  toMem.addr    := fromSg.addr
+  toMem.flags   := fromSg.flags
+  toMem.csrAddr := fromSg.csrAddr
   toMem.csrData := csrResult
 
   // Feed Forward
   val toId = io.feedForward
-  toId.gpr.valid     := fromId.flags.writeRd && fromId.rdAddr.orR
-  toId.gpr.bits.addr := fromId.rdAddr
+  toId.gpr.valid     := fromSg.flags.writeRd && fromSg.rdAddr.orR
+  toId.gpr.bits.addr := fromSg.rdAddr
   toId.gpr.bits.data := result
-  toId.gpr.bits.isLd := fromId.flags.ld
+  toId.gpr.bits.isLd := fromSg.flags.ld
 
-  toId.csr.valid     := fromId.flags.csr && fromId.csrAddr.orR
-  toId.csr.bits.addr := fromId.csrAddr
+  toId.csr.valid     := fromSg.flags.csr && fromSg.csrAddr.orR
+  toId.csr.bits.addr := fromSg.csrAddr
   toId.csr.bits.data := csrResult
 
-  io.busy := Mux(fromId.flags.muldiv, mdu.io.busy, false.B)
+  io.busy := Mux(fromSg.flags.muldiv, mdu.io.busy, false.B)
 }
