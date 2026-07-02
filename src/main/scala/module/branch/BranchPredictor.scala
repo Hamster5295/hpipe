@@ -4,7 +4,6 @@ import chisel3._
 import chisel3.util._
 import hammer._
 import hammer.model.Fixed
-import os.Source.WritableSource
 
 class BranchReadPort(implicit val p: HPipeParameters) extends Bundle {
   val pc            = Input(Addr())
