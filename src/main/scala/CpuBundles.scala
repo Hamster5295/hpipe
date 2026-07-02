@@ -221,11 +221,14 @@ class Sg2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val rs2Addr = XRegAddr()
   val rdAddr  = XRegAddr()
   val csrAddr = CsrAddr()
+//   val addr    = Addr() // Branch Address (if any)
 
   val src1   = Word()
   val src2   = Word()
-  val addr   = Addr() // Branch Address (if any)
   val csrSrc = Word()
+
+  val addrBase = Addr()
+  val imm = Word()
 
   val funct = UInt(3.W)
   val flags = new OpFlags()

@@ -20,6 +20,8 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   val io     = IO(new PipeExIO)
   val fromSg = io.fromSg
 
+  val addr = fromSg.addrBase +% fromSg.imm
+
   // ALU op: ADD for mem/jal (address computation), funct for arithmetic.
   // Branch & CSR results are unused (brTake is direct, CSR uses csrSrc).
   val op = MuxIf(
@@ -72,7 +74,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
     GEU.asUInt -> !brLtu,
   ))
   val brMiss   = brTake ^ pred.brTake
-  val jalrMiss = !(fromSg.addr === pred.target)
+  val jalrMiss = !(addr === pred.target)
 
   io.branch.flags    := pred.flags
   io.branch.pc       := fromSg.pc
@@ -80,7 +82,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
     (brMiss && pred.flags.isBr) || (jalrMiss && pred.flags.isJalr)
   io.branch.target := Mux(
     (pred.flags.isBr && brTake) || pred.flags.isJalr,
-    fromSg.addr,
+    addr,
     pred.defaultTarget,
   )
   io.branch.brTake   := brTake
@@ -102,7 +104,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   toMem.rd      := fromSg.rdAddr
   toMem.funct   := fromSg.funct
   toMem.data    := result
-  toMem.addr    := fromSg.addr
+  toMem.addr    := addr
   toMem.flags   := fromSg.flags
   toMem.csrAddr := fromSg.csrAddr
   toMem.csrData := csrResult

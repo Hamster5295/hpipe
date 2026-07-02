@@ -72,9 +72,10 @@ class PipeSg(implicit p: HPipeParameters) extends Module {
       Src2.Four -> 4.U,
     ),
   )
-
-  toEx.addr   := Mux(decoded.useRs1ForAddr, rs1, fromId.pc) +% decoded.imm
   toEx.csrSrc := csrSrc
+
+  toEx.addrBase := Mux(decoded.useRs1ForAddr, rs1, fromId.pc)
+  toEx.imm      := decoded.imm
 
   toEx.funct     := decoded.funct
   toEx.flags     := decoded.flags

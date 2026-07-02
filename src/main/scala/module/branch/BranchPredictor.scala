@@ -44,9 +44,9 @@ class BranchPredictor(implicit val p: HPipeParameters) extends Module {
 
   val info = io.read.info
   io.read.target := MuxIf(
+    info.isBr                                         -> hist.io.read.target,
     ((info.isJalr && io.read.rs1Valid) || info.isJal) -> io.read.brAddr,
     info.isRet                                        -> ras.io.read.target,
-    info.isBr                                         -> hist.io.read.target,
   )(io.read.defaultTarget)
   io.read.brTake := hist.io.read.brTake
 }
