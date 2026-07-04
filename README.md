@@ -152,6 +152,8 @@ However, after M extension was implemented, the `yosys` takes too long to synthe
 - [x] Yosys-based backend analysis
 - [x] Branch Prediction & Optimized Branch Penalty
 - [x] CSRs supporting M mode
+- [ ] PLIC & CLINT
+- [ ] Zephyr OS
 - [ ] L1 Cache & TLB
 - [ ] AXI Bus
 - [x] Coremark Bench
@@ -160,9 +162,11 @@ However, after M extension was implemented, the `yosys` takes too long to synthe
 1. HPipe under simulation, passing every isa test in `riscv-tests`
 ![HPipe under simulation, passing every isa test in `riscv-tests`](docs/assets/sim.png)
 
-1. Waveform of a running HPipe
+2. Waveform of a running HPipe
 ![Waveform when HPipe is running](docs/assets/waveform.png)
 
+3. Coremark result ran by HPipe
+![Coremark result ran by HPipe](docs/assets/coremark.png)
 
 ## Acknowledgements
 
