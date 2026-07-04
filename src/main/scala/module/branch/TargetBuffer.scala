@@ -21,45 +21,61 @@ class TargetBufferIO(implicit p: HPipeParameters) extends Bundle {
 }
 
 class TargetBuffer(implicit p: HPipeParameters) extends Module {
-  val indexWidth = log2Ceil(p.TargetBuf.Size)
+  val ways            = p.TargetBuf.Ways
+  val groups          = p.TargetBuf.Size / ways
+  val groupIndexWidth = log2Ceil(groups)
+  val tagWidth        = p.TargetBuf.TagWidth
+  val skipPcBits      = if (p.ExtC) 1 else 2
 
-  val io         = IO(new TargetBufferIO)
-  val query      = io.pc.end(p.TargetBuf.TagWidth)
-  val writeQuery = io.writePc.end(p.TargetBuf.TagWidth)
+  val io = IO(new TargetBufferIO)
 
-  val entries = RegZero(Vec(p.TargetBuf.Size, new TargetEntry))
-  val plru    = Module(new PseudoLruSelector(p.TargetBuf.Size))
+  val pc      = io.pc.head(p.AddrWidth - skipPcBits)
+  val writePc = io.writePc.head(p.AddrWidth - skipPcBits)
+
+  val groupIdx      = pc.end(groupIndexWidth)
+  val tag           = pc.span(groupIndexWidth, tagWidth)
+  val writeGroupIdx = writePc.end(groupIndexWidth)
+  val writeTag      = writePc.span(groupIndexWidth, tagWidth)
+
+  val entries = RegZero(Vec(groups, Vec(ways, new TargetEntry)))
+  val plrus   = Seq.fill(groups)(Module(new PseudoLruSelector(ways)))
 
   // Read
-  val hits = entries.withIndex(indexWidth).map(e =>
-    (e.bits.valid && e.bits.tag === query) ## e.index ## e.bits.target,
-  )
-  val hitEntry = hits.treeReduce((_, l, r) =>
-    Mux(l.msb(), l, r),
-  )
-  io.hit    := hitEntry.msb()
-  io.target := hitEntry.tail(1 + indexWidth)
-  val hitIndex = hitEntry.get(-1, -indexWidth)
+  val readGroup = entries(groupIdx)
+  val hits      = VecInit(readGroup.map(g => g.valid && g.tag === tag))
+  val hit       = hits.asUInt.orR
+  val hitIndex  = OHToUInt(hits)
 
-  plru.io.hitValid := hitEntry.msb()
-  plru.io.hitIndex := hitIndex
+  io.hit    := hit
+  io.target := readGroup(hitIndex).target
 
-  // Write
-  val wen       = io.writeEnable
-  val writeHits = entries.map(e => e.valid && e.tag === writeQuery)
-  val writeHit  = writeHits.asUInt.orR
-
-  val replaces = entries.zipWithIndex.map { case (e, idx) =>
-    val hit     = writeHits(idx)
-    val replace = !writeHit && plru.io.replaceIndex === idx.U
-
-    e.valid  := e.valid || (wen && replace)
-    e.tag    := Mux(wen && replace, writeQuery, e.tag)
-    e.target := MuxIf(
-      !wen             -> e.target,
-      (hit || replace) -> io.writeData,
-    )(e.target)
+  plrus.zipWithIndex.map { case (plru, idx) =>
+    val valid = groupIdx === idx.U
+    plru.io.hitValid := valid && hit
+    plru.io.hitIndex := hitIndex
   }
 
-  plru.io.replaceValid := wen && !writeHit
+  // Write
+  val writeGroup = entries(writeGroupIdx)
+  val writeHits  = VecInit(writeGroup.map(g => g.valid && g.tag === writeTag))
+  val writeHit   = writeHits.asUInt.orR
+  val writeHitIndex = OHToUInt(writeHits)
+
+  val replace = writeGroup.zipWithIndex.map { case (entry, idx) =>
+    val change  = writeHit && writeHitIndex === idx.U
+    val replace = !writeHit &&
+      plrus.map(_.io.replaceIndex).asVec(writeGroupIdx) === idx.U
+
+    entry.valid  := io.writeEnable && replace || entry.valid
+    entry.tag    := Mux(io.writeEnable && replace, writeTag, entry.tag)
+    entry.target :=
+      Mux(io.writeEnable && (replace || change), io.writeData, entry.target)
+
+    io.writeEnable && replace
+  }.asUInt.orR
+
+  plrus.zipWithIndex.map { case (plru, idx) =>
+    val valid = writeGroupIdx === idx.U
+    plru.io.replaceValid := replace
+  }
 }
