@@ -9,7 +9,12 @@ trait HasRetAddrStackParameter {
   val config = p.RetAddrStack
 }
 
-class RetAddrStackIO(implicit p: HPipeParameters) extends BranchPredictorIO
+class RetAddrStackIO(implicit p: HPipeParameters) extends Bundle {
+  val target = Output(Addr())
+
+  val flags       = Input(new BranchFlags)
+  val writeTarget = Input(Addr())
+}
 
 class RetAddrStack(implicit val p: HPipeParameters) extends Module
     with HasRetAddrStackParameter {
@@ -19,20 +24,18 @@ class RetAddrStack(implicit val p: HPipeParameters) extends Module
   val ptr   = RegZero(UInt(config.PtrWidth.W))
 
   val stackTop = ptr -% 1.U
+  io.target := stack(stackTop)
 
   // Write
-  val write = io.write.info.isCall
-  stack(ptr) := io.write.callAddr
+  val push = io.flags.isCall
+  val pop  = io.flags.isRet
+  stack(ptr) := io.writeTarget
 
-  // Read
-  val read = io.read.info.isRet
-  io.read.target := stack(stackTop)
-
-  ptr := MuxIf(
-    (read && write) -> ptr,
-    read            -> stackTop,
-    write           -> (ptr +% 1.U),
-  )(ptr)
-
-  io.read.brTake := false.B
+  ptr := Mux1H(
+    Seq(
+      push            -> (ptr +% 1.U),
+      pop             -> (ptr -% 1.U),
+      (!push && !pop) -> ptr,
+    ),
+  )
 }

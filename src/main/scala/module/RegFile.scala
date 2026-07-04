@@ -15,7 +15,7 @@ class RegFileWritePort(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class RegFileIO(implicit val p: HPipeParameters) extends Bundle {
-  val reads  = Vec(3, new RegFileReadPort)
+  val reads  = Vec(2, new RegFileReadPort)
   val writes = new RegFileWritePort
 
   val regs = Output(Vec(p.XLEN - 1, Word()))

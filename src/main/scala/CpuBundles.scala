@@ -68,32 +68,32 @@ class OpFlags(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class BranchInfo(implicit val p: HPipeParameters) extends Bundle {
+  val valid = Bool()
+
+  val pc    = Addr()
   val flags = new BranchFlags()
 
-  val pc       = Addr()
-  val redirect = Bool()
-  val target   = Addr()
+  val take   = Bool()
+  val target = Addr()
 
-  val brTake   = Bool()
-  val callAddr = Addr()
+  val redirect       = Bool()
+  val redirectTarget = Addr()
 }
 
 class BranchFlags(implicit val p: HPipeParameters) extends Bundle {
-  val isJalr = Bool()
   val isJal  = Bool()
-  val isBr   = Bool()
   val isCall = Bool()
   val isRet  = Bool()
+
+  def isStack = isCall || isRet
 }
 
 class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
   val flags = new BranchFlags
 
-  val jalrSrc = XRegAddr()
-  val brTake  = Bool()
-
-  val defaultTarget = Addr()
-  val target        = Addr()
+  val take   = Bool()
+  val target = Addr()
+  val stepPc = Addr()
 }
 
 class RetireInfo(implicit val p: HPipeParameters) extends Bundle {
@@ -228,7 +228,7 @@ class Sg2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val csrSrc = Word()
 
   val addrBase = Addr()
-  val imm = Word()
+  val imm      = Word()
 
   val funct = UInt(3.W)
   val flags = new OpFlags()

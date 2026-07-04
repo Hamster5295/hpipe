@@ -87,11 +87,11 @@ class Decoder(implicit p: HPipeParameters) extends Module {
     InstInfo(BLTU,   B,   Src1.Reg,  Src2.Reg,  br = true, rd = false),
     InstInfo(BGEU,   B,   Src1.Reg,  Src2.Reg,  br = true, rd = false),
 
-    InstInfo(LB,     I,   Src1.None, Src2.Reg,  ld = true, useRs1ForAddr = true),
-    InstInfo(LH,     I,   Src1.None, Src2.Reg,  ld = true, useRs1ForAddr = true),
-    InstInfo(LW,     I,   Src1.None, Src2.Reg,  ld = true, useRs1ForAddr = true),
-    InstInfo(LBU,    I,   Src1.None, Src2.Reg,  ld = true, useRs1ForAddr = true),
-    InstInfo(LHU,    I,   Src1.None, Src2.Reg,  ld = true, useRs1ForAddr = true),
+    InstInfo(LB,     I,   Src1.None, Src2.None, ld = true, useRs1ForAddr = true),
+    InstInfo(LH,     I,   Src1.None, Src2.None, ld = true, useRs1ForAddr = true),
+    InstInfo(LW,     I,   Src1.None, Src2.None, ld = true, useRs1ForAddr = true),
+    InstInfo(LBU,    I,   Src1.None, Src2.None, ld = true, useRs1ForAddr = true),
+    InstInfo(LHU,    I,   Src1.None, Src2.None, ld = true, useRs1ForAddr = true),
 
     InstInfo(SB,     S,   Src1.None, Src2.Reg,  st = true, rd = false, useRs1ForAddr = true),
     InstInfo(SH,     S,   Src1.None, Src2.Reg,  st = true, rd = false, useRs1ForAddr = true),
@@ -179,7 +179,7 @@ class Decoder(implicit p: HPipeParameters) extends Module {
   io.result.imm   := imm
   io.result.flags := flags
 
-  io.result.useRs1 := src1 === Src1.Reg || useRs1ForAddr
-  io.result.useRs2 := src2 === Src2.Reg
+  io.result.useRs1        := src1 === Src1.Reg || useRs1ForAddr
+  io.result.useRs2        := src2 === Src2.Reg
   io.result.useRs1ForAddr := useRs1ForAddr
 }

@@ -35,9 +35,9 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   toSg.valid := io.fromIf.valid
 
   // Regs & Imm
-  toSg.rs1Addr     := rs1Addr
-  toSg.rs2Addr     := rs2Addr
-  toSg.rdAddr      := rdAddr
+  toSg.rs1Addr := rs1Addr
+  toSg.rs2Addr := rs2Addr
+  toSg.rdAddr  := rdAddr
   toSg.decoded := decoded
 
   toSg.decoded.useRs1 := decoded.useRs1 && rs1Addr.orR
