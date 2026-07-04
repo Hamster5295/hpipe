@@ -50,9 +50,12 @@ Currently it supports RV32IM_izcsr, but more extensions are on the way.
 
 ### IF & BTB
 
-The IF stage involves a 16-entry BTB with 2-bit saturation counters for each entry, adopting **PLRU** substitution strategy.
+The IF stage involves a mixture of branch prediction modules:
+- `TargetBuffer`: A address cache that stores branch target, adopting a 2-way group assosiation
+- `HistTable`: 2-bit saturation counters for prediction of b-class instructions (`beq`, `bne`, etc.)
+- `RetAddrStack`: A LIFO stack that pushes and pops function exits
 
-The Penalty of branch miss is **2 cycles**.
+The Penalty of branch miss is **3 cycles**.
 
 
 ### ID
@@ -121,11 +124,11 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 Characteristics were estimated using Xilinx part `xc7a200t`
 
-- Power = 431mW
-- Clock Freq = 151.5MHz
+- Power = 525mW
+- Clock Freq = 166.7MHz
 - Utilization
-  - LUT = 3533
-  - FF  = 3205
+  - LUT = 4432
+  - FF  = 4722
   - DSP = 4
 
 

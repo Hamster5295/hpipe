@@ -52,7 +52,7 @@ barebones_clock() { return rtc_get(); }
    does not occur. If there are issues with the return value overflowing,
    increase this value.
         */
-#define CLOCKS_PER_SEC 100000000
+#define CLOCKS_PER_SEC 166666666
 #define GETMYTIME(_t) (*_t = barebones_clock())
 #define MYTIMEDIFF(fin, ini) ((fin) - (ini))
 #define TIMER_RES_DIVIDER 1
