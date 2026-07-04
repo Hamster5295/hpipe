@@ -44,6 +44,7 @@ class BranchPredictor(implicit p: HPipeParameters) extends Module {
 
   val ras = Module(new RetAddrStack)
   ras.io.flags       := io.read.flags
+  ras.io.writeEnable := io.write.valid
   ras.io.writeTarget := io.write.target
 
   io.read.take :=
