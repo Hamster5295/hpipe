@@ -35,7 +35,6 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   // RegFile
   pipeSg.io.rs1Read <> regFile.io.reads(0)
   pipeSg.io.rs2Read <> regFile.io.reads(1)
-  pipeIf.io.regRead <> regFile.io.reads(2)
   regFile.io.writes := pipeWb.io.regWrite
 
   // CSR
@@ -48,7 +47,8 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
 
   // Feed Forward
   pipeIf.io.stall :=
-    pipeWb.io.busy || pipeMem.io.busy || pipeEx.io.busy || pipeSg.io.busy || pipeId.io.busy
+    pipeWb.io.busy || pipeMem.io.busy || pipeEx.io.busy || pipeSg.io.busy ||
+      pipeId.io.busy
 
   pipeIf.io.feedForwardId  := pipeId.io.feedForward
   pipeIf.io.feedForwardSg  := pipeSg.io.feedForward
@@ -145,7 +145,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
     dbg.regInfo.t5   := regFile.io.regs(29)
     dbg.regInfo.t6   := regFile.io.regs(30)
 
-    dbg.branch     := branch.flags.isBr || branch.flags.isJalr
+    dbg.branch     := branch.valid
     dbg.branchMiss := branch.redirect
 
     dbg.csr := csrFile.io.csr

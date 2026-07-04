@@ -20,22 +20,19 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   val io     = IO(new PipeExIO)
   val fromSg = io.fromSg
 
+  // The addr for branch & mem insts
   val addr = fromSg.addrBase +% fromSg.imm
-
-  // ALU op: ADD for mem/jal (address computation), funct for arithmetic.
-  // Branch & CSR results are unused (brTake is direct, CSR uses csrSrc).
-  val op = MuxIf(
-    (fromSg.flags.isMem || fromSg.flags.jal) -> Add,
-  )(fromSg.funct.asTypeOf(ALUOp()))
-
-  val aluInv = fromSg.flags.aluInv
 
   // ALU
   val alu = Module(new ArithUnit)
   alu.io.src1 := fromSg.src1
   alu.io.src2 := fromSg.src2
-  alu.io.op   := op
-  alu.io.inv  := aluInv
+  alu.io.op   := Mux(
+    fromSg.flags.isMem || fromSg.flags.jal,
+    Add,
+    fromSg.funct.asTypeOf(ALUOp()),
+  )
+  alu.io.inv := fromSg.flags.aluInv
 
   // Mul & Div
   val mdu = Module(new MulDivUnit)
@@ -73,20 +70,18 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
     LTU.asUInt -> brLtu,
     GEU.asUInt -> !brLtu,
   ))
-  val brMiss   = brTake ^ pred.brTake
-  val jalrMiss = !(addr === pred.target)
 
-  io.branch.flags    := pred.flags
-  io.branch.pc       := fromSg.pc
-  io.branch.redirect :=
-    (brMiss && pred.flags.isBr) || (jalrMiss && pred.flags.isJalr)
-  io.branch.target := Mux(
-    (pred.flags.isBr && brTake) || pred.flags.isJalr,
-    addr,
-    pred.defaultTarget,
-  )
-  io.branch.brTake   := brTake
-  io.branch.callAddr := alu.io.result // CALL will always take the alu result
+  val realTarget = Mux(fromSg.flags.br && !brTake, pred.stepPc, addr)
+  val branchMiss = !(realTarget === Mux(pred.take, pred.target, pred.stepPc))
+
+  io.branch.valid          := fromSg.flags.br || fromSg.flags.jal
+  io.branch.pc             := fromSg.pc
+  io.branch.flags          := pred.flags
+  io.branch.take           := brTake
+  io.branch.target         := addr       // Addr is the branch target when taken
+  io.branch.redirect       := branchMiss && io.branch.valid
+  io.branch.redirectTarget := realTarget // realTarget is the actual branch
+  // (When br condition not met, realTarget falls to pc + 4)
 
   // Exception
   val excp = io.toMem.exception

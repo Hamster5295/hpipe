@@ -54,8 +54,6 @@ class CSA(width: Int) extends Module {
   io.co := co.asUInt.tail(1)
 }
 
-
-
 class IntBoothMul(width: Int) extends IntMul(width) {
 
   val cnt = ((width + 1f) / 2).ceil.toInt

@@ -3,6 +3,7 @@ package hpipe
 import chisel3._
 import chisel3.util.log2Ceil
 import hammer._
+import scala.annotation.meta.param
 
 case class HPipeParameters(
     val Debug:         Boolean = false,
@@ -19,25 +20,27 @@ case class HPipeParameters(
     val ExtC: Boolean = false,
 
     // Branch
-    val HistBuf:      HistBufferParameters = HistBufferParameters(),
+    val TargetBuf:    TargetBufferParameters = TargetBufferParameters(),
+    val HistTable:    HistoryTableParameters = HistoryTableParameters(),
     val RetAddrStack: RetAddrStackParameters = RetAddrStackParameters(),
 ) {
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth
 }
 
-case class HistBufferParameters(
-    val PCLen:      Int = 16,
-    val Count:      Int = 32,
-    val CnterWidth: Int = 2,
-    val LruWidth:   Int = 8,
-) {
-  val PtrWidth = log2Ceil(Count)
-}
+case class TargetBufferParameters(
+    val Size:     Int = 32,
+    val TagWidth: Int = 16,
+)
+
+case class HistoryTableParameters(
+    val Size:        Int = 256,
+    val RecordWidth: Int = 2,
+)
 
 case class RetAddrStackParameters(
     val Depth: Int = 8,
-    val PCLen: Int = 16,
+    val TagWidth: Int = 16,
 ) {
   val PtrWidth = log2Ceil(Depth)
 }

@@ -64,5 +64,5 @@ object Insts {
   val CSRRCI = BitPat("b?????????????????111?????1110011")
 
   // Trap Return
-  val MRET   = BitPat("b00110000001000000000000001110011")
+  val MRET = BitPat("b00110000001000000000000001110011")
 }

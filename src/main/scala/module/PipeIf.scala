@@ -7,8 +7,7 @@ import hammer._
 import hpipe.Insts._
 
 class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
-  val fetch   = new InstFetchIO
-  val regRead = Flipped(new RegFileReadPort)
+  val fetch = new InstFetchIO
 
   val toId   = Output(new If2IdIO)
   val fromEx = Input(new BranchInfo)
@@ -33,37 +32,28 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   val inst = io.fetch.inst
 
   def parse(
-      br:   Boolean,
       jal:  Boolean,
       jalr: Boolean,
       mret: Boolean,
   ) =
     BitPat(
-      s"b${if (br) 1 else 0}"
-        ++ s"${if (jal) 1 else 0}"
+      s"b${if (jal) 1 else 0}"
         ++ s"${if (jalr) 1 else 0}"
         ++ s"${if (mret) 1 else 0}",
     )
 
   val table = TruthTable(
     Map(
-      JAL  -> parse(false, true, false, false),
-      JALR -> parse(false, false, true, false),
-      BEQ  -> parse(true, false, false, false),
-      BNE  -> parse(true, false, false, false),
-      BLT  -> parse(true, false, false, false),
-      BGE  -> parse(true, false, false, false),
-      BLTU -> parse(true, false, false, false),
-      BGEU -> parse(true, false, false, false),
-      MRET -> parse(false, false, false, true),
+      JAL  -> parse(true, false, false),
+      JALR -> parse(false, true, false),
+      MRET -> parse(false, false, true),
     ),
     BitPat.N(4),
   )
   val decoded = decoder(inst, table)
-  val isBr    = decoded.msb()
-  val isJal   = decoded.msb(1)
-  val isJalr  = decoded.msb(2)
-  val isMRet  = decoded.msb(3)
+  val isJal   = decoded.msb()
+  val isJalr  = decoded.msb(1)
+  val isMRet  = decoded.msb(2)
 
   val imm = MuxIf(
     isJalr -> SignExt(inst(31, 20), 32),
@@ -71,67 +61,41 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
       inst(31) ## inst(19, 12) ## inst(20) ## inst(30, 21) ## 0.U(1.W),
       32,
     ),
-    isBr -> SignExt(
-      inst(31) ## inst(7) ## inst(30, 25) ## inst(11, 8) ## 0.U(1.W),
-      32,
-    ),
   )(0.U)
 
   // Addr Gen
   val rs1Addr = inst(19, 15)
   val rdAddr  = inst(11, 7)
-  io.regRead.addr := rs1Addr
 
+  val jalAddr = pc +% imm
+
+  val predictor = Module(new BranchPredictor)
+  val brRead    = predictor.io.read
+  brRead.pc           := pc
+  brRead.flags.isJal  := isJal
+  brRead.flags.isCall := (isJal || isJalr) && (rdAddr === 1.U || rdAddr === 5.U)
+  brRead.flags.isRet  :=
+    (isJalr
+      && !(rs1Addr === rdAddr)
+      && (rs1Addr === 1.U || rs1Addr === 5.U)
+      && !inst(31, 20).orR)
+  brRead.jalAddr := jalAddr
+
+  val brWrite = predictor.io.write
+  brWrite.pc     := io.fromEx.pc
+  brWrite.flags  := io.fromEx.flags
+  brWrite.valid  := io.fromEx.valid
+  brWrite.target := io.fromEx.target
+  brWrite.take   := io.fromEx.take
+
+  // Csr Forwarding
   val ffId  = io.feedForwardId
   val ffSg  = io.feedForwardSg
   val ffEx  = io.feedForwardEx
   val ffMem = io.feedForwardMem
 
-  val rs1InId  = ffId.gprMatch(rs1Addr)
-  val rs1InSg  = ffSg.gprMatch(rs1Addr)
-  val rs1InEx  = ffEx.gprMatch(rs1Addr)
-  val rs1InMem = ffMem.gprMatch(rs1Addr)
-
-  val rs1 = MuxIf(
-    // Here we ignore feedback from ex stage as timing is not sufficient
-    // This has little influence on branch miss rate
-    rs1InMem -> ffMem.gpr.bits.data,
-  )(io.regRead.data)
-
-  // RS1 should be valid for JALR to take branch
-  val rs1Valid = !rs1InId && !rs1InEx && !rs1InSg
-
-  val brAddr = {
-    val base = Mux(isJalr, rs1, pc)
-    if (p.UseArithMacro) (base +% imm).end(32)
-    else UIntCLA(32)(base, imm, 0.B).end(32)
-  }
-
-  val predictor = Module(new BranchPredictor)
-  val read      = predictor.io.read
-  read.pc            := pc
-  read.brAddr        := brAddr
-  read.defaultTarget := pc +% 4.U
-  read.info.isJalr   := isJalr
-  read.info.isJal    := isJal
-  read.info.isBr     := isBr
-  read.info.isCall   :=
-    (isJal || isJalr) && (rdAddr === 1.U || rdAddr === 5.U)
-  read.info.isRet :=
-    (isJalr
-      && !(rs1Addr === rdAddr)
-      && (rs1Addr === 1.U || rs1Addr === 5.U)
-      && !inst(31, 20).orR)
-  read.rs1Valid := rs1Valid
-
-  val write  = predictor.io.write
-  val branch = io.fromEx
-  write.info     := branch.flags
-  write.pc       := branch.pc
-  write.brTake   := branch.brTake
-  write.callAddr := branch.callAddr
-
   val mepcInId  = ffId.csrMatch(CsrAddr.MEPC)
+  val mepcInSg  = ffSg.csrMatch(CsrAddr.MEPC)
   val mepcInEx  = ffEx.csrMatch(CsrAddr.MEPC)
   val mepcInMem = ffMem.csrMatch(CsrAddr.MEPC)
 
@@ -140,18 +104,19 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
     mepcInMem -> ffMem.csr.bits.data,
   )(io.csr.mepc)
 
-  val mepcValid = !mepcInId
+  val mepcValid = !mepcInId && !mepcInSg
 
-  val nextpc = MuxIf(
+  val stepPc = pc +% 4.U
+  val nextPc = MuxIf(
     // We don't need feed-forward here, as trap will flush everything
-    io.trap                -> io.csr.mtvec,
-    (isMRet && !mepcValid) -> pc,
-    isMRet                 -> mepc,
-    io.stall               -> pc,
-    io.fromEx.redirect     -> io.fromEx.target,
-  )(predictor.io.read.target)
+    io.trap               -> io.csr.mtvec,
+    (isMRet && mepcValid) -> mepc,
+    io.stall              -> pc,
+    io.fromEx.redirect    -> io.fromEx.redirectTarget,
+    brRead.take           -> brRead.target,
+  )(stepPc)
 
-  pc            := nextpc
+  pc            := nextPc
   io.fetch.addr := pc
 
   val toId = io.toId
@@ -159,11 +124,11 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   toId.pc    := pc
   toId.inst  := io.fetch.inst
 
-  toId.prediction.flags         := predictor.io.read.info
-  toId.prediction.jalrSrc       := rs1Addr
-  toId.prediction.brTake        := predictor.io.read.brTake
-  toId.prediction.defaultTarget := predictor.io.read.defaultTarget
-  toId.prediction.target        := predictor.io.read.target
+  val pred = toId.prediction
+  pred.flags  := brRead.flags
+  pred.take   := brRead.take
+  pred.target := brRead.target
+  pred.stepPc := stepPc
 
   io.busy := isMRet && !mepcValid
 }

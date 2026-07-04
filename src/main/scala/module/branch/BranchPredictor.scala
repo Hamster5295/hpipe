@@ -3,49 +3,53 @@ package hpipe
 import chisel3._
 import chisel3.util._
 import hammer._
-import hammer.model.Fixed
 
-class BranchReadPort(implicit val p: HPipeParameters) extends Bundle {
-  val pc            = Input(Addr())
-  val defaultTarget = Input(Addr())
-  val brAddr        = Input(Addr())
+class BranchPort(implicit p: HPipeParameters) extends Bundle {
+  val pc    = Input(Addr())
+  val flags = Input(new BranchFlags)
+}
 
-  val info     = Input(new BranchFlags)
-  val rs1Valid = Input(Bool())
-
+class BranchReadPort(implicit p: HPipeParameters) extends BranchPort {
   val target = Output(Addr())
-  val brTake = Output(Bool())
+  val take   = Output(Bool())
+
+  val jalAddr = Input(Addr())
 }
 
-class BranchWritePort(implicit val p: HPipeParameters) extends Bundle {
-  val pc       = Input(Addr())
-  val brTake   = Input(Bool())
-  val callAddr = Input(Addr())
-
-  val info = Input(new BranchFlags)
+class BranchWritePort(implicit p: HPipeParameters) extends BranchPort {
+  val valid  = Input(Bool())
+  val target = Input(Addr())
+  val take   = Input(Bool())
 }
 
-class BranchPredictorIO(implicit val p: HPipeParameters) extends Bundle {
+class BranchPredictorIO(implicit p: HPipeParameters) extends Bundle {
   val read  = new BranchReadPort
   val write = new BranchWritePort
 }
 
-class BranchPredictor(implicit val p: HPipeParameters) extends Module {
+class BranchPredictor(implicit p: HPipeParameters) extends Module {
   val io = IO(new BranchPredictorIO)
 
-  val hist = Module(new HistBuffer)
-  io.read <> hist.io.read
-  hist.io.write := io.write
+  val btb = Module(new TargetBuffer)
+  btb.io.pc          := io.read.pc
+  btb.io.writeEnable := io.write.valid && !io.write.flags.isStack
+  btb.io.writePc     := io.write.pc
+  btb.io.writeData   := io.write.target
+
+  val bht = Module(new HistoryTable)
+  bht.io.pc          := io.read.pc
+  bht.io.writeEnable := io.write.valid && !io.write.flags.isStack
+  bht.io.writePc     := io.write.pc
+  bht.io.writeTake   := io.write.take
 
   val ras = Module(new RetAddrStack)
-  io.read <> ras.io.read
-  ras.io.write := io.write
+  ras.io.flags       := io.read.flags
+  ras.io.writeTarget := io.write.target
 
-  val info = io.read.info
+  io.read.take :=
+    btb.io.hit && bht.io.take || io.read.flags.isStack || io.read.flags.isJal
   io.read.target := MuxIf(
-    info.isBr                                         -> hist.io.read.target,
-    ((info.isJalr && io.read.rs1Valid) || info.isJal) -> io.read.brAddr,
-    info.isRet                                        -> ras.io.read.target,
-  )(io.read.defaultTarget)
-  io.read.brTake := hist.io.read.brTake
+    io.read.flags.isJal   -> io.read.jalAddr,
+    io.read.flags.isStack -> ras.io.target,
+  )(btb.io.target)
 }
