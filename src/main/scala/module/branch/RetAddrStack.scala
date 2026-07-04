@@ -12,6 +12,7 @@ trait HasRetAddrStackParameter {
 class RetAddrStackIO(implicit p: HPipeParameters) extends Bundle {
   val target = Output(Addr())
 
+  val writeEnable = Input(Bool())
   val flags       = Input(new BranchFlags)
   val writeTarget = Input(Addr())
 }
@@ -31,11 +32,9 @@ class RetAddrStack(implicit val p: HPipeParameters) extends Module
   val pop  = io.flags.isRet
   stack(ptr) := io.writeTarget
 
-  ptr := Mux1H(
-    Seq(
-      push            -> (ptr +% 1.U),
-      pop             -> (ptr -% 1.U),
-      (!push && !pop) -> ptr,
-    ),
-  )
+  ptr := MuxIf(
+    !io.writeEnable -> ptr,
+    push            -> (ptr +% 1.U),
+    pop             -> (ptr -% 1.U),
+  )(ptr)
 }
