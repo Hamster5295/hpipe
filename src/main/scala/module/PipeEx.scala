@@ -71,8 +71,12 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
     GEU.asUInt -> !brLtu,
   ))
 
-  val realTarget = Mux(fromSg.flags.br && !brTake, pred.stepPc, addr)
-  val branchMiss = !(realTarget === Mux(pred.take, pred.target, pred.stepPc))
+  // Parallel: target mismatch computed independently of brTake comparison
+  val actualTake     = brTake || fromSg.flags.jal
+  val targetMismatch = addr =/= pred.target
+  val branchMiss     = (actualTake ^ pred.take) | (actualTake & pred.take & targetMismatch)
+
+  val realTarget = Mux(actualTake, addr, pred.stepPc)
 
   io.branch.valid          := fromSg.flags.br || fromSg.flags.jal
   io.branch.pc             := fromSg.pc

@@ -30,6 +30,7 @@ case class HPipeParameters(
 
 case class TargetBufferParameters(
     val Size:     Int = 32,
+    val Ways:     Int = 2,
     val TagWidth: Int = 16,
 )
 
