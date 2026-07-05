@@ -79,8 +79,8 @@ class PipeSg(implicit p: HPipeParameters) extends Module {
 
   toEx.funct     := decoded.funct
   toEx.flags     := decoded.flags
-  toEx.exception := fromId.exception
-  toEx.predInfo  := fromId.predInfo
+  toEx.trap := fromId.trap
+  toEx.pred  := fromId.pred
 
   // Pipeline handshake
   io.busy := ldUseStall

@@ -111,7 +111,7 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
     // We don't need feed-forward here, as trap will flush everything
     io.trap               -> io.csr.mtvec,
     (isMRet && mepcValid) -> mepc,
-    io.stall              -> pc,
+    (isMRet || io.stall)  -> pc,
     io.fromEx.redirect    -> io.fromEx.redirectTarget,
     brRead.take           -> brRead.target,
   )(stepPc)

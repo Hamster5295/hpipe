@@ -40,7 +40,7 @@ case class HistoryTableParameters(
 )
 
 case class RetAddrStackParameters(
-    val Depth: Int = 8,
+    val Depth:    Int = 8,
     val TagWidth: Int = 16,
 ) {
   val PtrWidth = log2Ceil(Depth)
@@ -70,10 +70,12 @@ object CsrAddr {
   def apply() = UInt(12.W) // 12 is specified by
 
   val MSTATUS = "x300".U
+  val MIE     = "x304".U
   val MTVEC   = "x305".U
   val MEPC    = "x341".U
   val MCAUSE  = "x342".U
   val MTVAL   = "x343".U
+  val MIP     = "x344".U
 
   val CYCLE    = "xC00".U
   val INSTRET  = "xC02".U

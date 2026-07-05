@@ -42,6 +42,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   pipeSg.io.csrRead <> csrFile.io.reads(0)
   pipeEx.io.csrTransform <> csrFile.io.transforms(0)
   pipeWb.io.csrWrite <> csrFile.io.writes(0)
+  pipeWb.io.csr := csrFile.io.csr
 
   csrFile.io.retire := pipeWb.io.retire
 
@@ -63,7 +64,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   pipeIf.io.fromEx := branch
 
   // Trap
-  val trap = pipeWb.io.retire.trap
+  val trap = pipeWb.io.retire.trapValid
   pipeIf.io.trap := trap
 
   io.memStore.req.valid :=
