@@ -20,7 +20,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   val toSg = io.toSg
   val inst = io.fromIf.inst
   toSg.pc       := io.fromIf.pc
-  toSg.predInfo := io.fromIf.prediction
+  toSg.pred := io.fromIf.prediction
 
   val rs1Addr = inst(19, 15)
   val rs2Addr = inst(24, 20)
@@ -47,7 +47,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
   toSg.csrAddr := Mux(decoded.flags.mret, CsrAddr.MSTATUS, inst.head(12))
 
   // Exception
-  val excp = toSg.exception
+  val excp = toSg.trap
 
   val ecall       = decoded.flags.ecall
   val invalidInst = !decoded.valid

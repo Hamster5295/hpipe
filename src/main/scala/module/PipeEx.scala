@@ -58,7 +58,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   )(alu.io.result)
 
   // Branch - dedicated comparators bypass ALU for shorter critical path
-  val pred   = io.fromSg.predInfo
+  val pred   = io.fromSg.pred
   val brEq   = fromSg.src1 === fromSg.src2
   val brLt   = fromSg.src1.asSInt < fromSg.src2.asSInt
   val brLtu  = fromSg.src1 < fromSg.src2
@@ -88,13 +88,13 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   // (When br condition not met, realTarget falls to pc + 4)
 
   // Exception
-  val excp = io.toMem.exception
+  val excp = io.toMem.trap
 
   val brMisaligned =
     fromSg.flags.br && io.branch.target.end(if (p.ExtC) 1 else 2).orR
 
-  excp.valid := fromSg.exception.valid | brMisaligned
-  excp.cause := Mux(brMisaligned, 0.U, fromSg.exception.cause)
+  excp.valid := fromSg.trap.valid | brMisaligned
+  excp.cause := Mux(brMisaligned, 0.U, fromSg.trap.cause)
 
   // To Mem
   val toMem = io.toMem

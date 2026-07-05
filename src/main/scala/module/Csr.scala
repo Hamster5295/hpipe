@@ -23,12 +23,13 @@ case class CsrModel(
 class Csr(implicit p: HPipeParameters) extends Bundle {
 
   val mstatus = Word()
-//   val mie     = Word()
-  val mtvec = Word()
+  val mie     = Word()
+  val mtvec   = Word()
 
   val mepc   = Word()
   val mcause = Word()
   val mtval  = Word()
+  val mip    = Word()
 
   val cycle  = Word()
   val cycleh = Word()
@@ -38,11 +39,12 @@ class Csr(implicit p: HPipeParameters) extends Bundle {
 
   private val csrList = Seq(
     CsrModel(MSTATUS, RW, mstatus, reset = "b1000".U),
-    // CsrModel("x304", RW, mie),
+    CsrModel(MIE, RW, mie),
     CsrModel(MTVEC, RW, mtvec, write = i => i.head(30) ## 0.U(2.W)),
     CsrModel(MEPC, RW, mepc, write = i => i.head(30) ## 0.U(2.W)),
     CsrModel(MCAUSE, RW, mcause),
     CsrModel(MTVAL, RW, mtval),
+    CsrModel(MIP, RO, mip),
 
     CsrModel(CYCLE, RO, cycle),
     CsrModel(INSTRET, RO, instret),
@@ -121,19 +123,19 @@ class CsrFile(implicit val p: HPipeParameters) extends Module {
 
   // mstatus
   csr.mstatus := Mux(
-    io.retire.trap,
+    io.retire.trapValid,
     "b1_1000".U ## csr.mstatus(3) ## "b000_0000".U, // MPIE = previous MIE
     csr.mstatus,
   )
 
   // mepc
-  csr.mepc := Mux(io.retire.trap, io.retire.pc, csr.mepc)
+  csr.mepc := Mux(io.retire.trapValid, io.retire.pc, csr.mepc)
 
   // mcause
   csr.mcause :=
     Mux(
-      io.retire.trap,
-      io.retire.exception.cause,
+      io.retire.trapValid,
+      io.retire.trap.cause,
       csr.mcause,
     ) // 11 - ecall from M mode
 
