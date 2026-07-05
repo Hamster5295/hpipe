@@ -9,9 +9,10 @@ class HPipeIO(implicit val p: HPipeParameters) extends Bundle {
   val memLoad   = new MemLoadIO
   val memStore  = new MemStoreIO
 
-  val retire = Output(new RetireInfo)
+  val interrupt = Input(new InterruptSource)
 
-  val debug = if (p.Debug) Some(Output(new DebugInfo)) else None
+  val retire = Output(new RetireInfo)
+  val debug  = if (p.Debug) Some(Output(new DebugInfo)) else None
 }
 
 class HPipe(implicit val p: HPipeParameters) extends Module {
@@ -44,7 +45,8 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   pipeWb.io.csrWrite <> csrFile.io.writes(0)
   pipeWb.io.csr := csrFile.io.csr
 
-  csrFile.io.retire := pipeWb.io.retire
+  csrFile.io.interrupt := io.interrupt
+  csrFile.io.retire    := pipeWb.io.retire
 
   // Feed Forward
   pipeIf.io.stall :=

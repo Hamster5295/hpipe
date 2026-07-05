@@ -38,18 +38,20 @@ class Csr(implicit p: HPipeParameters) extends Bundle {
   val instreth = Word()
 
   private val csrList = Seq(
+// format: off
     CsrModel(MSTATUS, RW, mstatus, reset = "b1000".U),
-    CsrModel(MIE, RW, mie),
-    CsrModel(MTVEC, RW, mtvec, write = i => i.head(30) ## 0.U(2.W)),
-    CsrModel(MEPC, RW, mepc, write = i => i.head(30) ## 0.U(2.W)),
-    CsrModel(MCAUSE, RW, mcause),
-    CsrModel(MTVAL, RW, mtval),
-    CsrModel(MIP, RO, mip),
+    CsrModel(MIE,     RW, mie,     write = _ & "x888".U),
+    CsrModel(MTVEC,   RW, mtvec,   write = _.head(30) ## 0.U(2.W)),
+    CsrModel(MEPC,    RW, mepc,    write = _.head(30) ## 0.U(2.W)),
+    CsrModel(MCAUSE,  RW, mcause),
+    CsrModel(MTVAL,   RW, mtval),
+    CsrModel(MIP,     RO, mip),
 
-    CsrModel(CYCLE, RO, cycle),
-    CsrModel(INSTRET, RO, instret),
-    CsrModel(CYCLEH, RO, cycleh),
+    CsrModel(CYCLE,    RO, cycle),
+    CsrModel(INSTRET,  RO, instret),
+    CsrModel(CYCLEH,   RO, cycleh),
     CsrModel(INSTRETH, RO, instreth),
+// format: on
   )
 
   def reset(signal: Bool) = when(signal)(csrList.map(c => c.data := c.reset))
@@ -93,6 +95,8 @@ class CsrFileIO(implicit val p: HPipeParameters) extends Bundle {
   val writes     = Vec(1, new CsrWritePort)
   val transforms = Vec(1, new CsrTransformPort)
 
+  val interrupt = Input(new InterruptSource)
+
   val csr = Output(new Csr)
 
   // CSR Specific
@@ -120,6 +124,11 @@ class CsrFile(implicit val p: HPipeParameters) extends Module {
   io.csr := csr
 
   /// CSR Specific
+
+  // mip
+  val intr = io.interrupt
+  csr.mip :=
+    csr.mip | (intr.external << 11) | (intr.timer << 7) | (intr.software << 3)
 
   // mstatus
   csr.mstatus := Mux(
