@@ -31,6 +31,12 @@ class MemStoreIO(implicit val p: HPipeParameters) extends Bundle {
   val req = Output(new MemStoreReq)
 }
 
+class InterruptSource(implicit p: HPipeParameters) extends Bundle {
+  val external = Bool()
+  val timer    = Bool()
+  val software = Bool()
+}
+
 class GprDestInfo(implicit p: HPipeParameters) extends Bundle {
   val addr = XRegAddr()
   val data = Word()
@@ -97,9 +103,9 @@ class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class RetireInfo(implicit val p: HPipeParameters) extends Bundle {
-  val valid     = Bool()
-  val pc        = Addr()
-  val trap = new TrapInfo
+  val valid = Bool()
+  val pc    = Addr()
+  val trap  = new TrapInfo
 
   val ebreak = Bool()
 
@@ -259,8 +265,8 @@ class Mem2WbIO(implicit p: HPipeParameters) extends PipeIO {
   val csrAddr = CsrAddr()
   val csrData = Word()
 
-  val flags     = new OpFlags()
-  val trap = new TrapInfo
+  val flags = new OpFlags()
+  val trap  = new TrapInfo
 }
 
 // Enums
