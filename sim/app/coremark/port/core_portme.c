@@ -16,8 +16,9 @@ limitations under the License.
 Original Author: Shay Gal-on
 */
 #include "core_portme.h"
+#include "common.h"
 #include "coremark.h"
-#include "peripheral.h"
+#include "instrinc.h"
 
 #if VALIDATION_RUN
 volatile ee_s32 seed1_volatile = 0x3415;
@@ -43,7 +44,11 @@ volatile ee_s32 seed5_volatile = 0;
    time.h and windows.h definitions included.
 */
 CORETIMETYPE
-barebones_clock() { return rtc_get(); }
+barebones_clock() {
+  u32 time = 0;
+  CSRR(time, cycle);
+  return time;
+}
 /* Define : TIMER_RES_DIVIDER
         Divider to trade off timer resolution and total time that can be
    measured.
