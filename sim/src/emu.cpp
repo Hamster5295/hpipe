@@ -104,6 +104,8 @@ void exec() {
     mem_write(cpu->io_memStore_req_addr, cpu->io_memStore_req_data,
               cpu->io_memStore_req_mask);
 
+  peripheral_step(cpu);
+
   cpu->eval();
   ctx->timeInc(1);
   TRACE();

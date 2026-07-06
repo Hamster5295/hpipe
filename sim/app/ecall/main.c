@@ -21,6 +21,6 @@ int main() {
   int i = 0;
   CSRRW(i, mtvec, handler);
   ECALL();
-  hprintf("Back to main!");
+  hprintf("Back to main! \n");
   return 0;
 }

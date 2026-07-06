@@ -1,22 +1,28 @@
 #include "peripheral.h"
 #include "debug.h"
-#include "emu.h"
+#include <cstddef>
 #include <stdio.h>
 
-bool is_peripheral(uint32_t addr) { return (addr >> 28) == 0x4; }
+peripheral_t peris[32] = {};
+uint32_t peri_count = 0;
 
+bool is_peripheral(uint32_t addr) { return (addr >> 28) != 0x8; }
 uint32_t peripheral_addr_trans(uint32_t addr) { return addr & 0xFFFF; }
-
-bool is_valid_ascii(char c) {
-  return (c >= ' ' && c <= '~') || (c == '\n' || c == '\r');
-}
+void peripheral_add(peripheral_t peri) { peris[peri_count++] = peri; }
 
 uint32_t peripheral_read(uint32_t addr) {
-  uint32_t paddr = peripheral_addr_trans(addr);
-  switch (paddr & 0xF000) {
-  case RTC_BASE:
-    DBG("RTC Read: %d", emu_get_cycles());
-    return emu_get_cycles();
+
+  for (int i = 0; i < peri_count; i++) {
+    peripheral_t peri = peris[i];
+    if ((addr >> 20) != peri.addr_h12)
+      continue;
+    if (peri.read == NULL) {
+      WARN("[Peripheral] Read with non-readable peripheral address 0x%08X, "
+           "falling back to 0",
+           addr);
+      return 0;
+    }
+    return peri.read(addr);
   }
 
   WARN("[Peripheral] Read with invalid address 0x%08X, falling back to 0",
@@ -25,18 +31,27 @@ uint32_t peripheral_read(uint32_t addr) {
 }
 
 void peripheral_write(uint32_t addr, uint8_t data) {
-  uint32_t paddr = peripheral_addr_trans(addr);
-  switch (paddr & 0xF000) {
-  case RTC_BASE:
-    WARN("[Peripheral] Write to READONLY RTC at 0x%08X", addr);
-    return;
 
-  case UART_BASE:
-    DBG("UART Send: %c", data);
-    if (!is_valid_ascii(data)) {
-      ERR("[UART] Invalid character '%2X' sent!", data);
+  for (int i = 0; i < peri_count; i++) {
+    peripheral_t peri = peris[i];
+    if ((addr >> 20) != peri.addr_h12)
+      continue;
+    if (peri.write == NULL) {
+      WARN("[Peripheral] Read with non-writeable peripheral address 0x%08X, "
+           "falling back to 0",
+           addr);
+      return;
     }
-    printf("%c", data);
+    peri.write(addr, data);
     return;
   }
+
+  WARN("[Peripheral] Write with invalid address 0x%08X, falling back to 0",
+       addr);
+}
+
+void peripheral_step(VHPipe *cpu) {
+  for (int i = 0; i < peri_count; i++)
+    if (peris[i].step != NULL)
+      peris[i].step(cpu);
 }

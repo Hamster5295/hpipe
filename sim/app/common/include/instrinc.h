@@ -10,6 +10,8 @@
 #define CSRRC(rd, csr, rs)                                                     \
   asm volatile("csrrc %0," #csr ",%1;" : "=r"(rd) : "r"(rs))
 
+#define CSRR(rd, csr) asm volatile("csrr %0," #csr : "=r"(rd))
+
 #define ECALL() asm volatile("ecall")
 
 #define MRET() asm volatile("mret")
