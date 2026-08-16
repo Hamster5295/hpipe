@@ -20,6 +20,7 @@ case class HPipeParameters(
     val ExtC: Boolean = false,
 
     // Branch
+    val Branch:       Boolean = true,
     val TargetBuf:    TargetBufferParameters = TargetBufferParameters(),
     val HistTable:    HistoryTableParameters = HistoryTableParameters(),
     val RetAddrStack: RetAddrStackParameters = RetAddrStackParameters(),

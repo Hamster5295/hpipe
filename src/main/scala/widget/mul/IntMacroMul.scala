@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 
-class IntFpgaMul(width: Int) extends IntMul(width) {
+class IntMacroMul(width: Int) extends AbstractIntMul(width) {
 
   val a = RegNext(Mux(io.aSigned, ~io.a + 1.U, io.a))
   val b = RegNext(Mux(io.bSigned, ~io.b + 1.U, io.b))
