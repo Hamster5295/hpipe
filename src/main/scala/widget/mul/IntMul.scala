@@ -15,6 +15,16 @@ class IntMulIO(width: Int) extends Bundle {
   val o       = Output(UInt((width * 2).W))
 }
 
-class IntMul(width: Int) extends Module {
+abstract class AbstractIntMul(width: Int) extends Module {
   val io = IO(new IntMulIO(width))
+}
+
+class IntMul(width: Int)(implicit p: HPipeParameters)
+    extends AbstractIntMul(width) {
+  val inner = Module(
+    if (p.UseArithMacro) new IntMacroMul(width)
+    else new IntBoothMul(width),
+  )
+
+  io <> inner.io
 }

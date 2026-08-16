@@ -54,7 +54,7 @@ class CSA(width: Int) extends Module {
   io.co := co.asUInt.tail(1)
 }
 
-class IntBoothMul(width: Int) extends IntMul(width) {
+class IntBoothMul(width: Int) extends AbstractIntMul(width) {
 
   val cnt = ((width + 1f) / 2).ceil.toInt
 
@@ -83,7 +83,7 @@ class IntBoothMul(width: Int) extends IntMul(width) {
     queue.enqueue(adder.io.co)
   }
 
-  val adder = Module(new UIntCLA(width * 2, 4))
+  val adder = Module(new UIntCla(width * 2, 4))
   adder.io.a := queue.dequeue()
   adder.io.b := queue.dequeue()
   adder.io.c := false.B

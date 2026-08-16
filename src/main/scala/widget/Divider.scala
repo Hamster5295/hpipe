@@ -16,7 +16,8 @@ class IntDiv(width: Int) extends Bundle {
   val remainder = Output(UInt(width.W))
 }
 
-class IntNonRestoringDiv(width: Int, useMacro: Boolean) extends Module {
+class IntNonRestoringDiv(width: Int)(implicit p: HPipeParameters)
+    extends Module {
   val io = IO(new IntDiv(width))
 
   val reg = RegZero(UInt((width * 2 + 1).W))
@@ -59,12 +60,12 @@ class IntNonRestoringDiv(width: Int, useMacro: Boolean) extends Module {
   val divisor  = 0.U(1.W) ## divisorAbs ## 0.U(width.W)
 
   val resSign = dividend.msb()
-  val res     =
-    UIntCLA(width * 2 + 1, 4)(
-      dividend,
-      Mux(~resSign, ~divisor, divisor),
-      ~resSign,
-    ).tail(1)
+  val res = UIntAdd(
+    width * 2 + 1,
+    dividend,
+    Mux(~resSign, ~divisor, divisor),
+    ~resSign,
+  ).tail(1)
 
   reg := res.head(width * 2) ## ~res.msb()
 
@@ -72,8 +73,7 @@ class IntNonRestoringDiv(width: Int, useMacro: Boolean) extends Module {
   val quo  = reg.end(width)
   val rem  = Mux(
     reg.msb(),
-    if (useMacro) reg(width * 2 - 1, width) + divisorAbs
-    else UIntCLA(width, 4)(reg(width * 2 - 1, width), divisorAbs, 0.B),
+    UIntAdd(width, reg(width * 2 - 1, width), divisorAbs),
     reg(width * 2 - 1, width),
   )
 

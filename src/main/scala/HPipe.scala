@@ -171,6 +171,14 @@ object HPipeFpga extends App {
   )
 }
 
+object HPipeFpgaMini extends App {
+  Export(
+    new HPipe()(HPipeParameters(UseArithMacro = true, Branch = false)),
+    args,
+    Array("-lowering-options=mitigateVivadoArrayIndexConstPropBug"),
+  )
+}
+
 object HPipeAsic extends App {
   Export(
     new HPipe()(HPipeParameters(UseArithMacro = true)),
