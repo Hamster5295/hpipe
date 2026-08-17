@@ -2,6 +2,9 @@
 package build
 
 import mill._
+import mill.api.Task.Simple
+import mill.javalib.publish._
+import mill.javalib.publish.PomSettings
 import mill.scalalib._
 import mill.scalalib.scalafmt.ScalafmtModule
 
@@ -11,7 +14,7 @@ import mill.scalalib.scalafmt.ScalafmtModule
 // to properly generate and handle test directories and output files.
 // See: https://github.com/com-lihaoyi/mill/issues/3840
 
-object `hpipe` extends SbtModule with ScalafmtModule { m =>
+object `hpipe` extends SbtModule with ScalafmtModule with PublishModule { m =>
   override def scalaVersion = "2.13.18"
   def chiselVersion         = "7.11.0"
 
@@ -34,6 +37,30 @@ object `hpipe` extends SbtModule with ScalafmtModule { m =>
   val envPath       = sys.env("PATH") + ":" + resourcesPath
   override def forkEnv: T[Map[String, String]] = super.forkEnv() ++ Map(
     "PATH" -> envPath,
+  )
+
+  /// Publish
+  def publishVersion: Simple[String] = "v0.1.11"
+
+  def pomSettings: Simple[PomSettings] = PomSettings(
+    description = "A 6-stage pipelined RISC-V 32bit CPU",
+    organization = "",
+    url = "",
+    licenses = Seq(),
+    versionControl = VersionControl(
+      browsableRepository = Some(s"https://codeberg.org/hamster5295/hpipe"),
+      connection = Some(VersionControlConnection.gitGit(
+        "github.com",
+        "hamster5295/hpipe.git",
+      )),
+      developerConnection = Some(VersionControlConnection.gitSsh(
+        "github.com",
+        "hamster5295/hpipe.git",
+        username = Some("git"),
+      )),
+      tag = None,
+    ),
+    developers = Seq(Developer(id = "Hamster5295", name = "Hamster5295")),
   )
 
   object test extends SbtTests with TestModule.ScalaTest {
