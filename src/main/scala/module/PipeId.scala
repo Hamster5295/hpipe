@@ -19,7 +19,7 @@ class PipeId(implicit val p: HPipeParameters) extends Module {
 
   val toSg = io.toSg
   val inst = io.fromIf.inst
-  toSg.pc       := io.fromIf.pc
+  toSg.pc   := io.fromIf.pc
   toSg.pred := io.fromIf.prediction
 
   val rs1Addr = inst(19, 15)

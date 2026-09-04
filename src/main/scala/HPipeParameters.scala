@@ -3,7 +3,6 @@ package hpipe
 import chisel3._
 import chisel3.util.log2Ceil
 import hammer._
-import scala.annotation.meta.param
 
 case class HPipeParameters(
     val Debug:         Boolean = false,
@@ -68,7 +67,7 @@ object XRegAddr {
 }
 
 object CsrAddr {
-  def apply() = UInt(12.W) // 12 is specified by
+  def apply() = UInt(12.W) // 12 is specified by Manual
 
   val MSTATUS = "x300".U
   val MIE     = "x304".U

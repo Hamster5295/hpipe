@@ -60,7 +60,7 @@ class IntNonRestoringDiv(width: Int)(implicit p: HPipeParameters)
   val divisor  = 0.U(1.W) ## divisorAbs ## 0.U(width.W)
 
   val resSign = dividend.msb()
-  val res = UIntAdd(
+  val res     = UIntAdd(
     width * 2 + 1,
     dividend,
     Mux(~resSign, ~divisor, divisor),

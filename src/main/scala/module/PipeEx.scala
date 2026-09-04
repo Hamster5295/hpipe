@@ -74,7 +74,8 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   // Parallel: target mismatch computed independently of brTake comparison
   val actualTake     = brTake || fromSg.flags.jal
   val targetMismatch = addr =/= pred.target
-  val branchMiss     = (actualTake ^ pred.take) | (actualTake & pred.take & targetMismatch)
+  val branchMiss     =
+    (actualTake ^ pred.take) | (actualTake & pred.take & targetMismatch)
 
   val realTarget = Mux(actualTake, addr, pred.stepPc)
 

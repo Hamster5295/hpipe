@@ -77,9 +77,9 @@ class PipeSg(implicit p: HPipeParameters) extends Module {
   toEx.addrBase := Mux(decoded.useRs1ForAddr, rs1, fromId.pc)
   toEx.imm      := decoded.imm
 
-  toEx.funct     := decoded.funct
-  toEx.flags     := decoded.flags
-  toEx.trap := fromId.trap
+  toEx.funct := decoded.funct
+  toEx.flags := decoded.flags
+  toEx.trap  := fromId.trap
   toEx.pred  := fromId.pred
 
   // Pipeline handshake
