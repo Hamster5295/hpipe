@@ -102,12 +102,16 @@ void exec() {
   if (cpu->io_instFetch_addr_valid && inited)
     cpu->io_instFetch_inst_bits = mem_read(cpu->io_instFetch_addr_bits);
 
-  if (cpu->io_memLoad_req_valid && inited)
-    cpu->io_memLoad_data = mem_read(cpu->io_memLoad_req_addr);
+  cpu->io_memLoad_addr_ready = 1;
+  cpu->io_memLoad_data_valid = 1;
+  cpu->io_memStore_req_ready = 1;
+
+  if (cpu->io_memLoad_addr_valid && inited)
+    cpu->io_memLoad_data_bits = mem_read(cpu->io_memLoad_addr_bits);
 
   if (cpu->io_memStore_req_valid && inited)
-    mem_write(cpu->io_memStore_req_addr, cpu->io_memStore_req_data,
-              cpu->io_memStore_req_mask);
+    mem_write(cpu->io_memStore_req_bits_addr, cpu->io_memStore_req_bits_data,
+              cpu->io_memStore_req_bits_mask);
 
   peripheral_step(cpu);
 

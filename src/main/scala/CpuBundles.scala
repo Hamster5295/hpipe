@@ -10,25 +10,19 @@ class InstFetchPort(implicit val p: HPipeParameters) extends Bundle {
   val inst = Flipped(Decoupled(Inst()))
 }
 
-class MemLoadReq(implicit p: HPipeParameters) extends Bundle {
-  val valid = Bool()
-  val addr  = Addr()
-}
-
 class MemStoreReq(implicit p: HPipeParameters) extends Bundle {
-  val valid = Bool()
-  val addr  = Addr()
-  val data  = Word()
-  val mask  = Mask()
+  val addr = Addr()
+  val data = Word()
+  val mask = Mask()
 }
 
 class MemLoadPort(implicit val p: HPipeParameters) extends Bundle {
-  val req  = Output(new MemLoadReq)
-  val data = Input(Word())
+  val addr = Decoupled(Addr())
+  val data = Flipped(Decoupled(Word()))
 }
 
 class MemStorePort(implicit val p: HPipeParameters) extends Bundle {
-  val req = Output(new MemStoreReq)
+  val req = Decoupled(new MemStoreReq)
 }
 
 class InterruptSource(implicit p: HPipeParameters) extends Bundle {
@@ -58,9 +52,9 @@ class DestInfo(implicit val p: HPipeParameters) extends Bundle {
 
 class OpFlags(implicit val p: HPipeParameters) extends Bundle {
   val writeRd = Bool() // Write data back to rf
-  val br      = Bool() // Branch current pc
-  val ld      = Bool() // Load data in mem stage
-  val st      = Bool() // Store data in mem stage
+  val branch  = Bool() // Branch current pc
+  val load    = Bool() // Load data in mem stage
+  val store   = Bool() // Store data in mem stage
   val jal     = Bool() // Is JAL (get PC+4 and use it for wb)
   val aluInv  = Bool() // Is Invert op in ALU (for `sub` and `sra`)
   val ecall   = Bool() // Is ECall Inst
@@ -70,7 +64,7 @@ class OpFlags(implicit val p: HPipeParameters) extends Bundle {
   val muldiv = Bool() // Is Mul || Div
   val csr    = Bool()
 
-  def isMem = ld || st
+  def isMem = load || store
 }
 
 class BranchInfo(implicit val p: HPipeParameters) extends Bundle {

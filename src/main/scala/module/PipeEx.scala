@@ -62,7 +62,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   val brEq   = fromSg.src1 === fromSg.src2
   val brLt   = fromSg.src1.asSInt < fromSg.src2.asSInt
   val brLtu  = fromSg.src1 < fromSg.src2
-  val brTake = fromSg.flags.br && MuxLookup(fromSg.funct, false.B)(Seq(
+  val brTake = fromSg.flags.branch && MuxLookup(fromSg.funct, false.B)(Seq(
     EQ.asUInt  -> brEq,
     NE.asUInt  -> !brEq,
     LT.asUInt  -> brLt,
@@ -79,7 +79,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
 
   val realTarget = Mux(actualTake, addr, pred.stepPc)
 
-  io.branch.valid          := fromSg.flags.br || fromSg.flags.jal
+  io.branch.valid          := fromSg.flags.branch || fromSg.flags.jal
   io.branch.pc             := fromSg.pc
   io.branch.flags          := pred.flags
   io.branch.take           := brTake
@@ -92,7 +92,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   val excp = io.toMem.trap
 
   val brMisaligned =
-    fromSg.flags.br && io.branch.target.end(if (p.ExtC) 1 else 2).orR
+    fromSg.flags.branch && io.branch.target.end(if (p.ExtC) 1 else 2).orR
 
   excp.valid := fromSg.trap.valid | brMisaligned
   excp.cause := Mux(brMisaligned, 0.U, fromSg.trap.cause)
@@ -114,7 +114,7 @@ class PipeEx(implicit val p: HPipeParameters) extends Module {
   toId.gpr.valid     := fromSg.flags.writeRd && fromSg.rdAddr.orR
   toId.gpr.bits.addr := fromSg.rdAddr
   toId.gpr.bits.data := result
-  toId.gpr.bits.isLd := fromSg.flags.ld
+  toId.gpr.bits.isLd := fromSg.flags.load
 
   toId.csr.valid     := fromSg.flags.csr && fromSg.csrAddr.orR
   toId.csr.bits.addr := fromSg.csrAddr

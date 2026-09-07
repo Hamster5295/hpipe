@@ -27,13 +27,13 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   val io = IO(new PipeIfIO)
 
   // Inst Fetch State Machine
-  val pc         = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
-  val pcFetching = RegZero(Bool())
+  val pc        = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
+  val fetchBusy = RegZero(Bool())
 
-  io.fetch.addr.valid := !pcFetching
+  io.fetch.addr.valid := !fetchBusy
   io.fetch.addr.bits  := pc
-
   io.fetch.inst.ready := true.B
+
   val inst     = io.fetch.inst.bits
   val instFire = io.fetch.inst.fire
 
@@ -51,8 +51,8 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
     * So when (addr ^ inst), pcFetching = addr
     * else its value is kept
     */
-  pcFetching :=
-    Mux(io.fetch.addr.fire ^ io.fetch.inst.fire, io.fetch.addr.fire, pcFetching)
+  fetchBusy :=
+    Mux(io.fetch.addr.fire ^ io.fetch.inst.fire, io.fetch.addr.fire, fetchBusy)
 
   // Decode BR & JAL for BTB
   val decoder = Module(new BranchDecoder)
