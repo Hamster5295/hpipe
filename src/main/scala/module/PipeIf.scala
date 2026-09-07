@@ -41,11 +41,12 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
     * The pcFetching bit indicates whether a pc req is sent and not yet received
     * It follows the truth table below:
     * 
-    * addr - inst - result
-    * 00 - keep
-    * 10 - 1
-    * 01 - 0
-    * 11 - keep
+    * addr  |   inst    |   result
+    * ==============================
+    *  0    |    0      |   keep
+    *  1    |    0      |   1
+    *  0    |    1      |   0
+    *  1    |    1      |   keep
     * 
     * So when (addr ^ inst), pcFetching = addr
     * else its value is kept
