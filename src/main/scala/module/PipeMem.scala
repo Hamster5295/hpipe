@@ -42,8 +42,6 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   )
 
   // Store
-  val storeBusy = !io.memStore.req.fire
-
   io.memStore.req.valid     := fromEx.flags.store
   io.memStore.req.bits.addr := fromEx.addr
   io.memStore.req.bits.data := fromEx.data
@@ -70,5 +68,6 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   toId.csr.bits.data := fromEx.csrData
 
   io.busy :=
-    (fromEx.flags.load && loadBusy) || (fromEx.flags.store && storeBusy)
+    (fromEx.flags.load && !io.memLoad.data.fire) ||
+      (fromEx.flags.store && !io.memStore.req.fire)
 }

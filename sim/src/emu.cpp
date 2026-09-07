@@ -97,13 +97,14 @@ void exec() {
 
   cpu->clock = 0;
   cpu->io_instFetch_addr_ready = 1;
-  cpu->io_instFetch_inst_valid = 1;
+  cpu->io_instFetch_inst_valid = !cpu->io_instFetch_inst_valid;
+//   cpu->io_instFetch_inst_valid = 1;
 
   if (cpu->io_instFetch_addr_valid && inited)
     cpu->io_instFetch_inst_bits = mem_read(cpu->io_instFetch_addr_bits);
 
   cpu->io_memLoad_addr_ready = 1;
-  cpu->io_memLoad_data_valid = 1;
+  cpu->io_memLoad_data_valid = !cpu->io_memLoad_data_valid;
   cpu->io_memStore_req_ready = 1;
 
   if (cpu->io_memLoad_addr_valid && inited)
