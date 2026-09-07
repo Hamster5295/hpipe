@@ -17,7 +17,7 @@ import mill.scalalib.scalafmt.ScalafmtModule
 
 object `hpipe` extends SbtModule with ScalafmtModule with PublishModule { m =>
   override def scalaVersion = "2.13.18"
-  def chiselVersion         = "7.11.0"
+  def chiselVersion         = "7.15.0"
 
   def moduleDir              = super.moduleDir / os.up
   override def scalacOptions = Seq(
