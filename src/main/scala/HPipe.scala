@@ -5,9 +5,9 @@ import chisel3.util._
 import hammer._
 
 class HPipeIO(implicit val p: HPipeParameters) extends Bundle {
-  val instFetch = new InstFetchIO
-  val memLoad   = new MemLoadIO
-  val memStore  = new MemStoreIO
+  val instFetch = new InstFetchPort
+  val memLoad   = new MemLoadPort
+  val memStore  = new MemStorePort
 
   val interrupt = Input(new InterruptSource)
 

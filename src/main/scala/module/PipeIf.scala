@@ -7,7 +7,7 @@ import hammer._
 import hpipe.Insts._
 
 class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
-  val fetch = new InstFetchIO
+  val fetch = new InstFetchPort
 
   val toId   = Output(new If2IdIO)
   val fromEx = Input(new BranchInfo)
@@ -26,34 +26,40 @@ class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
 class PipeIf(implicit val p: HPipeParameters) extends Module {
   val io = IO(new PipeIfIO)
 
-  val pc = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
+  // Inst Fetch State Machine
+  val pc         = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
+  val pcFetching = RegZero(Bool())
+
+  io.fetch.addr.valid := !pcFetching
+  io.fetch.addr.bits  := pc
+
+  io.fetch.inst.ready := true.B
+  val inst     = io.fetch.inst.bits
+  val instFire = io.fetch.inst.fire
+
+  /**
+    * The pcFetching bit indicates whether a pc req is sent and not yet received
+    * It follows the truth table below:
+    * 
+    * addr - inst - result
+    * 00 - keep
+    * 10 - 1
+    * 01 - 0
+    * 11 - keep
+    * 
+    * So when (addr ^ inst), pcFetching = addr
+    * else its value is kept
+    */
+  pcFetching :=
+    Mux(io.fetch.addr.fire ^ io.fetch.inst.fire, io.fetch.addr.fire, pcFetching)
 
   // Decode BR & JAL for BTB
-  val inst = io.fetch.inst
-
-  def parse(
-      jal:  Boolean,
-      jalr: Boolean,
-      mret: Boolean,
-  ) =
-    BitPat(
-      s"b${if (jal) 1 else 0}"
-        ++ s"${if (jalr) 1 else 0}"
-        ++ s"${if (mret) 1 else 0}",
-    )
-
-  val table = TruthTable(
-    Map(
-      JAL  -> parse(true, false, false),
-      JALR -> parse(false, true, false),
-      MRET -> parse(false, false, true),
-    ),
-    BitPat.N(4),
-  )
-  val decoded = decoder(inst, table)
-  val isJal   = decoded.msb()
-  val isJalr  = decoded.msb(1)
-  val isMret  = decoded.msb(2)
+  val decoder = Module(new BranchDecoder)
+  decoder.io.inst := inst
+  val decoded = decoder.io.out
+  val isJal   = decoded.isJal
+  val isJalr  = decoded.isJalr
+  val isMret  = decoded.isMret
 
   val imm = MuxIf(
     isJalr -> SignExt(inst(31, 20), 32),
@@ -106,23 +112,25 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
 
   val mepcValid = !mepcInId && !mepcInSg
 
+  val busy = (isMret && !mepcValid) || !instFire
+  val halt = busy || io.stall
+
   val stepPc = pc +% 4.U
   val nextPc = MuxIf(
     // We don't need feed-forward here, as trap will flush everything
     io.trap               -> io.csr.mtvec,
     (isMret && mepcValid) -> mepc,
-    (isMret || io.stall)  -> pc,
+    halt                  -> pc,
     io.fromEx.redirect    -> io.fromEx.redirectTarget,
     brRead.take           -> brRead.target,
   )(stepPc)
 
-  pc            := nextPc
-  io.fetch.addr := pc
+  pc := nextPc
 
   val toId = io.toId
   toId.valid := !reset.asBool
   toId.pc    := pc
-  toId.inst  := io.fetch.inst
+  toId.inst  := inst
 
   val pred = toId.prediction
   pred.flags  := brRead.flags
@@ -130,5 +138,5 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   pred.target := brRead.target
   pred.stepPc := stepPc
 
-  io.busy := isMret && !mepcValid
+  io.busy := busy
 }

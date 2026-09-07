@@ -5,9 +5,9 @@ import chisel3.util._
 
 // Data Bundles
 
-class InstFetchIO(implicit val p: HPipeParameters) extends Bundle {
-  val addr = Output(Addr())
-  val inst = Input(Inst())
+class InstFetchPort(implicit val p: HPipeParameters) extends Bundle {
+  val addr = Decoupled(Addr())
+  val inst = Flipped(Decoupled(Inst()))
 }
 
 class MemLoadReq(implicit p: HPipeParameters) extends Bundle {
@@ -22,12 +22,12 @@ class MemStoreReq(implicit p: HPipeParameters) extends Bundle {
   val mask  = Mask()
 }
 
-class MemLoadIO(implicit val p: HPipeParameters) extends Bundle {
+class MemLoadPort(implicit val p: HPipeParameters) extends Bundle {
   val req  = Output(new MemLoadReq)
   val data = Input(Word())
 }
 
-class MemStoreIO(implicit val p: HPipeParameters) extends Bundle {
+class MemStorePort(implicit val p: HPipeParameters) extends Bundle {
   val req = Output(new MemStoreReq)
 }
 

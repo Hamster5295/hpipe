@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <vector>
 
 extern "C" {
 #include "gdbstub.h"
@@ -32,14 +31,18 @@ VerilatedFstC *tfp;
 // Internal states
 VerilatedContext *ctx;
 VHPipe *cpu;
+uint8_t mem[MEM_SIZE];
+bool inited = false;
 
+// Return Value
+int ret = 0;
+
+// Performances
 int cycles = 0, branch = 0, branchMiss = 0;
+
+// GDB breakpoints
 vector<size_t> bps(4, -1);
 bool halted = false, shutdown = false;
-
-uint8_t mem[MEM_SIZE];
-
-int ret = 0;
 
 uint32_t mem_addr_trans(uint32_t addr) { return addr - RESET_VECTOR; }
 
@@ -93,14 +96,16 @@ void mem_write(uint32_t addr, uint32_t data, uint32_t mask) {
 void exec() {
 
   cpu->clock = 0;
+  cpu->io_instFetch_addr_ready = 1;
+  cpu->io_instFetch_inst_valid = 1;
 
-  if (cpu->io_instFetch_addr >= 0x80000000)
-    cpu->io_instFetch_inst = mem_read(cpu->io_instFetch_addr);
+  if (cpu->io_instFetch_addr_valid && inited)
+    cpu->io_instFetch_inst_bits = mem_read(cpu->io_instFetch_addr_bits);
 
-  if (cpu->io_memLoad_req_valid)
+  if (cpu->io_memLoad_req_valid && inited)
     cpu->io_memLoad_data = mem_read(cpu->io_memLoad_req_addr);
 
-  if (cpu->io_memStore_req_valid)
+  if (cpu->io_memStore_req_valid && inited)
     mem_write(cpu->io_memStore_req_addr, cpu->io_memStore_req_data,
               cpu->io_memStore_req_mask);
 
@@ -348,6 +353,7 @@ struct target_ops emu_init(char *fst) {
   exec();
 
   cpu->reset = 0;
+  inited = true;
 
   return {
       .cont = gdb_cont,
@@ -374,12 +380,13 @@ int emu_cleanup() {
   tfp->close();
 #endif
 
-  long csr_cycle = (cpu->io_debug_csr_cycleh << 32) | cpu->io_debug_csr_cycle;
+  long csr_cycle =
+      ((long)cpu->io_debug_csr_cycleh << 32) | cpu->io_debug_csr_cycle;
   long csr_instret =
-      (cpu->io_debug_csr_instreth << 32) | cpu->io_debug_csr_instret;
+      ((long)cpu->io_debug_csr_instreth << 32) | cpu->io_debug_csr_instret;
   INFO(ANSI_FG_WHITE "Inst per Cycle = %ld / %ld = %f" ANSI_NONE, csr_instret,
        csr_cycle, (float)csr_instret / csr_cycle);
-  INFO(ANSI_FG_WHITE "Branch Miss    = %ld / %ld = %f" ANSI_NONE, branchMiss,
+  INFO(ANSI_FG_WHITE "Branch Miss    = %d / %d = %f" ANSI_NONE, branchMiss,
        branch, (float)branchMiss / branch);
   return ret;
 }
