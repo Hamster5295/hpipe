@@ -25,6 +25,9 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   val pipeMem = Module(new PipeMem)
   val pipeWb  = Module(new PipeWb)
 
+  val pipes = Seq(pipeIf, pipeId, pipeSg, pipeEx, pipeMem, pipeWb).reverse
+  val pipeBusyMask = pipes.map(_.io.busy).asUInt
+
   val regFile = Module(new RegFile)
   val csrFile = Module(new CsrFile)
 
@@ -49,10 +52,6 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   csrFile.io.retire    := pipeWb.io.retire
 
   // Feed Forward
-  pipeIf.io.stall :=
-    pipeWb.io.busy || pipeMem.io.busy || pipeEx.io.busy || pipeSg.io.busy ||
-      pipeId.io.busy
-
   pipeIf.io.feedForwardId  := pipeId.io.feedForward
   pipeIf.io.feedForwardSg  := pipeSg.io.feedForward
   pipeIf.io.feedForwardEx  := pipeEx.io.feedForward
@@ -65,38 +64,40 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   val branch = pipeEx.io.branch
   pipeIf.io.fromEx := branch
 
+  // Stall
+  pipeIf.io.stall := pipeBusyMask.orR
+
   // Trap
   val trap = pipeWb.io.retire.trapValid
-  pipeIf.io.trap := trap
+  pipeIf.io.trap   := trap
+  pipeMem.io.flush := trap
 
   io.memStore.req.valid :=
     Mux(trap, false.B, pipeMem.io.memStore.req.valid)
 
-  // Pipeline
   pipeId.io.fromIf := RegFlush(
     pipeIf.io.toId,
-    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeSg.io.busy &&
-      !pipeId.io.busy,
-    pipeIf.io.busy || branch.redirect || trap,
+    !pipeBusyMask.end(5).orR,
+    (pipeIf.io.busy && !pipeBusyMask.end(4).orR) || branch.redirect || trap,
   )
   pipeSg.io.fromId := RegFlush(
     pipeId.io.toSg,
-    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy && !pipeSg.io.busy,
-    pipeId.io.busy || branch.redirect || trap,
+    !pipeBusyMask.end(4).orR,
+    (pipeId.io.busy && pipeBusyMask.end(3).orR) || branch.redirect || trap,
   )
   pipeEx.io.fromSg := RegFlush(
     pipeSg.io.toEx,
-    !pipeWb.io.busy && !pipeMem.io.busy && !pipeEx.io.busy,
-    pipeSg.io.busy || branch.redirect || trap,
+    !pipeBusyMask.end(3).orR,
+    (pipeSg.io.busy && pipeBusyMask.end(2).orR) || branch.redirect || trap,
   )
   pipeMem.io.fromEx := RegFlush(
     pipeEx.io.toMem,
-    !pipeWb.io.busy && !pipeMem.io.busy,
-    pipeEx.io.busy || trap,
+    !pipeBusyMask.end(2).orR,
+    (pipeEx.io.busy && pipeBusyMask(0)) || trap,
   )
   pipeWb.io.fromMem := RegFlush(
     pipeMem.io.toWb,
-    !pipeWb.io.busy,
+    !pipeBusyMask(0),
     pipeMem.io.busy || trap,
   )
 

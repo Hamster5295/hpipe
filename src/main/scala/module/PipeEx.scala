@@ -16,8 +16,8 @@ class PipeExIO(implicit p: HPipeParameters) extends StageIO {
   val branch      = Output(new BranchInfo)
 }
 
-class PipeEx(implicit val p: HPipeParameters) extends Module {
-  val io     = IO(new PipeExIO)
+class PipeEx(implicit val p: HPipeParameters)
+    extends StageModule(new PipeExIO) {
   val fromSg = io.fromSg
 
   // The addr for branch & mem insts

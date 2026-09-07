@@ -11,11 +11,13 @@ class PipeMemIO(implicit p: HPipeParameters) extends StageIO {
   val fromEx = Input(new Ex2MemIO)
   val toWb   = Output(new Mem2WbIO)
 
+  val flush = Input(Bool())
+
   val feedForward = new DestInfo
 }
 
-class PipeMem(implicit val p: HPipeParameters) extends Module {
-  val io     = IO(new PipeMemIO)
+class PipeMem(implicit val p: HPipeParameters)
+    extends StageModule(new PipeMemIO) {
   val fromEx = io.fromEx
 
   // Load
@@ -34,12 +36,12 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
     LoadOp.UHalf.asUInt -> loaded.end(16),
   ))
 
-  // See PipeIf.fetchBusy for why it's like this
-  loadBusy := Mux(
-    io.memLoad.addr.fire ^ io.memLoad.data.fire,
-    io.memLoad.addr.fire,
-    loadBusy,
-  )
+  // See PipeIf.fetchBusy for the principle here
+  loadBusy := MuxIf(
+    io.flush                                      -> false.B,
+    (io.memLoad.addr.fire ^ io.memLoad.data.fire) -> io.memLoad.addr.fire,
+  )(loadBusy)
+  val loadValid = io.memLoad.data.fire && (loadBusy || io.memLoad.addr.fire)
 
   // Store
   io.memStore.req.valid     := fromEx.flags.store
@@ -68,6 +70,6 @@ class PipeMem(implicit val p: HPipeParameters) extends Module {
   toId.csr.bits.data := fromEx.csrData
 
   io.busy :=
-    (fromEx.flags.load && !io.memLoad.data.fire) ||
+    (fromEx.flags.load && !loadValid) ||
       (fromEx.flags.store && !io.memStore.req.fire)
 }

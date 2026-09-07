@@ -10,13 +10,12 @@ class PipeWbIO(implicit p: HPipeParameters) extends StageIO {
   val regWrite = Flipped(new RegFileWritePort)
   val csrWrite = Flipped(new CsrWritePort)
 
-  val csr = Input(new Csr)
-
+  val csr    = Input(new Csr)
   val retire = Output(new RetireInfo)
 }
 
-class PipeWb(implicit val p: HPipeParameters) extends Module {
-  val io      = IO(new PipeWbIO)
+class PipeWb(implicit val p: HPipeParameters)
+    extends StageModule(new PipeWbIO) {
   val fromMem = io.fromMem
 
   io.busy := false.B

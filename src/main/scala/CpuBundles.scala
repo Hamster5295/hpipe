@@ -173,6 +173,11 @@ class StageIO(implicit val p: HPipeParameters) extends Bundle {
   val busy = Bool()
 }
 
+class StageModule[T <: StageIO](gen: => T)(implicit p: HPipeParameters)
+    extends Module {
+  val io = IO(gen)
+}
+
 class If2IdIO(implicit p: HPipeParameters) extends PipeIO {
   val inst = Inst()
   val pc   = Addr()

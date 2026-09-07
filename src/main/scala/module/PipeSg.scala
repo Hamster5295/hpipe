@@ -18,8 +18,7 @@ class PipeSgIO(implicit p: HPipeParameters) extends StageIO {
   val feedForward = Output(new DestInfo)
 }
 
-class PipeSg(implicit p: HPipeParameters) extends Module {
-  val io = IO(new PipeSgIO)
+class PipeSg(implicit p: HPipeParameters) extends StageModule(new PipeSgIO) {
 
   val fromId  = io.fromId
   val toEx    = io.toEx

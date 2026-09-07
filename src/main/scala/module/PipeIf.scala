@@ -23,8 +23,8 @@ class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
   val csr = Input(new Csr)
 }
 
-class PipeIf(implicit val p: HPipeParameters) extends Module {
-  val io = IO(new PipeIfIO)
+class PipeIf(implicit val p: HPipeParameters)
+    extends StageModule(new PipeIfIO) {
 
   // Inst Fetch State Machine
   val pc        = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
@@ -51,8 +51,16 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
     * So when (addr ^ inst), pcFetching = addr
     * else its value is kept
     */
-  fetchBusy :=
-    Mux(io.fetch.addr.fire ^ io.fetch.inst.fire, io.fetch.addr.fire, fetchBusy)
+  fetchBusy := MuxIf(
+    io.fromEx.redirect                        -> 0.B,
+    (io.fetch.addr.fire ^ io.fetch.inst.fire) -> io.fetch.addr.fire,
+  )(fetchBusy)
+
+  // Inst fetch is only valid when
+  // 1. A fetch is in flight, then the response is fired (fetchBusy && inst.fire)
+  // 2. A fetch and its response is fired in the same cycle (addr.fire && inst.fire)
+  // If PC changes when a fetch is in flight (branch), the fetchBusy will be pulled down by MuxIf
+  val fetchValid = io.fetch.inst.fire && (fetchBusy || io.fetch.addr.fire)
 
   // Decode BR & JAL for BTB
   val decoder = Module(new BranchDecoder)
@@ -113,16 +121,16 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
 
   val mepcValid = !mepcInId && !mepcInSg
 
-  val busy = (isMret && !mepcValid) || !instFire
-  val halt = busy || io.stall
+  val busy = (isMret && !mepcValid) || !fetchValid
+  val halt = io.stall
 
   val stepPc = pc +% 4.U
   val nextPc = MuxIf(
     // We don't need feed-forward here, as trap will flush everything
     io.trap               -> io.csr.mtvec,
     (isMret && mepcValid) -> mepc,
-    halt                  -> pc,
     io.fromEx.redirect    -> io.fromEx.redirectTarget,
+    halt                  -> pc,
     brRead.take           -> brRead.target,
   )(stepPc)
 
