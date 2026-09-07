@@ -11,8 +11,8 @@ class HPipeIO(implicit val p: HPipeParameters) extends Bundle {
 
   val interrupt = Input(new InterruptSource)
 
-  val retire = Output(new RetireInfo)
-  val debug  = if (p.Debug) Some(Output(new DebugInfo)) else None
+  val retire = if (p.Sim) Some(Output(new RetireInfo)) else None
+  val debug  = if (p.Sim) Some(Output(new DebugInfo)) else None
 }
 
 class HPipe(implicit val p: HPipeParameters) extends Module {
@@ -100,11 +100,12 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
     pipeMem.io.busy || trap,
   )
 
-  // Retire Observation
-  io.retire := pipeWb.io.retire
+  // Sim
+  if (p.Sim) {
 
-  // Debug
-  if (io.debug.isDefined) {
+    // Retire Observation
+    io.retire.get := pipeWb.io.retire
+
     val dbg = io.debug.get
     dbg.pcIf  := pipeIf.io.toId.pc
     dbg.pcId  := pipeId.io.toSg.pc
@@ -159,8 +160,8 @@ object HPipe extends App {
   Export(new HPipe()(HPipeParameters()), args)
 }
 
-object HPipeDebug extends App {
-  Export(new HPipe()(HPipeParameters(Debug = true)), args)
+object HPipeSim extends App {
+  Export(new HPipe()(HPipeParameters(Sim = true)), args)
 }
 
 object HPipeFpga extends App {

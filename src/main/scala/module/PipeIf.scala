@@ -53,7 +53,7 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   val decoded = decoder(inst, table)
   val isJal   = decoded.msb()
   val isJalr  = decoded.msb(1)
-  val isMRet  = decoded.msb(2)
+  val isMret  = decoded.msb(2)
 
   val imm = MuxIf(
     isJalr -> SignExt(inst(31, 20), 32),
@@ -110,8 +110,8 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   val nextPc = MuxIf(
     // We don't need feed-forward here, as trap will flush everything
     io.trap               -> io.csr.mtvec,
-    (isMRet && mepcValid) -> mepc,
-    (isMRet || io.stall)  -> pc,
+    (isMret && mepcValid) -> mepc,
+    (isMret || io.stall)  -> pc,
     io.fromEx.redirect    -> io.fromEx.redirectTarget,
     brRead.take           -> brRead.target,
   )(stepPc)
@@ -130,5 +130,5 @@ class PipeIf(implicit val p: HPipeParameters) extends Module {
   pred.target := brRead.target
   pred.stepPc := stepPc
 
-  io.busy := isMRet && !mepcValid
+  io.busy := isMret && !mepcValid
 }

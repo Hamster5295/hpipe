@@ -51,7 +51,8 @@ APP_ELF = $(SIM_DIR)/app/build/$(APP)/$(APP).elf
 
 verilog-sim:
 	@echo Exporting SystemVerilog for Simulation...
-	@$(MILL) $(PRJ).runMain $(TARGET)Debug --target-dir sim/rtl
+	@rm -rf sim/rtl/*
+	@$(MILL) $(PRJ).runMain $(TARGET)Sim --target-dir sim/rtl
 
 sim: verilog-sim
 	@$(MAKE) -C $(APP_DIR) sim

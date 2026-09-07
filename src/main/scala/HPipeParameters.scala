@@ -5,7 +5,7 @@ import chisel3.util.log2Ceil
 import hammer._
 
 case class HPipeParameters(
-    val Debug:         Boolean = false,
+    val Sim:         Boolean = false,
     val UseArithMacro: Boolean = false,
 
     val XLEN: Int = 32,
