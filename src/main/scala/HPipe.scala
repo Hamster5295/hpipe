@@ -83,17 +83,17 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   pipeSg.io.fromId := RegFlush(
     pipeId.io.toSg,
     !pipeBusyMask.end(4).orR,
-    (pipeId.io.busy && pipeBusyMask.end(3).orR) || branch.redirect || trap,
+    (pipeId.io.busy && !pipeBusyMask.end(3).orR) || branch.redirect || trap,
   )
   pipeEx.io.fromSg := RegFlush(
     pipeSg.io.toEx,
     !pipeBusyMask.end(3).orR,
-    (pipeSg.io.busy && pipeBusyMask.end(2).orR) || branch.redirect || trap,
+    (pipeSg.io.busy && !pipeBusyMask.end(2).orR) || branch.redirect || trap,
   )
   pipeMem.io.fromEx := RegFlush(
     pipeEx.io.toMem,
     !pipeBusyMask.end(2).orR,
-    (pipeEx.io.busy && pipeBusyMask(0)) || trap,
+    (pipeEx.io.busy && !pipeBusyMask(0)) || trap,
   )
   pipeWb.io.fromMem := RegFlush(
     pipeMem.io.toWb,
