@@ -53,21 +53,21 @@ object `hpipe` extends SbtModule with ScalafmtModule with PublishModule { m =>
   /// Publish
   override def mainClass: Simple[Option[String]] = Some("hpipe.Cli")
 
-  def publishVersion: Simple[String] = "v0.1.11"
+  def publishVersion: Simple[String] = "0.2.0"
 
   def pomSettings: Simple[PomSettings] = PomSettings(
-    description = "A 6-stage pipelined RISC-V 32bit CPU",
-    organization = "",
-    url = "",
+    description = "A 6-stage Pipelined RV32IM CPU",
+    organization = "io.hamster5295",
+    url = "https://codeberg.org/hamster5295/hpipe",
     licenses = Seq(License.MIT),
     versionControl = VersionControl(
       browsableRepository = Some(s"https://codeberg.org/hamster5295/hpipe"),
-      connection = Some(VersionControlConnection.gitGit(
-        "github.com",
-        "hamster5295/hpipe.git",
+      connection = Some(VersionControlConnection.gitHttps(
+        "codeberg.org",
+        "hamster5295/hpipe",
       )),
       developerConnection = Some(VersionControlConnection.gitSsh(
-        "github.com",
+        "codeberg.org",
         "hamster5295/hpipe.git",
         username = Some("git"),
       )),
