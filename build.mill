@@ -53,7 +53,7 @@ object `hpipe` extends SbtModule with ScalafmtModule with PublishModule { m =>
   /// Publish
   override def mainClass: Simple[Option[String]] = Some("hpipe.Cli")
 
-  def publishVersion: Simple[String] = "0.2.0"
+  def publishVersion: Simple[String] = "0.2.1"
 
   def pomSettings: Simple[PomSettings] = PomSettings(
     description = "A 6-stage Pipelined RV32IM CPU",
