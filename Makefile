@@ -111,6 +111,19 @@ asic: verilog-asic
 	@echo Reports available at '$(ASIC_DIR)/build'
 
 
+# Publish
+
+cli:
+	@echo Publishing HPipe CLI to out/hpipe/assembly.dest/out.jar...
+	@$(MILL) $(PRJ).assembly
+
+
+MVN_PATH ?= .deps
+
+lib:
+	@echo Publishing HPipe as a library to $(MVN_PATH)...
+	@$(MILL) $(PRJ).publishLocal --localIvyRepo $(abspath $(MVN_PATH))
+
 # Clean up
 
 clean:
