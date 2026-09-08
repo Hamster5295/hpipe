@@ -10,7 +10,7 @@ trait HasRetAddrStackParameter {
 }
 
 class RetAddrStackIO(implicit p: HPipeParameters) extends Bundle {
-  val target = Output(Addr())
+  val target = Valid(Addr())
 
   val writeEnable = Input(Bool())
   val flags       = Input(new BranchFlags)
@@ -24,8 +24,12 @@ class RetAddrStack(implicit val p: HPipeParameters) extends Module
   val stack = Reg(Vec(config.Depth, Addr()))
   val ptr   = RegZero(UInt(config.PtrWidth.W))
 
+  def isEmpty = ptr === 0.U
+  def isFull  = ptr === config.Depth.U
+
   val stackTop = ptr -% 1.U
-  io.target := stack(stackTop)
+  io.target.valid := ptr =/= 0.U
+  io.target.bits  := stack(stackTop)
 
   // Write
   val push = io.flags.isCall
@@ -33,8 +37,8 @@ class RetAddrStack(implicit val p: HPipeParameters) extends Module
   stack(ptr) := io.writeTarget
 
   ptr := MuxIf(
-    !io.writeEnable -> ptr,
-    push            -> (ptr +% 1.U),
-    pop             -> (ptr -% 1.U),
+    !io.writeEnable   -> ptr,
+    (push && !isFull) -> (ptr +% 1.U),
+    (pop && !isEmpty) -> (ptr -% 1.U),
   )(ptr)
 }

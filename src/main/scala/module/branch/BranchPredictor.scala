@@ -49,11 +49,15 @@ class BranchPredictor(implicit p: HPipeParameters) extends Module {
     ras.io.writeTarget := io.write.target
 
     io.read.take :=
-      btb.io.hit && bht.io.take || io.read.flags.isStack || io.read.flags.isJal
+      btb.io.hit && bht.io.take ||
+        io.read.flags.isStack && ras.io.target.valid ||
+        io.read.flags.isJal
+
     io.read.target := MuxIf(
       io.read.flags.isJal   -> io.read.jalAddr,
-      io.read.flags.isStack -> ras.io.target,
+      io.read.flags.isStack -> ras.io.target.bits,
     )(btb.io.target)
+
   } else {
     io.read.take   := false.B
     io.read.target := 0.U
