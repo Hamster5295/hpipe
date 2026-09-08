@@ -156,37 +156,3 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
     dbg.csr := csrFile.io.csr
   }
 }
-
-object HPipe extends App {
-  Export(new HPipe()(HPipeParameters()), args)
-}
-
-object HPipeSim extends App {
-  Export(new HPipe()(HPipeParameters(Sim = true)), args)
-}
-
-object HPipeFpga extends App {
-  Export(
-    new HPipe()(HPipeParameters(UseArithMacro = true)),
-    args,
-    Array("-lowering-options=mitigateVivadoArrayIndexConstPropBug"),
-  )
-}
-
-object HPipeFpgaMini extends App {
-  Export(
-    new HPipe()(HPipeParameters(UseArithMacro = true, Branch = false)),
-    args,
-    Array("-lowering-options=mitigateVivadoArrayIndexConstPropBug"),
-  )
-}
-
-object HPipeAsic extends App {
-  Export(
-    new HPipe()(HPipeParameters(UseArithMacro = true)),
-    args,
-    Array(
-      "-lowering-options=disallowLocalVariables,disallowPackedArrays",
-    ),
-  )
-}

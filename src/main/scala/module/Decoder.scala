@@ -40,7 +40,7 @@ class BranchDecoder(implicit p: HPipeParameters) extends Module {
       JALR -> parse(false, true, false),
       MRET -> parse(false, false, true),
     ),
-    BitPat.N(4),
+    BitPat.N(3),
   )
   val decoded = decoder(io.inst, table)
   io.out.isJal  := decoded.msb()
@@ -187,7 +187,7 @@ class Decoder(implicit p: HPipeParameters) extends Module {
   )
 
   val table =
-    TruthTable(insts.map(i => (i.inst, i.toBitPat)).toMap, BitPat.N(19))
+    TruthTable(insts.map(i => (i.inst, i.toBitPat)).toMap, BitPat.N(20))
   val result = decoder(inst, table)
 
   val valid         = result.msb()

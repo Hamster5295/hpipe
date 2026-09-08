@@ -1,5 +1,5 @@
 PRJ = hpipe
-TARGET ?= hpipe.HPipe
+TARGET ?= hpipe.Cli
 
 MILL = ./mill
 JAVA = java
@@ -52,7 +52,7 @@ APP_ELF = $(SIM_DIR)/app/build/$(APP)/$(APP).elf
 verilog-sim:
 	@echo Exporting SystemVerilog for Simulation...
 	@rm -rf sim/rtl/*
-	@$(MILL) $(PRJ).runMain $(TARGET)Sim --target-dir sim/rtl
+	@$(MILL) $(PRJ).runMain $(TARGET) --config config/sim.toml --target-dir sim/rtl
 
 sim: verilog-sim
 	@$(MAKE) -C $(APP_DIR) sim
@@ -77,7 +77,10 @@ FPGA_DIR = $(BACKEND_DIR)/fpga
 
 verilog-fpga:
 	@echo Exporting SystemVerilog for FPGA Analysis...
-	@$(MILL) $(PRJ).runMain $(TARGET)Fpga --target-dir $(FPGA_DIR)/rtl
+	@$(MILL) $(PRJ).runMain $(TARGET) 	\
+		--config config/fpga.toml 		\
+		--target-dir $(FPGA_DIR)/rtl 	\
+		-Flowering-options=mitigateVivadoArrayIndexConstPropBug
 
 init-fpga: verilog-fpga
 	@$(MAKE) -C $(FPGA_DIR) init
@@ -95,7 +98,10 @@ init-asic:
 
 verilog-asic:
 	@echo Exporting SystemVerilog for ASIC Analysis...
-	@$(MILL) $(PRJ).runMain $(TARGET)Asic --target-dir $(ASIC_DIR)/rtl
+	@$(MILL) $(PRJ).runMain $(TARGET) 	\
+		--config config/asic.toml 		\
+		--target-dir $(ASIC_DIR)/rtl 	\
+		-Flowering-options=disallowLocalVariables,disallowPackedArrays
 
 asic: verilog-asic
 	@echo Analysing backend...

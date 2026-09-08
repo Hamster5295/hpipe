@@ -35,6 +35,9 @@ object `hpipe` extends SbtModule with ScalafmtModule with PublishModule { m =>
 
   override def mvnDeps = Seq(
     mvn"org.chipsalliance::chisel:$chiselVersion",
+    mvn"com.indoorvivants::toml:0.3.0",
+    mvn"org.rogach::scallop:6.0.0",
+    mvn"com.gu::spy:0.1.1",
   )
 
   override def scalacPluginMvnDeps = Seq(
@@ -48,6 +51,8 @@ object `hpipe` extends SbtModule with ScalafmtModule with PublishModule { m =>
   )
 
   /// Publish
+  override def mainClass: Simple[Option[String]] = Some("hpipe.Cli")
+
   def publishVersion: Simple[String] = "v0.1.11"
 
   def pomSettings: Simple[PomSettings] = PomSettings(
