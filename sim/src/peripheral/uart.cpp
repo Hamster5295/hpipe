@@ -2,7 +2,9 @@
 #include "peripheral.h"
 #include <stdio.h>
 
-uint32_t uart_read(uint32_t addr) {}
+uint32_t uart_read(uint32_t addr) {
+    return 0;
+}
 
 void uart_write(uint32_t addr, uint8_t data) {
   DBG("UART Send: %c", data);
