@@ -122,7 +122,7 @@ MVN_DIR ?= .deps
 
 lib:
 	@echo Publishing HPipe as a library to $(MVN_DIR)...
-	@$(MILL) $(PRJ).publishLocal --localIvyRepo $(abspath $(MVN_DIR))
+	@$(MILL) $(PRJ).publishM2Local --m2RepoPath $(abspath $(MVN_DIR))
 
 # Clean up
 
