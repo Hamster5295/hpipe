@@ -4,7 +4,7 @@ SRCS += $(shell find repo -maxdepth 1 -name "*.c")
 INCS += port
 INCS += repo
 
-include ../Makefile
+include ../build.mk
 
 CFLAGS += -DFLAGS_STR=\"$(OPTFLAGS)\"
 CFLAGS += -DPERFORMANCE_RUN=1

@@ -1,3 +1,3 @@
 SRCS := $(shell find . -name "*.[cS]")
 
-include ../Makefile
+include ../build.mk
