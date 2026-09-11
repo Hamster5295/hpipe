@@ -18,7 +18,7 @@ Original Author: Shay Gal-on
 #include "core_portme.h"
 #include "common.h"
 #include "coremark.h"
-#include "instrinc.h"
+#include "intrinsic.h"
 
 #if VALIDATION_RUN
 volatile ee_s32 seed1_volatile = 0x3415;

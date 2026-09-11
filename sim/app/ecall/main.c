@@ -1,6 +1,6 @@
 #include "common.h"
 #include "hprintf.h"
-#include "instrinc.h"
+#include "intrinsic.h"
 
 void handler() {
   hprintf("This is handler!\n");
