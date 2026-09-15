@@ -104,6 +104,9 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   // Sim
   if (p.Sim) {
 
+    // Chiperf
+    val chiperf = Module(new ChiperfLogger(this))
+
     // Retire Observation
     io.retire.get := pipeWb.io.retire
 

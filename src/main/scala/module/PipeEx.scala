@@ -101,6 +101,7 @@ class PipeEx(implicit val p: HPipeParameters)
   val toMem = io.toMem
   toMem.valid   := fromSg.valid
   toMem.pc      := fromSg.pc
+  toMem.inst    := fromSg.inst
   toMem.rd      := fromSg.rdAddr
   toMem.funct   := fromSg.funct
   toMem.data    := result

@@ -36,6 +36,7 @@ class PipeWb(implicit val p: HPipeParameters)
   val retire = io.retire
   retire.valid      := fromMem.valid
   retire.pc         := fromMem.pc
+  retire.inst       := fromMem.inst
   retire.trap.valid := fromMem.trap.valid || intr
   retire.trap.cause := Mux(intr, "x8000_0000".U | intrCause, fromMem.trap.cause)
   retire.ebreak     := fromMem.flags.ebreak

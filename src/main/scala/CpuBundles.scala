@@ -99,6 +99,7 @@ class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
 class RetireInfo(implicit val p: HPipeParameters) extends Bundle {
   val valid = Bool()
   val pc    = Addr()
+  val inst  = Inst()
   val trap  = new TrapInfo
 
   val ebreak = Bool()
@@ -167,6 +168,9 @@ class DebugInfo(implicit val p: HPipeParameters) extends Bundle {
 
 class PipeIO(implicit val p: HPipeParameters) extends Bundle {
   val valid = Bool()
+
+  val pc   = Addr()
+  val inst = Inst()
 }
 
 class StageIO(implicit val p: HPipeParameters) extends Bundle {
@@ -179,15 +183,10 @@ class StageModule[T <: StageIO](gen: => T)(implicit p: HPipeParameters)
 }
 
 class If2IdIO(implicit p: HPipeParameters) extends PipeIO {
-  val inst = Inst()
-  val pc   = Addr()
-
   val prediction = new BranchPredictInfo
 }
 
 class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
-  val pc = Addr()
-
   val rs1 = XRegAddr()
   val rs2 = XRegAddr()
   val rd  = XRegAddr()
@@ -206,7 +205,6 @@ class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
 }
 
 class Id2SgIO(implicit p: HPipeParameters) extends PipeIO {
-  val pc = Addr()
 
   val rs1Addr = XRegAddr()
   val rs2Addr = XRegAddr()
@@ -220,8 +218,6 @@ class Id2SgIO(implicit p: HPipeParameters) extends PipeIO {
 }
 
 class Sg2ExIO(implicit p: HPipeParameters) extends PipeIO {
-  val pc = Addr()
-
   val rs1Addr = XRegAddr()
   val rs2Addr = XRegAddr()
   val rdAddr  = XRegAddr()
@@ -243,7 +239,6 @@ class Sg2ExIO(implicit p: HPipeParameters) extends PipeIO {
 }
 
 class Ex2MemIO(implicit p: HPipeParameters) extends PipeIO {
-  val pc = Addr()
   val rd = XRegAddr()
 
   val funct   = UInt(3.W)
@@ -257,7 +252,6 @@ class Ex2MemIO(implicit p: HPipeParameters) extends PipeIO {
 }
 
 class Mem2WbIO(implicit p: HPipeParameters) extends PipeIO {
-  val pc   = Addr()
   val rd   = XRegAddr()
   val data = Word()
 

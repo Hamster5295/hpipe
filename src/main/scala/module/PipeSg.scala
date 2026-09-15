@@ -52,6 +52,7 @@ class PipeSg(implicit p: HPipeParameters) extends StageModule(new PipeSgIO) {
 
   toEx.valid   := fromId.valid
   toEx.pc      := fromId.pc
+  toEx.inst    := fromId.inst
   toEx.rs1Addr := fromId.rs1Addr
   toEx.rs2Addr := fromId.rs2Addr
   toEx.rdAddr  := fromId.rdAddr

@@ -7,7 +7,8 @@ VERILATOR := verilator
 BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj/sim
 LIB_DIR = $(BUILD_DIR)/obj
-BIN = $(BUILD_DIR)/emu
+BIN_NAME = emu
+BIN = $(BUILD_DIR)/$(BIN_NAME)
 
 $(shell mkdir -p $(OBJ_DIR))
 
@@ -57,7 +58,7 @@ header: CFLAGS += $(addprefix -D,ENABLE_TRACE)
 header: build	
 
 sim: build
-	@$(BIN) $(SIMFLAGS)
+	@cd $(BUILD_DIR) && ./$(BIN_NAME) $(SIMFLAGS)
 
 wave: header sim
 
