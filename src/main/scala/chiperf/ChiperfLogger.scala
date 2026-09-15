@@ -24,83 +24,29 @@ class ChiperfLogger(hpipe: HPipe)(implicit p: HPipeParameters) extends Module {
 
     // Pipeline
     {
-      def printOX(name: String, result: PipeIO, pass: PipeIO) = {
-        val res = RegZero(new PipeIO)
-        res := result
-        when(res.valid && pass.valid) {
-          output.printf(
-            cf"[pip] \"$name\", O, 0x${res.inst}%x\n",
-          )
-        }
+      def printPip(name: String, valid: Bool, inst: UInt) =
+        when(valid)(output.printf(cf"[pip] $name, 0x${inst}%8x\n"))
+          .otherwise(output.printf(cf"[pip] $name, bubble\n"))
 
-        when(res.valid && !pass.valid) {
-          output.printf(
-            cf"[pip] \"$name\", X, 0x${res.inst}%x\n",
-          )
-        }
-      }
+      def printPipe(name: String, io: PipeIO) =
+        printPip(name, io.valid, io.inst)
 
-      // If
-      when(get(hpipe.pipeIf.fetchValid)) {
-        output.printf(cf"[pip] \"IF\", I, 0x${get(hpipe.pipeIf.inst)}%x\n")
-      }
-
-      printOX("IF", get(hpipe.pipeIf.io.toId), get(hpipe.pipeId.io.fromIf))
-
-      // Id
-      when(get(hpipe.pipeId.io.fromIf.valid)) {
-        output.printf(
-          cf"[pip] \"ID\", I, 0x${get(hpipe.pipeId.io.fromIf.inst)}%x\n",
-        )
-      }
-
-      printOX("ID", get(hpipe.pipeId.io.toSg), get(hpipe.pipeSg.io.fromId))
-
-      // Sg
-      when(get(hpipe.pipeSg.io.fromId.valid)) {
-        output.printf(
-          cf"[pip] \"SG\", I, 0x${get(hpipe.pipeSg.io.fromId.inst)}%x\n",
-        )
-      }
-
-      printOX("SG", get(hpipe.pipeSg.io.toEx), get(hpipe.pipeEx.io.fromSg))
-
-      // Ex
-      when(get(hpipe.pipeEx.io.fromSg.valid)) {
-        output.printf(
-          cf"[pip] \"EX\", I, 0x${get(hpipe.pipeEx.io.fromSg.inst)}%x\n",
-        )
-      }
-
-      printOX("EX", get(hpipe.pipeEx.io.toMem), get(hpipe.pipeMem.io.fromEx))
-
-      // Mem
-      when(get(hpipe.pipeMem.io.fromEx.valid)) {
-        output.printf(
-          cf"[pip] \"MEM\", I, 0x${get(hpipe.pipeMem.io.fromEx.inst)}%x\n",
-        )
-      }
-
-      printOX("MEM", get(hpipe.pipeMem.io.toWb), get(hpipe.pipeWb.io.fromMem))
-
-      // Wb
-      when(get(hpipe.pipeWb.io.fromMem.valid)) {
-        output.printf(
-          cf"[pip] \"WB\", I, 0x${get(hpipe.pipeWb.io.fromMem.inst)}%x\n",
-        )
-      }
-
-      val delayWb = RegNext(get(hpipe.pipeWb.io.retire))
-      when(delayWb.valid) {
-        output.printf(
-          cf"[pip] \"WB\", O, 0x${delayWb.inst}%x\n",
-        )
-      }
+      printPip("If", get(hpipe.pipeIf.fetchValid), get(hpipe.pipeIf.inst))
+      printPipe("Id", get(hpipe.pipeId.io.fromIf))
+      printPipe("Sg", get(hpipe.pipeSg.io.fromId))
+      printPipe("Ex", get(hpipe.pipeEx.io.fromSg))
+      printPipe("Mem", get(hpipe.pipeMem.io.fromEx))
+      printPipe("Wb", get(hpipe.pipeWb.io.fromMem))
     }
 
     output.printf(
       "[val] \"pc\", 0x%8x\n",
       get(hpipe.pipeIf.pc),
     )
+
+    when(get(hpipe.branch.valid)) {
+      when(get(hpipe.branch.redirect))(output.printf("[evt] \"Branch Miss\"\n"))
+        .otherwise(output.printf("[evt] \"Branch Hit\"\n"))
+    }
   }
 }

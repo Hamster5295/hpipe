@@ -137,7 +137,7 @@ class PipeIf(implicit val p: HPipeParameters)
   pc := nextPc
 
   val toId = io.toId
-  toId.valid := !reset.asBool
+  toId.valid := !reset.asBool && fetchValid
   toId.pc    := pc
   toId.inst  := inst
 
