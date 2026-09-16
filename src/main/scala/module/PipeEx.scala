@@ -3,9 +3,9 @@ package hpipe
 import chisel3._
 import chisel3.util._
 import hammer._
+import hpipe.BranchOp._
 import hpipe.arith._
 import hpipe.arith.AluOp._
-import hpipe.BranchOp._
 
 class PipeExIO(implicit p: HPipeParameters) extends StageIO {
   val fromSg = Input(new Sg2ExIO)
