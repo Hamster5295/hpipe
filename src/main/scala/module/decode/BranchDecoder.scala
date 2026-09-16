@@ -1,11 +1,13 @@
-package hpipe
+package hpipe.decode
 
 import chisel3._
 import chisel3.util._
 import chisel3.util.experimental.decode._
 import hammer._
-import hpipe.Insts._
-import hpipe.InstType._
+import hpipe._
+
+import Insts._
+import InstType._
 
 class BranchDecodeResult(implicit p: HPipeParameters) extends Bundle {
   val isJal  = Bool()

@@ -1,8 +1,9 @@
-package hpipe
+package hpipe.branch
 
 import chisel3._
 import chisel3.util._
 import hammer._
+import hpipe._
 
 trait HasRetAddrStackParameter {
   implicit val p: HPipeParameters

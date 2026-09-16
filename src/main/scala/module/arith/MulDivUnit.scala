@@ -1,9 +1,14 @@
-package hpipe
+package hpipe.arith
 
 import chisel3._
 import chisel3.util._
 import hammer._
-import hpipe.MulDivOp._
+import hpipe._
+
+object MulDivOp extends ChiselEnum {
+  val Mul, Mulh, Mulhsu, Mulhu, Div, Divu, Rem, Remu = Value
+}
+import MulDivOp._
 
 class MulDivUnitIO(implicit val p: HPipeParameters) extends Bundle {
   val src1   = Input(Word())

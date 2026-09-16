@@ -1,8 +1,9 @@
-package hpipe
+package hpipe.branch
 
 import chisel3._
 import chisel3.util._
 import hammer._
+import hpipe._
 
 class BranchPort(implicit p: HPipeParameters) extends Bundle {
   val pc    = Input(Addr())

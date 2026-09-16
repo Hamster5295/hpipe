@@ -3,8 +3,9 @@ package hpipe
 import chisel3._
 import chisel3.util._
 import hammer._
-import hpipe.Insts._
-import hpipe.InstType._
+import hpipe.decode._
+import hpipe.decode.Insts._
+import hpipe.decode.InstType._
 
 class PipeIdIO(implicit p: HPipeParameters) extends StageIO {
   val fromIf = Input(new If2IdIO)

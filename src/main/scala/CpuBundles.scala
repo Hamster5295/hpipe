@@ -2,6 +2,7 @@ package hpipe
 
 import chisel3._
 import chisel3.util._
+import hpipe.decode._
 
 // Data Bundles
 
@@ -264,24 +265,12 @@ class Mem2WbIO(implicit p: HPipeParameters) extends PipeIO {
 
 // Enums
 
-object InstType extends ChiselEnum {
-  val Invalid, R, I, S, B, U, J, Csr, N = Value
-}
-
 object Src1 extends ChiselEnum {
   val Reg, PC, Imm, None = Value
 }
 
 object Src2 extends ChiselEnum {
   val Reg, Imm, Four, None = Value
-}
-
-object ALUOp extends ChiselEnum {
-  val Add, Sll, Slt, Sltu, Xor, Srx, Or, And = Value
-}
-
-object MulDivOp extends ChiselEnum {
-  val Mul, Mulh, Mulhsu, Mulhu, Div, Divu, Rem, Remu = Value
 }
 
 object LoadOp extends ChiselEnum {

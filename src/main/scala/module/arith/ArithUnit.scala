@@ -1,14 +1,19 @@
-package hpipe
+package hpipe.arith
 
 import chisel3._
 import chisel3.util._
 import hammer._
-import hpipe.ALUOp._
+import hpipe._
+
+object AluOp extends ChiselEnum {
+  val Add, Sll, Slt, Sltu, Xor, Srx, Or, And = Value
+}
+import AluOp._
 
 class ArithUnitIO(implicit val p: HPipeParameters) extends Bundle {
   val src1 = Input(Word())
   val src2 = Input(Word())
-  val op   = Input(ALUOp())
+  val op   = Input(AluOp())
 
   val inv = Input(Bool()) // For SRL/SRA only
 

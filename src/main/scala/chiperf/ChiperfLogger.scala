@@ -1,9 +1,10 @@
-package hpipe
+package hpipe.chiperf
 
 import chisel3._
 import chisel3.util._
 import chisel3.util.experimental._
 import hammer._
+import hpipe._
 
 class ChiperfLogger(hpipe: HPipe)(implicit p: HPipeParameters) extends Module {
   val output = SimLog.file("hpipe.chiperf")

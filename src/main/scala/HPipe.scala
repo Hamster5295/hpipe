@@ -3,6 +3,7 @@ package hpipe
 import chisel3._
 import chisel3.util._
 import hammer._
+import hpipe.chiperf._
 
 class HPipeIO(implicit val p: HPipeParameters) extends Bundle {
   val instFetch = new InstFetchPort

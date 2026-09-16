@@ -4,7 +4,9 @@ import chisel3._
 import chisel3.util._
 import chisel3.util.experimental.decode._
 import hammer._
-import hpipe.Insts._
+import hpipe.branch._
+import hpipe.decode._
+import hpipe.decode.Insts._
 
 class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
   val fetch = new InstFetchPort

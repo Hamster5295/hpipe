@@ -1,6 +1,11 @@
-package hpipe
+package hpipe.decode
 
-import chisel3.util.BitPat
+import chisel3._
+import chisel3.util._
+
+object InstType extends ChiselEnum {
+  val Invalid, R, I, S, B, U, J, Csr, N = Value
+}
 
 object Insts {
   // I
