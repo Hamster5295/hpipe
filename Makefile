@@ -36,10 +36,6 @@ test-wave:
 format:
 	@$(MILL) _.reformat
 
-lint:
-	@$(JAVA) -jar src/main/resources/scalastyle -c .scalastyle.xml src
-
-
 # Simulation with Verilator
 
 SIM_DIR = sim
