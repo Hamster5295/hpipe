@@ -26,6 +26,8 @@ case class HPipeParameters(
 ) {
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth
+
+  val BranchPcSkipWidth = if (ExtC) 1 else 2
 }
 
 case class TargetBufferParameters(

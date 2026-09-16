@@ -26,7 +26,7 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
   val groups          = p.TargetBuf.Size / ways
   val groupIndexWidth = log2Ceil(groups)
   val tagWidth        = p.TargetBuf.TagWidth
-  val skipPcBits      = if (p.ExtC) 1 else 2
+  val skipPcBits      = p.BranchPcSkipWidth
 
   val io = IO(new TargetBufferIO)
 
