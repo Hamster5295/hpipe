@@ -65,38 +65,18 @@ class PipeIf(implicit val p: HPipeParameters)
   val fetchValid = io.fetch.inst.fire && (fetchBusy || io.fetch.addr.fire)
 
   // Decode BR & JAL for BTB
-  val decoder = Module(new BranchDecoder)
+  val decoder = Module(new EarlyDecoder)
+  decoder.io.pc   := pc
   decoder.io.inst := inst
   val decoded = decoder.io.out
-  val isJal   = decoded.isJal
-  val isJalr  = decoded.isJalr
-  val isMret  = decoded.isMret
-
-  val imm = MuxIf(
-    isJalr -> SignExt(inst(31, 20), 32),
-    isJal  -> SignExt(
-      inst(31) ## inst(19, 12) ## inst(20) ## inst(30, 21) ## 0.U(1.W),
-      32,
-    ),
-  )(0.U)
-
-  // Addr Gen
-  val rs1Addr = inst(19, 15)
-  val rdAddr  = inst(11, 7)
-
-  val jalAddr = pc +% imm
 
   val predictor = Module(new BranchPredictor)
   val brRead    = predictor.io.read
-  brRead.pc           := pc
-  brRead.flags.isJal  := isJal
-  brRead.flags.isCall := (isJal || isJalr) && (rdAddr === 1.U || rdAddr === 5.U)
-  brRead.flags.isRet  :=
-    (isJalr
-      && !(rs1Addr === rdAddr)
-      && (rs1Addr === 1.U || rs1Addr === 5.U)
-      && !inst(31, 20).orR)
-  brRead.jalAddr := jalAddr
+  brRead.pc             := pc
+  brRead.flags.isUncond := decoded.isUncond
+  brRead.uncondAddr     := decoded.uncondAddr
+  brRead.flags.isCall   := decoded.isCall
+  brRead.flags.isRet    := decoded.isRet
 
   val brWrite = predictor.io.write
   brWrite.pc     := io.fromEx.pc
@@ -123,17 +103,17 @@ class PipeIf(implicit val p: HPipeParameters)
 
   val mepcValid = !mepcInId && !mepcInSg
 
-  val busy = (isMret && !mepcValid) || !fetchValid
+  val busy = (decoded.isMret && !mepcValid) || !fetchValid
   val halt = io.stall
 
-  val stepPc = pc +% 4.U
+  val stepPc = pc +% Mux(decoded.isC, 2.U, 4.U)
   val nextPc = MuxIf(
     // We don't need feed-forward here, as trap will flush everything
-    io.trap               -> io.csr.mtvec,
-    (isMret && mepcValid) -> mepc,
-    io.fromEx.redirect    -> io.fromEx.redirectTarget,
-    halt                  -> pc,
-    brRead.take           -> brRead.target,
+    io.trap                       -> io.csr.mtvec,
+    (decoded.isMret && mepcValid) -> mepc,
+    io.fromEx.redirect            -> io.fromEx.redirectTarget,
+    halt                          -> pc,
+    brRead.take                   -> brRead.target,
   )(stepPc)
 
   pc := nextPc
@@ -143,7 +123,7 @@ class PipeIf(implicit val p: HPipeParameters)
   toId.pc    := pc
   toId.inst  := inst
 
-  val pred = toId.prediction
+  val pred = toId.pred
   pred.flags  := brRead.flags
   pred.take   := brRead.take
   pred.target := brRead.target

@@ -82,9 +82,9 @@ class BranchInfo(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class BranchFlags(implicit val p: HPipeParameters) extends Bundle {
-  val isJal  = Bool()
-  val isCall = Bool()
-  val isRet  = Bool()
+  val isUncond = Bool()
+  val isCall   = Bool()
+  val isRet    = Bool()
 
   def isStack = isCall || isRet
 }
@@ -184,7 +184,7 @@ class StageModule[T <: StageIO](gen: => T)(implicit p: HPipeParameters)
 }
 
 class If2IdIO(implicit p: HPipeParameters) extends PipeIO {
-  val prediction = new BranchPredictInfo
+  val pred = new BranchPredictInfo
 }
 
 class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
@@ -213,6 +213,7 @@ class Id2SgIO(implicit p: HPipeParameters) extends PipeIO {
   val csrAddr = CsrAddr()
 
   val decoded = new DecodeResult
+  val isC     = Bool()
 
   val trap = new TrapInfo
   val pred = new BranchPredictInfo
@@ -270,7 +271,7 @@ object Src1 extends ChiselEnum {
 }
 
 object Src2 extends ChiselEnum {
-  val Reg, Imm, Four, None = Value
+  val Reg, Imm, PcStep, None = Value
 }
 
 object LoadOp extends ChiselEnum {

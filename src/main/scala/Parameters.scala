@@ -16,7 +16,7 @@ case class HPipeParameters(
     val ResetVector: String = "x80000000",
 
     // Supported ISA Extensions
-    val ExtC: Boolean = false,
+    val ExtC: Boolean = true,
 
     // Branch
     val Branch:       Boolean = true,
@@ -27,7 +27,9 @@ case class HPipeParameters(
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth
 
-  val BranchPcSkipWidth = if (ExtC) 1 else 2
+  val PcUnusedWidth = if (ExtC) 1 else 2
+  val PcUsedWidth   = XLEN - PcUnusedWidth
+
 }
 
 case class TargetBufferParameters(

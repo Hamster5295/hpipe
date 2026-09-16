@@ -9,8 +9,7 @@ import hpipe.decode.InstType._
 
 class PipeIdIO(implicit p: HPipeParameters) extends StageIO {
   val fromIf = Input(new If2IdIO)
-//   val toEx   = Output(new Id2ExIO)
-  val toSg = Output(new Id2SgIO)
+  val toSg   = Output(new Id2SgIO)
 
   val feedForward = Output(new DestInfo)
 }
@@ -19,10 +18,17 @@ class PipeId(implicit val p: HPipeParameters)
     extends StageModule(new PipeIdIO) {
 
   val toSg = io.toSg
-  val inst = io.fromIf.inst
+
+  val isC  = !io.fromIf.inst.end(2).andR
+  val inst = if (p.ExtC) {
+    val decomp = Module(new RvcDecompressor)
+    decomp.io.in := io.fromIf.inst.end(16)
+    Mux(isC, decomp.io.out, io.fromIf.inst)
+  } else io.fromIf.inst
+
   toSg.pc   := io.fromIf.pc
   toSg.inst := io.fromIf.inst
-  toSg.pred := io.fromIf.prediction
+  toSg.pred := io.fromIf.pred
 
   val rs1Addr = inst(19, 15)
   val rs2Addr = inst(24, 20)
@@ -41,6 +47,7 @@ class PipeId(implicit val p: HPipeParameters)
   toSg.rs2Addr := rs2Addr
   toSg.rdAddr  := rdAddr
   toSg.decoded := decoded
+  toSg.isC     := isC
 
   toSg.decoded.useRs1 := decoded.useRs1 && rs1Addr.orR
   toSg.decoded.useRs2 := decoded.useRs2 && rs2Addr.orR

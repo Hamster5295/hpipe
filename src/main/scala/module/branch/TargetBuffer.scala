@@ -18,7 +18,7 @@ class TargetBufferIO(implicit p: HPipeParameters) extends Bundle {
 
   val writeEnable = Input(Bool())
   val writePc     = Input(Addr())
-  val writeData   = Input(Addr())
+  val writeTarget = Input(Addr())
 }
 
 class TargetBuffer(implicit p: HPipeParameters) extends Module {
@@ -26,12 +26,11 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
   val groups          = p.TargetBuf.Size / ways
   val groupIndexWidth = log2Ceil(groups)
   val tagWidth        = p.TargetBuf.TagWidth
-  val skipPcBits      = p.BranchPcSkipWidth
 
   val io = IO(new TargetBufferIO)
 
-  val pc      = io.pc.head(p.AddrWidth - skipPcBits)
-  val writePc = io.writePc.head(p.AddrWidth - skipPcBits)
+  val pc      = io.pc.head(p.PcUsedWidth)
+  val writePc = io.writePc.head(p.PcUsedWidth)
 
   val groupIdx      = pc.end(groupIndexWidth)
   val tag           = pc.span(groupIndexWidth, tagWidth)
@@ -70,7 +69,7 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
     entry.valid  := io.writeEnable && replace || entry.valid
     entry.tag    := Mux(io.writeEnable && replace, writeTag, entry.tag)
     entry.target :=
-      Mux(io.writeEnable && (replace || change), io.writeData, entry.target)
+      Mux(io.writeEnable && (replace || change), io.writeTarget, entry.target)
 
     io.writeEnable && replace
   }.asUInt.orR

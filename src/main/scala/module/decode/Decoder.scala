@@ -78,8 +78,8 @@ class Decoder(implicit p: HPipeParameters) extends Module {
     InstInfo(LUI,    U,   Src1.None, Src2.Imm ),
     InstInfo(AUIPC,  U,   Src1.PC,   Src2.Imm ),
 
-    InstInfo(JAL,    J,   Src1.PC,   Src2.Four, jal = true),
-    InstInfo(JALR,   I,   Src1.PC,   Src2.Four, jal = true, useRs1ForAddr = true),
+    InstInfo(JAL,    J,   Src1.PC,   Src2.PcStep, jal = true),
+    InstInfo(JALR,   I,   Src1.PC,   Src2.PcStep, jal = true, useRs1ForAddr = true),
 
     InstInfo(BEQ,    B,   Src1.Reg,  Src2.Reg,  br = true, rd = false),
     InstInfo(BNE,    B,   Src1.Reg,  Src2.Reg,  br = true, rd = false),

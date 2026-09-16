@@ -1,5 +1,5 @@
 TEST := all
-TEST_DIR := repo/isa/rv32ui repo/isa/rv32um
+TEST_DIR := repo/isa/rv32ui repo/isa/rv32um repo/isa/rv32uc
 
 TARGET = sim
 

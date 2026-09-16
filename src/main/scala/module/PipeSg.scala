@@ -67,9 +67,9 @@ class PipeSg(implicit p: HPipeParameters) extends StageModule(new PipeSgIO) {
   )
   toEx.src2 := MuxLookup(decoded.src2, 0.U)(
     Seq(
-      Src2.Reg  -> rs2,
-      Src2.Imm  -> decoded.imm,
-      Src2.Four -> 4.U,
+      Src2.Reg    -> rs2,
+      Src2.Imm    -> decoded.imm,
+      Src2.PcStep -> Mux(fromId.isC, 2.U, 4.U),
     ),
   )
   toEx.csrSrc := csrSrc

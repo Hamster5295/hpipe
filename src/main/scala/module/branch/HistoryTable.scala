@@ -17,11 +17,10 @@ class HistoryTableIO(implicit p: HPipeParameters) extends Bundle {
 class HistoryTable(implicit p: HPipeParameters) extends Module {
   val tagWidth = log2Ceil(p.HistTable.Size)
 
-  val io         = IO(new HistoryTableIO)
-  val skipPcBits = p.BranchPcSkipWidth
+  val io = IO(new HistoryTableIO)
 
-  val query      = io.pc.head(p.AddrWidth - skipPcBits).end(tagWidth)
-  val writeQuery = io.writePc.head(p.AddrWidth - skipPcBits).end(tagWidth)
+  val query      = io.pc.head(p.PcUsedWidth).end(tagWidth)
+  val writeQuery = io.writePc.head(p.PcUsedWidth).end(tagWidth)
 
   val entries = VecInit(Seq.tabulate(p.HistTable.Size) { i =>
     val cnter = Module(SaturateCounter(p.HistTable.RecordWidth, 1))

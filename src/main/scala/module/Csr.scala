@@ -41,8 +41,8 @@ class Csr(implicit p: HPipeParameters) extends Bundle {
 // format: off
     CsrModel(MSTATUS, RW, mstatus, reset = "b1000".U),
     CsrModel(MIE,     RW, mie,     write = _ & "x888".U),
-    CsrModel(MTVEC,   RW, mtvec,   write = _.head(30) ## 0.U(2.W)),
-    CsrModel(MEPC,    RW, mepc,    write = _.head(30) ## 0.U(2.W)),
+    CsrModel(MTVEC,   RW, mtvec,   write = _.head(p.PcUsedWidth) ## 0.U(p.PcUnusedWidth.W)),
+    CsrModel(MEPC,    RW, mepc,    write = _.head(p.PcUsedWidth) ## 0.U(p.PcUnusedWidth.W)),
     CsrModel(MCAUSE,  RW, mcause),
     CsrModel(MTVAL,   RW, mtval),
     CsrModel(MIP,     RO, mip),

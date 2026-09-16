@@ -14,7 +14,7 @@ class BranchReadPort(implicit p: HPipeParameters) extends BranchPort {
   val target = Output(Addr())
   val take   = Output(Bool())
 
-  val jalAddr = Input(Addr())
+  val uncondAddr = Input(Addr())
 }
 
 class BranchWritePort(implicit p: HPipeParameters) extends BranchPort {
@@ -36,7 +36,7 @@ class BranchPredictor(implicit p: HPipeParameters) extends Module {
     btb.io.pc          := io.read.pc
     btb.io.writeEnable := io.write.valid && !io.write.flags.isStack
     btb.io.writePc     := io.write.pc
-    btb.io.writeData   := io.write.target
+    btb.io.writeTarget := io.write.target
 
     val bht = Module(new HistoryTable)
     bht.io.pc          := io.read.pc
@@ -52,11 +52,11 @@ class BranchPredictor(implicit p: HPipeParameters) extends Module {
     io.read.take :=
       btb.io.hit && bht.io.take ||
         io.read.flags.isStack && ras.io.target.valid ||
-        io.read.flags.isJal
+        io.read.flags.isUncond
 
     io.read.target := MuxIf(
-      io.read.flags.isJal   -> io.read.jalAddr,
-      io.read.flags.isStack -> ras.io.target.bits,
+      io.read.flags.isUncond -> io.read.uncondAddr,
+      io.read.flags.isStack  -> ras.io.target.bits,
     )(btb.io.target)
 
   } else {

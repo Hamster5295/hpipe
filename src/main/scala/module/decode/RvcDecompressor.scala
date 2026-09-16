@@ -4,6 +4,7 @@ import Insts._
 import chisel3._
 import chisel3.util._
 import chisel3.util.experimental.decode._
+import hammer.UIntExt
 import hpipe._
 
 object RvcInst extends ChiselEnum {
