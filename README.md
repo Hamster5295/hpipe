@@ -1,6 +1,6 @@
 # HPipe
 
-Hamster's Pipelined RISC-V CPU Core
+Hamster's Pipelined RISC-V CPU Core (RV32IMC)
 
 This design is for learning purpose
 
@@ -127,8 +127,8 @@ Characteristics were estimated using Xilinx part `xc7a200t`
 - Power = 423mW
 - Clock Freq = 166.7MHz
 - Utilization
-  - LUT = 4368
-  - FF  = 4754
+  - LUT = 4623
+  - FF  = 4755
   - DSP = 4
 
 
@@ -152,6 +152,7 @@ However, after M extension was implemented, the `yosys` takes too long to synthe
 - [x] Yosys-based backend analysis
 - [x] Branch Prediction & Optimized Branch Penalty
 - [x] CSRs supporting M mode
+- [x] RV32C extension
 - [ ] PLIC & CLINT
 - [ ] Zephyr OS
 - [ ] L1 Cache & TLB
