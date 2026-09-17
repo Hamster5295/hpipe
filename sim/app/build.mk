@@ -34,10 +34,10 @@ ASFLAGS  += -MMD $(INCFLAGS)
 LDFLAGS  += -z noexecstack $(addprefix -T, $(LDSCRIPTS)) --gc-sections
 
 # RV Specific
-COMMON_CFLAGS := -fno-pic -mcmodel=medany -mstrict-align -march=rv32im_zicsr -mabi=ilp32
+COMMON_CFLAGS := -fno-pic -mcmodel=medany -mstrict-align -march=rv32imc_zicsr -mabi=ilp32
 CFLAGS        += $(COMMON_CFLAGS) -static
 ASFLAGS       += $(COMMON_CFLAGS) -O0
-LDFLAGS       += -melf32lriscv -nostdlib -L$(shell find $(RISCV_HOME)/lib/gcc -regex '.*/rv32im/ilp32')
+LDFLAGS       += -melf32lriscv -nostdlib -L$(shell find $(RISCV_HOME)/lib/gcc -regex '.*/rv32imac/ilp32')
 
 # Emulator Specific
 CFLAGS    += -fdata-sections -ffunction-sections

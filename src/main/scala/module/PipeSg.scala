@@ -87,12 +87,12 @@ class PipeSg(implicit p: HPipeParameters) extends StageModule(new PipeSgIO) {
 
   // Feed forward to IF (BTB)
   val ff = io.feedForward
-  ff.gpr.valid     := decoded.flags.writeRd
+  ff.gpr.valid     := fromId.valid && decoded.flags.writeRd
   ff.gpr.bits.addr := fromId.rdAddr
   ff.gpr.bits.data := DontCare
   ff.gpr.bits.isLd := DontCare
 
-  ff.csr.valid     := decoded.flags.csr
+  ff.csr.valid     := fromId.valid && decoded.flags.csr
   ff.csr.bits.addr := fromId.csrAddr
   ff.csr.bits.data := DontCare
 }

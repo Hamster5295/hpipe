@@ -60,12 +60,12 @@ class PipeMem(implicit val p: HPipeParameters)
   toWb.data := data
 
   val toId = io.feedForward
-  toId.gpr.valid     := fromEx.flags.writeRd && fromEx.rd.orR
+  toId.gpr.valid     := fromEx.valid && fromEx.flags.writeRd && fromEx.rd.orR
   toId.gpr.bits.addr := fromEx.rd
   toId.gpr.bits.data := data
   toId.gpr.bits.isLd := fromEx.flags.load
 
-  toId.csr.valid     := fromEx.flags.csr && fromEx.csrAddr.orR
+  toId.csr.valid     := fromEx.valid && fromEx.flags.csr && fromEx.csrAddr.orR
   toId.csr.bits.addr := fromEx.csrAddr
   toId.csr.bits.data := fromEx.csrData
 

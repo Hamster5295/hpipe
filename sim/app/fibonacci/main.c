@@ -6,6 +6,6 @@ int fibonacci(int num) {
 
 int main() {
   volatile int a = 0;
-  a = fibonacci(16);
-  return a == 987;
+  a = fibonacci(15);
+  return a != 987;
 }

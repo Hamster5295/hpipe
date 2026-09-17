@@ -20,7 +20,8 @@ class PipeWb(implicit val p: HPipeParameters)
 
   io.busy := false.B
 
-  io.regWrite.addr := Mux(fromMem.flags.writeRd, fromMem.rd, 0.U)
+  io.regWrite.addr :=
+    Mux(fromMem.valid && fromMem.flags.writeRd, fromMem.rd, 0.U)
   io.regWrite.data := fromMem.data
 
   io.csrWrite.addr := Mux(fromMem.flags.csr, fromMem.csrAddr, 0.U)

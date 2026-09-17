@@ -70,12 +70,12 @@ class PipeId(implicit val p: HPipeParameters)
 
   // Feed forward to IF (BTB)
   val ff = io.feedForward
-  ff.gpr.valid     := decoded.flags.writeRd
+  ff.gpr.valid     := io.fromIf.valid && decoded.flags.writeRd
   ff.gpr.bits.addr := toSg.rdAddr
   ff.gpr.bits.data := DontCare
   ff.gpr.bits.isLd := DontCare
 
-  ff.csr.valid     := decoded.flags.csr
+  ff.csr.valid     := io.fromIf.valid && decoded.flags.csr
   ff.csr.bits.addr := toSg.csrAddr
   ff.csr.bits.data := DontCare
 }

@@ -113,12 +113,12 @@ class PipeEx(implicit val p: HPipeParameters)
 
   // Feed Forward
   val toId = io.feedForward
-  toId.gpr.valid     := fromSg.flags.writeRd && fromSg.rdAddr.orR
+  toId.gpr.valid := fromSg.valid && fromSg.flags.writeRd && fromSg.rdAddr.orR
   toId.gpr.bits.addr := fromSg.rdAddr
   toId.gpr.bits.data := result
   toId.gpr.bits.isLd := fromSg.flags.load
 
-  toId.csr.valid     := fromSg.flags.csr && fromSg.csrAddr.orR
+  toId.csr.valid     := fromSg.valid && fromSg.flags.csr && fromSg.csrAddr.orR
   toId.csr.bits.addr := fromSg.csrAddr
   toId.csr.bits.data := csrResult
 
