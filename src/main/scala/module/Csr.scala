@@ -97,7 +97,7 @@ class CsrFileIO(implicit val p: HPipeParameters) extends Bundle {
 
   val interrupt = Input(new InterruptSource)
 
-  val csr = Output(new Csr)
+  val csrs = Output(new Csr)
 
   // CSR Specific
   val retire = Input(new RetireInfo)
@@ -121,7 +121,7 @@ class CsrFile(implicit val p: HPipeParameters) extends Module {
     io.writes.map(w => when(r.addr === w.addr)(r.data := w.data)),
   )
 
-  io.csr := csr
+  io.csrs := csr
 
   /// CSR Specific
 

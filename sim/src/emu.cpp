@@ -119,9 +119,9 @@ void exec() {
   ctx->timeInc(1);
   TRACE();
 
-  if (cpu->io_debug_branch)
+  if (cpu->io_sim_branch)
     branch++;
-  if (cpu->io_debug_branchMiss)
+  if (cpu->io_sim_branchMiss)
     branchMiss++;
 
   cpu->clock = 1;
@@ -142,21 +142,21 @@ bool step(int n) {
             MAX_CYCLE_PER_INST);
         return false;
       }
-    } while (!cpu->io_retire_valid);
-    DBG("Step Retring 0x%08X", cpu->io_retire_pc);
+    } while (!cpu->io_sim_retire_valid);
+    DBG("Step Retring 0x%08X", cpu->io_sim_retire_pc);
     DBG("Exec %d times", cnt);
   }
   return true;
 }
 
 bool try_trap() {
-  if (cpu->io_retire_ebreak) {
-    if (cpu->io_debug_regs_9) {
+  if (cpu->io_sim_retire_ebreak) {
+    if (cpu->io_sim_regs_9) {
       ret = 1;
-      ERR("Simulation FAILED at 0x%08X", cpu->io_retire_pc);
+      ERR("Simulation FAILED at 0x%08X", cpu->io_sim_retire_pc);
     } else
       INFO(ANSI_FG_GREEN "Simulation PASSED at 0x%08X" ANSI_NONE,
-           cpu->io_retire_pc);
+           cpu->io_sim_retire_pc);
     return true;
   }
   return false;
@@ -210,9 +210,9 @@ gdb_action_t gdb_cont(void *args) {
     if (try_trap())
       return ACT_SHUTDOWN;
 
-    if (cpu->io_retire_valid) {
+    if (cpu->io_sim_retire_valid) {
       for (auto it = bps.begin(); it != bps.end(); ++it) {
-        if (*it == cpu->io_retire_pc)
+        if (*it == cpu->io_sim_retire_pc)
           return ACT_RESUME;
       }
     }
@@ -223,7 +223,7 @@ gdb_action_t gdb_cont(void *args) {
 gdb_action_t gdb_stepi(void *args) {
   DBG("GDB step");
   step(1);
-  if (cpu->io_retire_ebreak) {
+  if (cpu->io_sim_retire_ebreak) {
     INFO("Hit EBREAK, shutting down...");
     return ACT_SHUTDOWN;
   }
@@ -283,7 +283,7 @@ int gdb_read_reg(void *args, int regno, void *reg_value) {
     return EFAULT;
 
   if (regno == 32) {
-    memcpy(reg_value, &cpu->io_retire_pc, 4);
+    memcpy(reg_value, &cpu->io_sim_retire_pc, 4);
     return 0;
   }
 
@@ -295,7 +295,7 @@ int gdb_read_reg(void *args, int regno, void *reg_value) {
   switch (regno) {
 #define REG(no)                                                                \
   case (no + 1):                                                               \
-    memcpy(reg_value, &cpu->io_debug_regs_##no, 4);                            \
+    memcpy(reg_value, &cpu->io_sim_regs_##no, 4);                            \
     break
 
     REGS
@@ -311,7 +311,7 @@ int gdb_write_reg(void *args, int regno, void *data) {
     return EFAULT;
 
   if (regno == 32) {
-    memcpy(&cpu->io_retire_pc, data, 4);
+    memcpy(&cpu->io_sim_retire_pc, data, 4);
     return 0;
   }
 
@@ -322,7 +322,7 @@ int gdb_write_reg(void *args, int regno, void *data) {
   switch (regno) {
 #define REG(no)                                                                \
   case (no + 1):                                                               \
-    memcpy(&cpu->io_debug_regs_##no, data, 4);                                 \
+    memcpy(&cpu->io_sim_regs_##no, data, 4);                                 \
     break
 
     REGS
@@ -385,9 +385,9 @@ int emu_cleanup() {
 #endif
 
   long csr_cycle =
-      ((long)cpu->io_debug_csr_cycleh << 32) | cpu->io_debug_csr_cycle;
+      ((long)cpu->io_sim_csrs_cycleh << 32) | cpu->io_sim_csrs_cycle;
   long csr_instret =
-      ((long)cpu->io_debug_csr_instreth << 32) | cpu->io_debug_csr_instret;
+      ((long)cpu->io_sim_csrs_instreth << 32) | cpu->io_sim_csrs_instret;
   INFO(ANSI_FG_WHITE "Inst per Cycle = %ld / %ld = %f" ANSI_NONE, csr_instret,
        csr_cycle, (float)csr_instret / csr_cycle);
   INFO(ANSI_FG_WHITE "Branch Miss    = %d / %d = %f" ANSI_NONE, branchMiss,

@@ -1,4 +1,4 @@
-package hpipe.chiperf
+package hpipe.sim
 
 import chisel3._
 import chisel3.util._
@@ -6,7 +6,9 @@ import chisel3.util.experimental._
 import hammer._
 import hpipe._
 
-class ChiperfLogger(hpipe: HPipe)(implicit p: HPipeParameters) extends Module {
+class ChiperfLogger(hpipe: HPipe, debugger: SimDebugger)(implicit
+    p: HPipeParameters,
+) extends Module {
   val output = SimLog.file("hpipe.chiperf")
 
   def get[A <: Data](source: A) = BoringUtils.tapAndRead(source)
@@ -43,6 +45,11 @@ class ChiperfLogger(hpipe: HPipe)(implicit p: HPipeParameters) extends Module {
     output.printf(
       "[val] \"pc\", 0x%8x\n",
       get(hpipe.pipeIf.pc),
+    )
+
+    output.printf(
+      "[val] \"sp\", 0x%8x\n",
+      get(debugger.regs.sp),
     )
 
     when(get(hpipe.branch.valid)) {
