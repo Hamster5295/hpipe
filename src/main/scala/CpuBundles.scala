@@ -185,7 +185,7 @@ class StageModule[T <: StageIO](gen: => T)(implicit p: HPipeParameters)
 
 class If2IdIO(implicit p: HPipeParameters) extends PipeIO {
   val pred = new BranchPredictInfo
-  val isC = Bool()
+  val isC  = Bool()
 }
 
 class Id2SgIO(implicit p: HPipeParameters) extends PipeIO {

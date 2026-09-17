@@ -8,6 +8,7 @@ import mill.javalib.publish._
 import mill.javalib.publish.PomSettings
 import mill.scalalib._
 import mill.scalalib.scalafmt.ScalafmtModule
+import mill.util.VcsVersionModule
 
 // Note: This project requires .mill-jvm-opts file containing:
 //   -Dchisel.project.root=${PWD}
@@ -15,7 +16,8 @@ import mill.scalalib.scalafmt.ScalafmtModule
 // to properly generate and handle test directories and output files.
 // See: https://github.com/com-lihaoyi/mill/issues/3840
 
-object `hpipe` extends SbtModule with ScalafmtModule with PublishModule { m =>
+object `hpipe` extends SbtModule with ScalafmtModule with PublishModule
+    with VcsVersionModule { m =>
   override def scalaVersion = "2.13.18"
   def chiselVersion         = "7.15.0"
 
@@ -53,8 +55,6 @@ object `hpipe` extends SbtModule with ScalafmtModule with PublishModule { m =>
 
   /// Publish
   override def mainClass: Simple[Option[String]] = Some("hpipe.Cli")
-
-  def publishVersion: Simple[String] = "0.3.1"
 
   def pomSettings: Simple[PomSettings] = PomSettings(
     description = "A 6-stage Pipelined RV32IM CPU",

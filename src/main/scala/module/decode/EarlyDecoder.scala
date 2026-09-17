@@ -28,7 +28,7 @@ class EarlyDecoder(implicit p: HPipeParameters) extends Module {
 
   val pc   = io.pc
   val inst = io.inst
-  val out = io.out
+  val out  = io.out
 
   def parse(
       jal:  Boolean,
