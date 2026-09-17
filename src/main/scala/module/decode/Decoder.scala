@@ -62,7 +62,7 @@ class DecodeResult(implicit p: HPipeParameters) extends Bundle {
 }
 
 class DecoderIO(implicit p: HPipeParameters) extends Bundle {
-  val inst = Input(Word())
+  val inst = Input(Inst())
 
   val result = Output(new DecodeResult)
 }

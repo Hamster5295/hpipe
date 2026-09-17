@@ -19,12 +19,7 @@ class PipeId(implicit val p: HPipeParameters)
 
   val toSg = io.toSg
 
-  val isC  = !io.fromIf.inst.end(2).andR
-  val inst = if (p.ExtC) {
-    val decomp = Module(new RvcDecompressor)
-    decomp.io.in := io.fromIf.inst.end(16)
-    Mux(isC, decomp.io.out, io.fromIf.inst)
-  } else io.fromIf.inst
+  val inst = io.fromIf.inst
 
   toSg.pc   := io.fromIf.pc
   toSg.inst := io.fromIf.inst
@@ -47,7 +42,7 @@ class PipeId(implicit val p: HPipeParameters)
   toSg.rs2Addr := rs2Addr
   toSg.rdAddr  := rdAddr
   toSg.decoded := decoded
-  toSg.isC     := isC
+  toSg.isC     := io.fromIf.isC
 
   toSg.decoded.useRs1 := decoded.useRs1 && rs1Addr.orR
   toSg.decoded.useRs2 := decoded.useRs2 && rs2Addr.orR

@@ -15,8 +15,6 @@ class EarlyDecodeResult(implicit p: HPipeParameters) extends Bundle {
   val isCall = Bool()
   val isRet  = Bool()
   val isMret = Bool()
-
-  val isC = Bool()
 }
 
 class EarlyDecoderIO(implicit p: HPipeParameters) extends Bundle {
@@ -30,7 +28,7 @@ class EarlyDecoder(implicit p: HPipeParameters) extends Module {
 
   val pc   = io.pc
   val inst = io.inst
-  val out  = io.out
+  val out = io.out
 
   def parse(
       jal:  Boolean,
@@ -68,34 +66,38 @@ class EarlyDecoder(implicit p: HPipeParameters) extends Module {
   val isRet  = isJalr && !(rs1Addr === rdAddr) &&
     (rs1Addr === 1.U || rs1Addr === 5.U) && !inst(31, 20).orR
 
-  if (p.ExtC) {
-    val isC = !io.inst.end(2).andR
+  out.isUncond   := isJal
+  out.uncondAddr := UIntAdd(32, pc, imm)
+  out.isCall     := isCall
+  out.isRet      := isRet
+  out.isMret     := isMret
 
-    val isJalC  = InstCs.C_J.matches(inst) || InstCs.C_JAL.matches(inst)
-    val isJalrC = InstCs.C_JALR.matches(inst) || InstCs.C_JR.matches(inst)
-    val immC    = SignExt(
-      inst(12) ## inst(8) ## inst(10, 9) ## inst(6) ## inst(7) ## inst(2) ##
-        inst(11) ## inst(5, 3) ## 0.U(1.W),
-      32,
-    )
+//   if (p.ExtC) {
+//     val isJalC  = InstCs.C_J.matches(inst) || InstCs.C_JAL.matches(inst)
+//     val isJalrC = InstCs.C_JALR.matches(inst) || InstCs.C_JR.matches(inst)
+//     val immC    = SignExt(
+//       inst(12) ## inst(8) ## inst(10, 9) ## inst(6) ## inst(7) ## inst(2) ##
+//         inst(11) ## inst(5, 3) ## 0.U(1.W),
+//       32,
+//     )
 
-    val isCallC = InstCs.C_JAL.matches(inst)
-    val isRetC  = InstCs.C_JR.matches(inst)
+//     val isCallC = InstCs.C_JAL.matches(inst)
+//     val isRetC  = InstCs.C_JR.matches(inst)
 
-    out.isUncond   := isJal || isJalC
-    out.uncondAddr := UIntAdd(32, pc, Mux(isC, immC, imm))
-    out.isCall     := isCall || isCallC
-    out.isRet      := isRet || isRetC
-    out.isMret     := isMret
-    out.isC        := isC
+//     out.isUncond   := isJal || isJalC
+//     out.uncondAddr := UIntAdd(32, pc, Mux(isC, immC, imm))
+//     out.isCall     := isCall || isCallC
+//     out.isRet      := isRet || isRetC
+//     out.isMret     := isMret
+//     out.isC        := isC
 
-  } else {
-    out.isUncond   := isJal
-    out.uncondAddr := UIntAdd(32, pc, imm)
-    out.isCall     := isCall
-    out.isRet      := isRet
-    out.isMret     := isMret
-    out.isC        := false.B
-  }
+//   } else {
+//     out.isUncond   := isJal
+//     out.uncondAddr := UIntAdd(32, pc, imm)
+//     out.isCall     := isCall
+//     out.isRet      := isRet
+//     out.isMret     := isMret
+//     out.isC        := false.B
+//   }
 
 }

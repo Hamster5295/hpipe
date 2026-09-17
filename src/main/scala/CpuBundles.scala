@@ -63,7 +63,7 @@ class OpFlags(implicit val p: HPipeParameters) extends Bundle {
   val mret    = Bool() // Is MRet Inst
 
   val muldiv = Bool() // Is Mul || Div
-  val csr    = Bool()
+  val csr    = Bool() // Is Zicsr
 
   def isMem = load || store
 }
@@ -185,24 +185,7 @@ class StageModule[T <: StageIO](gen: => T)(implicit p: HPipeParameters)
 
 class If2IdIO(implicit p: HPipeParameters) extends PipeIO {
   val pred = new BranchPredictInfo
-}
-
-class Id2ExIO(implicit p: HPipeParameters) extends PipeIO {
-  val rs1 = XRegAddr()
-  val rs2 = XRegAddr()
-  val rd  = XRegAddr()
-
-  val src1    = Word()
-  val src2    = Word()
-  val addr    = Addr() // Branch Address (if any)
-  val csrAddr = CsrAddr()
-  val csrSrc  = Word()
-
-  val funct = UInt(3.W)
-  val flags = new OpFlags()
-
-  val exception = new TrapInfo
-  val predInfo  = new BranchPredictInfo
+  val isC = Bool()
 }
 
 class Id2SgIO(implicit p: HPipeParameters) extends PipeIO {

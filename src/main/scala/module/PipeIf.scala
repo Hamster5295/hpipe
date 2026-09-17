@@ -36,9 +36,6 @@ class PipeIf(implicit val p: HPipeParameters)
   io.fetch.addr.bits  := pc
   io.fetch.inst.ready := true.B
 
-  val inst     = io.fetch.inst.bits
-  val instFire = io.fetch.inst.fire
-
   /**
     * The pcFetching bit indicates whether a pc req is sent and not yet received
     * It follows the truth table below:
@@ -63,6 +60,14 @@ class PipeIf(implicit val p: HPipeParameters)
   // 2. A fetch and its response is fired in the same cycle (addr.fire && inst.fire)
   // If PC changes when a fetch is in flight (branch), the fetchBusy will be pulled down by MuxIf
   val fetchValid = io.fetch.inst.fire && (fetchBusy || io.fetch.addr.fire)
+
+  val instRaw = io.fetch.inst.bits
+  val isC     = !instRaw.end(2).andR && p.ExtC.B
+  val inst    = if (p.ExtC) {
+    val decomp = Module(new RvcDecompressor)
+    decomp.io.in := instRaw.end(16)
+    Mux(isC, decomp.io.out, io.fetch.inst.bits)
+  } else io.fetch.inst.bits
 
   // Decode BR & JAL for BTB
   val decoder = Module(new EarlyDecoder)
@@ -106,7 +111,7 @@ class PipeIf(implicit val p: HPipeParameters)
   val busy = (decoded.isMret && !mepcValid) || !fetchValid
   val halt = io.stall
 
-  val stepPc = pc +% Mux(decoded.isC, 2.U, 4.U)
+  val stepPc = pc +% Mux(isC, 2.U, 4.U)
   val nextPc = MuxIf(
     // We don't need feed-forward here, as trap will flush everything
     io.trap                       -> io.csr.mtvec,
@@ -122,6 +127,7 @@ class PipeIf(implicit val p: HPipeParameters)
   toId.valid := !reset.asBool && fetchValid
   toId.pc    := pc
   toId.inst  := inst
+  toId.isC   := isC
 
   val pred = toId.pred
   pred.flags  := brRead.flags
