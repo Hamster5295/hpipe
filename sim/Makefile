@@ -9,6 +9,7 @@ OBJ_DIR = $(BUILD_DIR)/obj/sim
 LIB_DIR = $(BUILD_DIR)/obj
 BIN_NAME = emu
 BIN = $(BUILD_DIR)/$(BIN_NAME)
+CHIPERF_NAME = hpipe.chiperf
 
 $(shell mkdir -p $(OBJ_DIR))
 
@@ -59,6 +60,7 @@ header: build
 
 sim: build
 	@cd $(BUILD_DIR) && ./$(BIN_NAME) $(SIMFLAGS)
+	@cd $(BUILD_DIR) && gzip ./$(CHIPERF_NAME)
 
 wave: header sim
 

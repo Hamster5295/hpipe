@@ -41,6 +41,7 @@ object `hpipe` extends SbtModule with ScalafmtModule with PublishModule
     mvn"org.rogach::scallop:6.0.0",
     mvn"com.gu::spy:0.1.1",
     mvn"io.github.hamster5295::hammer:1.0.0",
+    mvn"io.github.hamster5295::chiperf-chisel:0.1.0",
   )
 
   override def scalacPluginMvnDeps = Seq(

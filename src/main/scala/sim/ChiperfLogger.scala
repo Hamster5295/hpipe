@@ -1,5 +1,7 @@
 package hpipe.sim
 
+import chiperf._
+import chiperf.event._
 import chisel3._
 import chisel3.util._
 import chisel3.util.experimental._
@@ -8,53 +10,49 @@ import hpipe._
 
 class ChiperfLogger(hpipe: HPipe, debugger: SimDebugger)(implicit
     p: HPipeParameters,
-) extends Module {
-  val output = SimLog.file("hpipe.chiperf")
+) extends ChiperfModule("hpipe.chiperf", "HPipe") {
 
-  def get[A <: Data](source: A) = BoringUtils.tapAndRead(source)
+  val pIf  = Pip("If")
+  val pId  = Pip("Id")
+  val pSg  = Pip("Sg")
+  val pEx  = Pip("Ex")
+  val pMem = Pip("Mem")
+  val pWb  = Pip("Wb")
 
-  val resets = Reg(Vec(2, Bool()))
-  resets(0) := reset.asBool
-  resets(1) := resets(0)
+  val pc = Val("pc")
+  val sp = Val("sp")
 
-  when(!resets(1) && resets(0)) {
-    output.printf("[rst]\n\n");
-    output.printf("chiperf 1.0\n@meta design=\"hpipe\"\n\n");
-  }
+  val brHit  = Evt("Branch Hit")
+  val brMiss = Evt("Branch Miss")
 
   when(clock.asBool) {
-    output.printf("[clk] p\n")
+    Clk()
 
     // Pipeline
-    {
-      def printPip(name: String, valid: Bool, inst: UInt) =
-        when(valid)(output.printf(cf"[pip] $name, 0x${inst}%8x\n"))
-          .otherwise(output.printf(cf"[pip] $name, bubble\n"))
+    pIf.printWithBubble(
+      cf"0x${probe(hpipe.pipeIf.inst)}%8x",
+      !probe(hpipe.pipeIf.fetchValid),
+    )
 
-      def printPipe(name: String, io: PipeIO) =
-        printPip(name, io.valid, io.inst)
-
-      printPip("If", get(hpipe.pipeIf.fetchValid), get(hpipe.pipeIf.inst))
-      printPipe("Id", get(hpipe.pipeId.io.fromIf))
-      printPipe("Sg", get(hpipe.pipeSg.io.fromId))
-      printPipe("Ex", get(hpipe.pipeEx.io.fromSg))
-      printPipe("Mem", get(hpipe.pipeMem.io.fromEx))
-      printPipe("Wb", get(hpipe.pipeWb.io.fromMem))
+    def printPipe(pip: Pip, io: PipeIO) = {
+      val sig = probe(io)
+      pip.printWithBubble(cf"0x${sig.inst}%8x", !sig.valid)
     }
 
-    output.printf(
-      "[val] \"pc\", 0x%8x\n",
-      get(hpipe.pipeIf.pc),
-    )
+    printPipe(pId, hpipe.pipeId.io.fromIf)
+    printPipe(pSg, hpipe.pipeSg.io.fromId)
+    printPipe(pEx, hpipe.pipeEx.io.fromSg)
+    printPipe(pMem, hpipe.pipeMem.io.fromEx)
+    printPipe(pWb, hpipe.pipeWb.io.fromMem)
 
-    output.printf(
-      "[val] \"sp\", 0x%8x\n",
-      get(debugger.regs.sp),
-    )
+    // Values
+    pc.print(cf"0x${probe(hpipe.pipeIf.pc)}%8x")
+    sp.print(cf"0x${probe(debugger.regs.sp)}%8x")
 
-    when(get(hpipe.branch.valid)) {
-      when(get(hpipe.branch.redirect))(output.printf("[evt] \"Branch Miss\"\n"))
-        .otherwise(output.printf("[evt] \"Branch Hit\"\n"))
+    // Evts
+    when(probe(hpipe.branch.valid)) {
+      when(probe(hpipe.branch.redirect))(brMiss.print())
+        .otherwise(brHit.print())
     }
   }
 }
