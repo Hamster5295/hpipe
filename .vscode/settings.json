@@ -1,0 +1,8 @@
+{
+    "files.watcherExclude": {
+        "**/target/**": true
+    },
+    "rust-analyzer.linkedProjects": [
+        "sim/app/rust-sample/Cargo.toml"
+    ]
+}

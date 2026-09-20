@@ -1,0 +1,10 @@
+{
+    "Param": {
+        "scope": "scala",
+        "prefix": "param",
+        "body": [
+            "implicit p : HPipeParameters"
+        ],
+        "description": "Implicit parameter templete"
+    },
+}
