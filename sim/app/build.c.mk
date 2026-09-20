@@ -9,12 +9,6 @@ OBJDUMP   = $(CROSS_COMPILE)objdump
 OBJCOPY   = $(CROSS_COMPILE)objcopy
 READELF   = $(CROSS_COMPILE)readelf
 
-TARGET ?= $(notdir $(shell pwd))
-BUILD_DIR = ../build
-OBJ_DIR = $(BUILD_DIR)/$(TARGET)
-IMAGE = $(OBJ_DIR)/$(TARGET)
-$(shell mkdir -p $(OBJ_DIR))
-
 SRCS += $(shell find ../common -name "*.[cS]")
 
 OBJS      = $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
@@ -74,15 +68,4 @@ $(IMAGE).elf: $(LINKAGE) $(LDSCRIPTS)
 
 image:: $(IMAGE).elf
 
-sim: image
-	make -C ../.. sim APP_DIR=$(abspath $(IMAGE)).bin
-
-wave: image 
-	make -C ../.. wave APP_DIR=$(abspath $(IMAGE)).bin
-
-clean:
-	@echo Removing build directory
-	@rm -rf $(BUILD_DIR)
-
-.DEFAULT_GOAL := image
-.PHONY: image clean
+include ../sim.mk

@@ -28,7 +28,7 @@ $(ALL): %: Makefile-%
 Makefile-%: $$(call find_src,%)
 	@/bin/echo -e "TARGET = rv-$*\nSRCS = $<\nINCS += $(shell pwd)/include \
 		$(shell pwd)/repo/isa/macros/scalar \
-		$(shell pwd)/repo/env\ninclude ../build.mk" > $@
+		$(shell pwd)/repo/env\ninclude ../build.c.mk" > $@
 	@make -s -f $@
 	@if make -C ../.. $(TARGET) APP_DIR=$(abspath ../build/rv-$*/rv-$*.bin); then \
 		printf "[%8s] $(COLOR_GREEN)PASS$(COLOR_NONE)\n" $* >> $(RESULT); \

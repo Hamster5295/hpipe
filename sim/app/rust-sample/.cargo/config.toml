@@ -1,0 +1,10 @@
+[build]
+target = "riscv32imc-unknown-none-elf"
+
+[target.riscv32imc-unknown-none-elf]
+rustflags = [
+    "-C", "link-args=-T../linker.ld --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0",
+]
+
+[profile.release]
+lto = true

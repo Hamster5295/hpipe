@@ -60,7 +60,7 @@ header: build
 
 sim: build
 	@cd $(BUILD_DIR) && ./$(BIN_NAME) $(SIMFLAGS)
-	@cd $(BUILD_DIR) && gzip ./$(CHIPERF_NAME)
+	@cd $(BUILD_DIR) && gzip -f ./$(CHIPERF_NAME)
 
 wave: header sim
 
