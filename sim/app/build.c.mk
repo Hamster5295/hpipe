@@ -9,6 +9,8 @@ OBJDUMP   = $(CROSS_COMPILE)objdump
 OBJCOPY   = $(CROSS_COMPILE)objcopy
 READELF   = $(CROSS_COMPILE)readelf
 
+include ../sim.mk
+
 SRCS += $(shell find ../common -name "*.[cS]")
 
 OBJS      = $(addprefix $(OBJ_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
@@ -67,5 +69,3 @@ $(IMAGE).elf: $(LINKAGE) $(LDSCRIPTS)
 	@$(OBJCOPY) -S -O binary $(IMAGE).elf $(IMAGE).bin
 
 image:: $(IMAGE).elf
-
-include ../sim.mk
