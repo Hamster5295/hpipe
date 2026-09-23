@@ -17,12 +17,12 @@ class MemStoreReq(implicit p: HPipeParameters) extends Bundle {
   val mask = Mask()
 }
 
-class MemLoadPort(implicit val p: HPipeParameters) extends Bundle {
+class MemReadPort(implicit val p: HPipeParameters) extends Bundle {
   val addr = Decoupled(Addr())
   val data = Flipped(Decoupled(Word()))
 }
 
-class MemStorePort(implicit val p: HPipeParameters) extends Bundle {
+class MemWritePort(implicit val p: HPipeParameters) extends Bundle {
   val req = Decoupled(new MemStoreReq)
 }
 

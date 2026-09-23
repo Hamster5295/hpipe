@@ -5,8 +5,8 @@ import chisel3.util._
 import hammer._
 
 class PipeMemIO(implicit p: HPipeParameters) extends StageIO {
-  val memLoad  = new MemLoadPort
-  val memStore = new MemStorePort
+  val read  = new MemReadPort
+  val write = new MemWritePort
 
   val fromEx = Input(new Ex2MemIO)
   val toWb   = Output(new Mem2WbIO)
@@ -23,11 +23,11 @@ class PipeMem(implicit val p: HPipeParameters)
   // Load
   val loadBusy = RegZero(Bool())
 
-  io.memLoad.addr.valid := fromEx.flags.load && !loadBusy
-  io.memLoad.addr.bits  := fromEx.addr
+  io.read.addr.valid := fromEx.flags.load && !loadBusy
+  io.read.addr.bits  := fromEx.addr
 
-  io.memLoad.data.ready := fromEx.flags.load
-  val loaded = io.memLoad.data.bits
+  io.read.data.ready := fromEx.flags.load
+  val loaded = io.read.data.bits
   val result = MuxLookup(fromEx.funct, 0.U)(Seq(
     LoadOp.Byte.asUInt  -> SignExt(loaded.end(8), 32),
     LoadOp.Half.asUInt  -> SignExt(loaded.end(16), 32),
@@ -38,16 +38,16 @@ class PipeMem(implicit val p: HPipeParameters)
 
   // See PipeIf.fetchBusy for the principle here
   loadBusy := MuxIf(
-    io.flush                                      -> false.B,
-    (io.memLoad.addr.fire ^ io.memLoad.data.fire) -> io.memLoad.addr.fire,
+    io.flush                                -> false.B,
+    (io.read.addr.fire ^ io.read.data.fire) -> io.read.addr.fire,
   )(loadBusy)
-  val loadValid = io.memLoad.data.fire && (loadBusy || io.memLoad.addr.fire)
+  val loadValid = io.read.data.fire && (loadBusy || io.read.addr.fire)
 
   // Store
-  io.memStore.req.valid     := fromEx.flags.store
-  io.memStore.req.bits.addr := fromEx.addr
-  io.memStore.req.bits.data := fromEx.data
-  io.memStore.req.bits.mask := MuxLookup(fromEx.funct, 0.U)(Seq(
+  io.write.req.valid     := fromEx.flags.store
+  io.write.req.bits.addr := fromEx.addr
+  io.write.req.bits.data := fromEx.data
+  io.write.req.bits.mask := MuxLookup(fromEx.funct, 0.U)(Seq(
     StoreOp.Byte.asUInt -> "b0001".U,
     StoreOp.Half.asUInt -> "b0011".U,
     StoreOp.Word.asUInt -> "b1111".U,
@@ -71,5 +71,5 @@ class PipeMem(implicit val p: HPipeParameters)
 
   io.busy :=
     (fromEx.flags.load && !loadValid) ||
-      (fromEx.flags.store && !io.memStore.req.fire)
+      (fromEx.flags.store && !io.write.req.fire)
 }
