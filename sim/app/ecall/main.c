@@ -10,16 +10,15 @@ void handler() {
   hprintf("mcause = %d\n", cause);
 
   int ppc = 0;
-  CSRRW(ppc, mepc, ppc);
-  CSRRW(ppc, mepc, ppc + 4);
+  CSRR(ppc, mepc);
+  CSRW(mepc, ppc + 4);
 
   MRET();
   stop(1);
 }
 
 int main() {
-  int i = 0;
-  CSRRW(i, mtvec, handler);
+  CSRW(mtvec, handler);
   ECALL();
   hprintf("Back to main! \n");
   return 0;
