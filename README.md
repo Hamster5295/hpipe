@@ -45,7 +45,7 @@ make asic
 
 This Core implements a 6-stage pipelined CPU.  
 
-Currently it supports RV32IM_izcsr, but more extensions are on the way.
+Currently it supports RV32IMC_izcsr, but more extensions are on the way.
 
 
 ### IF & BTB
