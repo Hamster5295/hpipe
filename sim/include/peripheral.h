@@ -20,8 +20,8 @@ typedef struct peripheral_t {
 } peripheral_t;
 
 bool is_peripheral(uint32_t addr);
-uint32_t peripheral_read(uint32_t addr);
-void peripheral_write(uint32_t addr, uint8_t data);
+uint32_t peripheral_read(uint32_t addr, bool* exception);
+void peripheral_write(uint32_t addr, uint8_t data, bool* exception);
 void peripheral_step(VHPipe* cpu);
 
 void peripheral_add(peripheral_t peri);

@@ -10,7 +10,7 @@ bool is_peripheral(uint32_t addr) { return (addr >> 28) != 0x8; }
 uint32_t peripheral_addr_trans(uint32_t addr) { return addr & 0xFFFF; }
 void peripheral_add(peripheral_t peri) { peris[peri_count++] = peri; }
 
-uint32_t peripheral_read(uint32_t addr) {
+uint32_t peripheral_read(uint32_t addr, bool *exception) {
 
   for (int i = 0; i < peri_count; i++) {
     peripheral_t peri = peris[i];
@@ -20,6 +20,7 @@ uint32_t peripheral_read(uint32_t addr) {
       WARN("[Peripheral] Read with non-readable peripheral address 0x%08X, "
            "falling back to 0",
            addr);
+      *exception = true;
       return 0;
     }
     return peri.read(addr);
@@ -27,10 +28,11 @@ uint32_t peripheral_read(uint32_t addr) {
 
   WARN("[Peripheral] Read with invalid address 0x%08X, falling back to 0",
        addr);
+  *exception = true;
   return 0;
 }
 
-void peripheral_write(uint32_t addr, uint8_t data) {
+void peripheral_write(uint32_t addr, uint8_t data, bool *exception) {
 
   for (int i = 0; i < peri_count; i++) {
     peripheral_t peri = peris[i];
@@ -40,6 +42,7 @@ void peripheral_write(uint32_t addr, uint8_t data) {
       WARN("[Peripheral] Read with non-writeable peripheral address 0x%08X, "
            "falling back to 0",
            addr);
+      *exception = true;
       return;
     }
     peri.write(addr, data);
@@ -48,6 +51,7 @@ void peripheral_write(uint32_t addr, uint8_t data) {
 
   WARN("[Peripheral] Write with invalid address 0x%08X, falling back to 0",
        addr);
+  *exception = true;
 }
 
 void peripheral_step(VHPipe *cpu) {

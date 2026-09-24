@@ -133,10 +133,8 @@ class PipeIf(implicit val p: HPipeParameters)
   toId.inst       := inst
   toId.isC        := isC
   toId.trap.valid := pcMisaligned || currentFetch.excp
-  toId.trap.cause := MuxIf(
-    pcMisaligned      -> 0.U,
-    currentFetch.excp -> 1.U,
-  )(0.U)
+  toId.trap.cause :=
+    Mux(currentFetch.excp, 1.U, 0.U) // 0 is also the misalign cause
 
   val pred = toId.pred
   pred.flags  := brRead.flags

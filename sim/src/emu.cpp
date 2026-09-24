@@ -46,16 +46,17 @@ bool halted = false, shutdown = false;
 
 uint32_t mem_addr_trans(uint32_t addr) { return addr - RESET_VECTOR; }
 
-uint32_t mem_read(uint32_t addr) {
+uint32_t mem_read(uint32_t addr, bool *exception) {
 
   if (is_peripheral(addr)) {
-    return peripheral_read(addr);
+    return peripheral_read(addr, exception);
   }
 
   uint32_t paddr = mem_addr_trans(addr);
   if (paddr >= MEM_SIZE) {
     ERR("Invalid memory read at 0x%08X: Out of range 0x%08X", addr,
         RESET_VECTOR + MEM_SIZE);
+    *exception = true;
     return 0;
   }
 
@@ -67,12 +68,12 @@ uint32_t mem_read(uint32_t addr) {
   return result;
 }
 
-void mem_write(uint32_t addr, uint32_t data, uint32_t mask) {
+void mem_write(uint32_t addr, uint32_t data, uint32_t mask, bool *exception) {
 
   if (is_peripheral(addr)) {
     for (int i = 0; i < 4; i++) {
       if ((mask >> i) & 0x1)
-        peripheral_write(addr + i, 0xFF & (data >> i * 8));
+        peripheral_write(addr + i, 0xFF & (data >> i * 8), exception);
     }
     return;
   }
@@ -82,6 +83,7 @@ void mem_write(uint32_t addr, uint32_t data, uint32_t mask) {
   if (paddr >= MEM_SIZE) {
     ERR("Invalid memory write at 0x%08X: Out of range 0x%08X", addr,
         RESET_VECTOR + MEM_SIZE);
+    *exception = true;
     return;
   }
 
@@ -99,19 +101,28 @@ void exec() {
   cpu->io_inst_addr_ready = 1;
   cpu->io_inst_resp_valid = 1;
 
-  if (cpu->io_inst_addr_valid && inited)
-    cpu->io_inst_resp_bits_data = mem_read(cpu->io_inst_addr_bits);
+  if (cpu->io_inst_addr_valid && inited) {
+    bool excp = 0;
+    cpu->io_inst_resp_bits_data = mem_read(cpu->io_inst_addr_bits, &excp);
+    cpu->io_inst_resp_bits_excp = excp;
+  }
 
   cpu->io_read_addr_ready = 1;
   cpu->io_read_resp_valid = 1;
   cpu->io_write_req_ready = 1;
 
-  if (cpu->io_read_addr_valid && inited)
-    cpu->io_read_resp_bits_data = mem_read(cpu->io_read_addr_bits);
+  if (cpu->io_read_addr_valid && inited) {
+    bool excp = 0;
+    cpu->io_read_resp_bits_data = mem_read(cpu->io_read_addr_bits, &excp);
+    cpu->io_read_resp_bits_excp = excp;
+  }
 
-  if (cpu->io_write_req_valid && inited)
+  if (cpu->io_write_req_valid && inited) {
+    bool excp = 0;
     mem_write(cpu->io_write_req_bits_addr, cpu->io_write_req_bits_data,
-              cpu->io_write_req_bits_mask);
+              cpu->io_write_req_bits_mask, &excp);
+    // TODO: support write resp exception
+  }
 
   peripheral_step(cpu);
 
@@ -261,7 +272,8 @@ int gdb_read_mem(void *args, size_t addr, size_t len, void *val) {
   if (mem_addr_trans(addr) + len > MEM_SIZE) {
     return EFAULT;
   }
-  uint32_t result = mem_read(addr);
+  bool unused;
+  uint32_t result = mem_read(addr, &unused);
   memcpy(val, (void *)&result, len);
   return 0;
 }
@@ -295,7 +307,7 @@ int gdb_read_reg(void *args, int regno, void *reg_value) {
   switch (regno) {
 #define REG(no)                                                                \
   case (no + 1):                                                               \
-    memcpy(reg_value, &cpu->io_sim_regs_##no, 4);                            \
+    memcpy(reg_value, &cpu->io_sim_regs_##no, 4);                              \
     break
 
     REGS
@@ -322,7 +334,7 @@ int gdb_write_reg(void *args, int regno, void *data) {
   switch (regno) {
 #define REG(no)                                                                \
   case (no + 1):                                                               \
-    memcpy(&cpu->io_sim_regs_##no, data, 4);                                 \
+    memcpy(&cpu->io_sim_regs_##no, data, 4);                                   \
     break
 
     REGS

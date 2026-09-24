@@ -17,13 +17,14 @@ class PipeIdIO(implicit p: HPipeParameters) extends StageIO {
 class PipeId(implicit val p: HPipeParameters)
     extends StageModule(new PipeIdIO) {
 
-  val toSg = io.toSg
+  val fromIf = io.fromIf
+  val toSg   = io.toSg
 
-  val inst = io.fromIf.inst
+  val inst = fromIf.inst
 
-  toSg.pc   := io.fromIf.pc
-  toSg.inst := io.fromIf.inst
-  toSg.pred := io.fromIf.pred
+  toSg.pc   := fromIf.pc
+  toSg.inst := fromIf.inst
+  toSg.pred := fromIf.pred
 
   val rs1Addr = inst(19, 15)
   val rs2Addr = inst(24, 20)
@@ -35,14 +36,14 @@ class PipeId(implicit val p: HPipeParameters)
 
   val decoded = decoder.io.result
 
-  toSg.valid := io.fromIf.valid
+  toSg.valid := fromIf.valid
 
   // Regs & Imm
   toSg.rs1Addr := rs1Addr
   toSg.rs2Addr := rs2Addr
   toSg.rdAddr  := rdAddr
   toSg.decoded := decoded
-  toSg.isC     := io.fromIf.isC
+  toSg.isC     := fromIf.isC
 
   toSg.decoded.useRs1 := decoded.useRs1 && rs1Addr.orR
   toSg.decoded.useRs2 := decoded.useRs2 && rs2Addr.orR
@@ -57,20 +58,24 @@ class PipeId(implicit val p: HPipeParameters)
   val invalidInst = !decoded.valid
   val hasExcp     = ecall || invalidInst
 
-  excp.valid := hasExcp
-  excp.cause := Mux1H(Seq(ecall -> 13.U, invalidInst -> 2.U, !hasExcp -> 0.U))
+  excp.valid := fromIf.trap.valid || hasExcp
+  excp.cause := Mux(
+    fromIf.trap.valid,
+    fromIf.trap.cause,
+    Mux1H(Seq(ecall -> 13.U, invalidInst -> 2.U, !hasExcp -> 0.U)),
+  )
 
   // Valid & Ready
   io.busy := false.B
 
   // Feed forward to IF (BTB)
   val ff = io.feedForward
-  ff.gpr.valid     := io.fromIf.valid && decoded.flags.writeRd
+  ff.gpr.valid     := fromIf.valid && decoded.flags.writeRd
   ff.gpr.bits.addr := toSg.rdAddr
   ff.gpr.bits.data := DontCare
   ff.gpr.bits.isLd := DontCare
 
-  ff.csr.valid     := io.fromIf.valid && decoded.flags.csr
+  ff.csr.valid     := fromIf.valid && decoded.flags.csr
   ff.csr.bits.addr := toSg.csrAddr
   ff.csr.bits.data := DontCare
 }
