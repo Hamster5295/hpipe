@@ -6,7 +6,7 @@ import hammer._
 import hpipe.sim._
 
 class HPipeIO(implicit val p: HPipeParameters) extends Bundle {
-  val inst  = new InstFetchPort
+  val inst  = new MemReadPort
   val read  = new MemReadPort
   val write = new MemWritePort
 
@@ -32,7 +32,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   val csrFile = Module(new CsrFile)
 
   // Ports
-  io.inst <> pipeIf.io.fetch
+  io.inst <> pipeIf.io.inst
   pipeMem.io.read <> io.read
   pipeMem.io.write <> io.write
 

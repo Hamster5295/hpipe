@@ -9,7 +9,7 @@ import hpipe.decode._
 import hpipe.decode.Insts._
 
 class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
-  val fetch = new InstFetchPort
+  val inst = new MemReadPort
 
   val toId   = Output(new If2IdIO)
   val fromEx = Input(new BranchInfo)
@@ -32,9 +32,9 @@ class PipeIf(implicit val p: HPipeParameters)
   val pc        = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
   val fetchBusy = RegZero(Bool())
 
-  io.fetch.addr.valid := !fetchBusy
-  io.fetch.addr.bits  := pc
-  io.fetch.inst.ready := true.B
+  io.inst.addr.valid := !fetchBusy
+  io.inst.addr.bits  := pc
+  io.inst.resp.ready := true.B
 
   /**
     * The pcFetching bit indicates whether a pc req is sent and not yet received
@@ -51,23 +51,23 @@ class PipeIf(implicit val p: HPipeParameters)
     * else its value is kept
     */
   fetchBusy := MuxIf(
-    io.fromEx.redirect                        -> 0.B,
-    (io.fetch.addr.fire ^ io.fetch.inst.fire) -> io.fetch.addr.fire,
+    io.fromEx.redirect                      -> 0.B,
+    (io.inst.addr.fire ^ io.inst.resp.fire) -> io.inst.addr.fire,
   )(fetchBusy)
 
   // Inst fetch is only valid when
   // 1. A fetch is in flight, then the response is fired (fetchBusy && inst.fire)
   // 2. A fetch and its response is fired in the same cycle (addr.fire && inst.fire)
   // If PC changes when a fetch is in flight (branch), the fetchBusy will be pulled down by MuxIf
-  val fetchValid = io.fetch.inst.fire && (fetchBusy || io.fetch.addr.fire)
+  val fetchValid = io.inst.resp.fire && (fetchBusy || io.inst.addr.fire)
 
-  val instRaw = io.fetch.inst.bits
+  val instRaw = io.inst.resp.bits.data
   val isC     = !instRaw.end(2).andR && p.ExtC.B
   val inst    = if (p.ExtC) {
     val decomp = Module(new RvcDecompressor)
     decomp.io.in := instRaw.end(16)
-    Mux(isC, decomp.io.out, io.fetch.inst.bits)
-  } else io.fetch.inst.bits
+    Mux(isC, decomp.io.out, io.inst.resp.bits)
+  } else io.inst.resp.bits
 
   // Decode BR & JAL for BTB
   val decoder = Module(new EarlyDecoder)

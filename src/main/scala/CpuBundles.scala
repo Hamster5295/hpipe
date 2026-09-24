@@ -24,7 +24,6 @@ class MemWriteReq(implicit p: HPipeParameters) extends Bundle {
 
 class MemReadPort(implicit val p: HPipeParameters) extends Bundle {
   val addr = Decoupled(Addr())
-//   val data = Flipped(Decoupled(Word()))
   val resp = Flipped(Decoupled(new MemReadResp))
 }
 
