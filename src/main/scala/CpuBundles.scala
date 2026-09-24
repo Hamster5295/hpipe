@@ -11,6 +11,11 @@ class InstFetchPort(implicit val p: HPipeParameters) extends Bundle {
   val inst = Flipped(Decoupled(Inst()))
 }
 
+class MemReadResp(implicit p: HPipeParameters) extends Bundle {
+  val data = Word()
+  val excp = Bool()
+}
+
 class MemWriteReq(implicit p: HPipeParameters) extends Bundle {
   val addr = Addr()
   val data = Word()
@@ -19,7 +24,8 @@ class MemWriteReq(implicit p: HPipeParameters) extends Bundle {
 
 class MemReadPort(implicit val p: HPipeParameters) extends Bundle {
   val addr = Decoupled(Addr())
-  val data = Flipped(Decoupled(Word()))
+//   val data = Flipped(Decoupled(Word()))
+  val resp = Flipped(Decoupled(new MemReadResp))
 }
 
 class MemWritePort(implicit val p: HPipeParameters) extends Bundle {
