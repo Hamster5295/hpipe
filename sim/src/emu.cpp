@@ -97,10 +97,10 @@ void exec() {
 
   cpu->clock = 0;
   cpu->io_inst_addr_ready = 1;
-  cpu->io_inst_inst_valid = 1;
+  cpu->io_inst_resp_valid = 1;
 
   if (cpu->io_inst_addr_valid && inited)
-    cpu->io_inst_inst_bits = mem_read(cpu->io_inst_addr_bits);
+    cpu->io_inst_resp_bits_data = mem_read(cpu->io_inst_addr_bits);
 
   cpu->io_read_addr_ready = 1;
   cpu->io_read_resp_valid = 1;

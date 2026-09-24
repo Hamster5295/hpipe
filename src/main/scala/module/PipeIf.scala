@@ -32,6 +32,8 @@ class PipeIf(implicit val p: HPipeParameters)
   val pc        = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
   val fetchBusy = RegZero(Bool())
 
+  val pcMisaligned = pc.end(p.PcUnusedWidth).orR
+
   io.inst.addr.valid := !fetchBusy
   io.inst.addr.bits  := pc
   io.inst.resp.ready := true.B
@@ -59,15 +61,17 @@ class PipeIf(implicit val p: HPipeParameters)
   // 1. A fetch is in flight, then the response is fired (fetchBusy && inst.fire)
   // 2. A fetch and its response is fired in the same cycle (addr.fire && inst.fire)
   // If PC changes when a fetch is in flight (branch), the fetchBusy will be pulled down by MuxIf
-  val fetchValid = io.inst.resp.fire && (fetchBusy || io.inst.addr.fire)
+  val fetchDone    = io.inst.resp.fire && (fetchBusy || io.inst.addr.fire)
+  val lastFetch    = RegEnable(io.inst.resp.bits, fetchDone)
+  val currentFetch = Mux(fetchDone, io.inst.resp.bits, lastFetch)
 
-  val instRaw = io.inst.resp.bits.data
+  val instRaw = currentFetch.data
   val isC     = !instRaw.end(2).andR && p.ExtC.B
   val inst    = if (p.ExtC) {
     val decomp = Module(new RvcDecompressor)
     decomp.io.in := instRaw.end(16)
-    Mux(isC, decomp.io.out, io.inst.resp.bits)
-  } else io.inst.resp.bits
+    Mux(isC, decomp.io.out, instRaw)
+  } else instRaw
 
   // Decode BR & JAL for BTB
   val decoder = Module(new EarlyDecoder)
@@ -108,7 +112,7 @@ class PipeIf(implicit val p: HPipeParameters)
 
   val mepcValid = !mepcInId && !mepcInSg
 
-  val busy = (decoded.isMret && !mepcValid) || !fetchValid
+  val busy = (decoded.isMret && !mepcValid) || !fetchDone
   val halt = io.stall
 
   val stepPc = pc +% Mux(isC, 2.U, 4.U)
@@ -124,10 +128,15 @@ class PipeIf(implicit val p: HPipeParameters)
   pc := nextPc
 
   val toId = io.toId
-  toId.valid := !reset.asBool && fetchValid
-  toId.pc    := pc
-  toId.inst  := inst
-  toId.isC   := isC
+  toId.valid      := !reset.asBool && fetchDone
+  toId.pc         := pc
+  toId.inst       := inst
+  toId.isC        := isC
+  toId.trap.valid := pcMisaligned || currentFetch.excp
+  toId.trap.cause := MuxIf(
+    pcMisaligned      -> 0.U,
+    currentFetch.excp -> 1.U,
+  )(0.U)
 
   val pred = toId.pred
   pred.flags  := brRead.flags

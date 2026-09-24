@@ -31,7 +31,7 @@ class ChiperfLogger(hpipe: HPipe, debugger: SimDebugger)(implicit
     // Pipeline
     pIf.printWithBubble(
       cf"0x${probe(hpipe.pipeIf.inst)}%8x",
-      !probe(hpipe.pipeIf.fetchValid),
+      !probe(hpipe.pipeIf.fetchDone),
     )
 
     def printPipe(pip: Pip, io: PipeIO) = {
