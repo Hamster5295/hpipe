@@ -61,11 +61,9 @@ class PipeIf(implicit val p: HPipeParameters)
   // 1. A fetch is in flight, then the response is fired (fetchBusy && inst.fire)
   // 2. A fetch and its response is fired in the same cycle (addr.fire && inst.fire)
   // If PC changes when a fetch is in flight (branch), the fetchBusy will be pulled down by MuxIf
-  val fetchDone    = io.inst.resp.fire && (fetchBusy || io.inst.addr.fire)
-  val lastFetch    = RegEnable(io.inst.resp.bits, fetchDone)
-  val currentFetch = Mux(fetchDone, io.inst.resp.bits, lastFetch)
+  val fetchDone = io.inst.resp.fire && (fetchBusy || io.inst.addr.fire)
 
-  val instRaw = currentFetch.data
+  val instRaw = io.inst.resp.bits.data
   val isC     = !instRaw.end(2).andR && p.ExtC.B
   val inst    = if (p.ExtC) {
     val decomp = Module(new RvcDecompressor)
@@ -132,9 +130,9 @@ class PipeIf(implicit val p: HPipeParameters)
   toId.pc         := pc
   toId.inst       := inst
   toId.isC        := isC
-  toId.trap.valid := pcMisaligned || currentFetch.excp
+  toId.trap.valid := pcMisaligned || io.inst.resp.bits.excp
   toId.trap.cause :=
-    Mux(currentFetch.excp, 1.U, 0.U) // 0 is also the misalign cause
+    Mux(io.inst.resp.bits.excp, 1.U, 0.U) // 0 is also the misalign cause
 
   val pred = toId.pred
   pred.flags  := brRead.flags
