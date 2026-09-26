@@ -31,7 +31,7 @@ class BranchPredictorIO(implicit p: HPipeParameters) extends Bundle {
 class BranchPredictor(implicit p: HPipeParameters) extends Module {
   val io = IO(new BranchPredictorIO)
 
-  if (p.Branch) {
+  if (p.Branch.Enabled) {
     val btb = Module(new TargetBuffer)
     btb.io.pc          := io.read.pc
     btb.io.writeEnable := io.write.valid && !io.write.flags.isStack

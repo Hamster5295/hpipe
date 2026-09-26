@@ -7,7 +7,7 @@ import hpipe._
 
 trait HasRetAddrStackParameter {
   implicit val p: HPipeParameters
-  val config = p.RetAddrStack
+  val config = p.Branch.RetAddrStack
 }
 
 class RetAddrStackIO(implicit p: HPipeParameters) extends Bundle {

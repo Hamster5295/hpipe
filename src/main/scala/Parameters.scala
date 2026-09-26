@@ -19,10 +19,11 @@ case class HPipeParameters(
     val ExtC: Boolean = true,
 
     // Branch
-    val Branch:       Boolean = true,
-    val TargetBuf:    TargetBufferParameters = TargetBufferParameters(),
-    val HistTable:    HistoryTableParameters = HistoryTableParameters(),
-    val RetAddrStack: RetAddrStackParameters = RetAddrStackParameters(),
+    val Branch: BranchParameters = BranchParameters(),
+
+    // Cache
+    val ICache: CacheParameters = CacheParameters(),
+    val DCache: CacheParameters = CacheParameters(),
 ) {
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth
@@ -33,13 +34,13 @@ case class HPipeParameters(
 }
 
 case class TargetBufferParameters(
-    val Size:     Int = 32,
+    val Depth:    Int = 32,
     val Ways:     Int = 2,
     val TagWidth: Int = 16,
 )
 
 case class HistoryTableParameters(
-    val Size:        Int = 256,
+    val Depth:       Int = 256,
     val RecordWidth: Int = 2,
 )
 
@@ -49,3 +50,15 @@ case class RetAddrStackParameters(
 ) {
   val PtrWidth = log2Ceil(Depth)
 }
+
+case class BranchParameters(
+    val Enabled:      Boolean = true,
+    val TargetBuf:    TargetBufferParameters = TargetBufferParameters(),
+    val HistTable:    HistoryTableParameters = HistoryTableParameters(),
+    val RetAddrStack: RetAddrStackParameters = RetAddrStackParameters(),
+)
+
+case class CacheParameters(
+    val Depth: Int = 16,
+    val Width: Int = 512,
+)

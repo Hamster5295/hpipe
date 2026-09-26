@@ -7,7 +7,7 @@ import hpipe._
 
 class TargetEntry(implicit p: HPipeParameters) extends Bundle {
   val valid  = Bool()
-  val tag    = UInt(p.TargetBuf.TagWidth.W)
+  val tag    = UInt(p.Branch.TargetBuf.TagWidth.W)
   val target = Addr()
 }
 
@@ -22,10 +22,11 @@ class TargetBufferIO(implicit p: HPipeParameters) extends Bundle {
 }
 
 class TargetBuffer(implicit p: HPipeParameters) extends Module {
-  val ways            = p.TargetBuf.Ways
-  val groups          = p.TargetBuf.Size / ways
+  val pa              = p.Branch.TargetBuf
+  val ways            = pa.Ways
+  val groups          = pa.Depth / ways
   val groupIndexWidth = log2Ceil(groups)
-  val tagWidth        = p.TargetBuf.TagWidth
+  val tagWidth        = pa.TagWidth
 
   val io = IO(new TargetBufferIO)
 
