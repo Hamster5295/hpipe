@@ -6,26 +6,6 @@ import hpipe.decode._
 
 // Data Bundles
 
-class CoreReadResp(implicit p: HPipeParameters) extends Bundle {
-  val data = Word()
-  val excp = Bool()
-}
-
-class CoreWriteReq(implicit p: HPipeParameters) extends Bundle {
-  val addr = Addr()
-  val data = Word()
-  val mask = Mask()
-}
-
-class CoreReadPort(implicit val p: HPipeParameters) extends Bundle {
-  val addr = Decoupled(Addr())
-  val resp = Flipped(Decoupled(new CoreReadResp))
-}
-
-class CoreWritePort(implicit val p: HPipeParameters) extends Bundle {
-  val req = Decoupled(new CoreWriteReq)
-}
-
 class InterruptSource(implicit p: HPipeParameters) extends Bundle {
   val external = Bool()
   val timer    = Bool()
@@ -112,6 +92,37 @@ class TrapInfo(implicit p: HPipeParameters) extends Bundle {
   val valid = Bool()
   val cause = Word()
 }
+
+// Mem
+
+class ReadResp(dataWidth: Int) extends Bundle {
+  val data = UInt(dataWidth.W)
+  val excp = Bool()
+}
+
+class WriteReq(addrWidth: Int, dataWidth: Int) extends Bundle {
+  val addr = UInt(addrWidth.W)
+  val data = UInt(dataWidth.W)
+  val mask = UInt((dataWidth / 8).W)
+}
+
+class ReadPort(addrWidth: Int, dataWidth: Int) extends Bundle {
+  val addr = Decoupled(UInt(addrWidth.W))
+  val resp = Flipped(Decoupled(new ReadResp(dataWidth)))
+}
+
+class WritePort(addrWidth: Int, dataWidth: Int) extends Bundle {
+  val req = Decoupled(new WriteReq(addrWidth, dataWidth))
+}
+
+class CoreReadPort(implicit p: HPipeParameters) extends ReadPort(p.XLEN, p.XLEN)
+class CoreWritePort(implicit p: HPipeParameters)
+    extends WritePort(p.XLEN, p.XLEN)
+
+class CacheReadPort(implicit p: HPipeParameters)
+    extends ReadPort(p.XLEN, p.CacheWidth)
+class CacheWritePort(implicit p: HPipeParameters)
+    extends WritePort(p.XLEN, p.CacheWidth)
 
 // Pipeline IOs
 

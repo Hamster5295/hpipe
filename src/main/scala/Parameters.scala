@@ -21,9 +21,9 @@ case class HPipeParameters(
     // Branch
     val Branch: BranchParameters = BranchParameters(),
 
-    // Cache
-    val ICache: CacheParameters = CacheParameters(),
-    val DCache: CacheParameters = CacheParameters(),
+    // Cache & Bus
+    val BusWidth:   Int = 64,
+    val CacheDepth: Int = 64,
 ) {
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth
@@ -31,6 +31,7 @@ case class HPipeParameters(
   val PcUnusedWidth = if (ExtC) 1 else 2
   val PcUsedWidth   = XLEN - PcUnusedWidth
 
+  val CacheWidth = BusWidth // to simplify implementions
 }
 
 case class TargetBufferParameters(
@@ -56,9 +57,4 @@ case class BranchParameters(
     val TargetBuf:    TargetBufferParameters = TargetBufferParameters(),
     val HistTable:    HistoryTableParameters = HistoryTableParameters(),
     val RetAddrStack: RetAddrStackParameters = RetAddrStackParameters(),
-)
-
-case class CacheParameters(
-    val Depth: Int = 16,
-    val Width: Int = 512,
 )
