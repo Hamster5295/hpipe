@@ -22,13 +22,16 @@ class ChiperfLogger(hpipe: HPipe, debugger: SimDebugger)(implicit
   val pc = Val("pc")
   val sp = Val("sp")
 
+  val btb = Val("BTB Cnt")
+  val ras = Val("RAS Ptr")
+
   val brHit  = Evt("Branch Hit")
   val brMiss = Evt("Branch Miss")
 
   when(clock.asBool) {
     Clk()
 
-    // Pipeline
+    /// Pipeline
     pIf.printWithBubble(
       cf"0x${probe(hpipe.pipeIf.inst)}%8x",
       !probe(hpipe.pipeIf.fetchDone),
@@ -45,11 +48,15 @@ class ChiperfLogger(hpipe: HPipe, debugger: SimDebugger)(implicit
     printPipe(pMem, hpipe.pipeMem.io.fromEx)
     printPipe(pWb, hpipe.pipeWb.io.fromMem)
 
-    // Values
+    /// Values
     pc.print(cf"0x${probe(hpipe.pipeIf.pc)}%8x")
     sp.print(cf"0x${probe(debugger.regs.sp)}%8x")
 
-    // Evts
+    // Branch
+    btb.print(cf"0x${probe(hpipe.pipeIf.predictor.btb.count)}%8x")
+    ras.print(cf"${probe(hpipe.pipeIf.predictor.ras.ptr)}")
+
+    /// Evts
     when(probe(hpipe.branch.valid)) {
       when(probe(hpipe.branch.redirect))(brMiss.print())
         .otherwise(brHit.print())
