@@ -6,29 +6,24 @@ import hpipe.decode._
 
 // Data Bundles
 
-class InstFetchPort(implicit val p: HPipeParameters) extends Bundle {
-  val addr = Decoupled(Addr())
-  val inst = Flipped(Decoupled(Inst()))
-}
-
-class MemReadResp(implicit p: HPipeParameters) extends Bundle {
+class CoreReadResp(implicit p: HPipeParameters) extends Bundle {
   val data = Word()
   val excp = Bool()
 }
 
-class MemWriteReq(implicit p: HPipeParameters) extends Bundle {
+class CoreWriteReq(implicit p: HPipeParameters) extends Bundle {
   val addr = Addr()
   val data = Word()
   val mask = Mask()
 }
 
-class MemReadPort(implicit val p: HPipeParameters) extends Bundle {
+class CoreReadPort(implicit val p: HPipeParameters) extends Bundle {
   val addr = Decoupled(Addr())
-  val resp = Flipped(Decoupled(new MemReadResp))
+  val resp = Flipped(Decoupled(new CoreReadResp))
 }
 
-class MemWritePort(implicit val p: HPipeParameters) extends Bundle {
-  val req = Decoupled(new MemWriteReq)
+class CoreWritePort(implicit val p: HPipeParameters) extends Bundle {
+  val req = Decoupled(new CoreWriteReq)
 }
 
 class InterruptSource(implicit p: HPipeParameters) extends Bundle {

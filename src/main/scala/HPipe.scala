@@ -6,9 +6,9 @@ import hammer._
 import hpipe.sim._
 
 class HPipeIO(implicit val p: HPipeParameters) extends Bundle {
-  val inst  = new MemReadPort
-  val read  = new MemReadPort
-  val write = new MemWritePort
+  val inst  = new CoreReadPort
+  val read  = new CoreReadPort
+  val write = new CoreWritePort
 
   val interrupt = Input(new InterruptSource)
 

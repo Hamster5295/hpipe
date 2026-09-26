@@ -9,7 +9,7 @@ import hpipe.decode._
 import hpipe.decode.Insts._
 
 class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
-  val inst = new MemReadPort
+  val inst = new CoreReadPort
 
   val toId   = Output(new If2IdIO)
   val fromEx = Input(new BranchInfo)

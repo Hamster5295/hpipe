@@ -5,8 +5,8 @@ import chisel3.util._
 import hammer._
 
 class PipeMemIO(implicit p: HPipeParameters) extends StageIO {
-  val read  = new MemReadPort
-  val write = new MemWritePort
+  val read  = new CoreReadPort
+  val write = new CoreWritePort
 
   val fromEx = Input(new Ex2MemIO)
   val toWb   = Output(new Mem2WbIO)
