@@ -79,4 +79,6 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
     val valid = writeGroupIdx === idx.U
     plru.io.replaceValid := replace
   }
+
+  val count = entries.flatMap(i => i).map(_.valid.asUInt).reduce(_ +& _)
 }

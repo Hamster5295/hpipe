@@ -31,36 +31,39 @@ class BranchPredictorIO(implicit p: HPipeParameters) extends Bundle {
 class BranchPredictor(implicit p: HPipeParameters) extends Module {
   val io = IO(new BranchPredictorIO)
 
-  if (p.Branch.Enabled) {
-    val btb = Module(new TargetBuffer)
-    btb.io.pc          := io.read.pc
-    btb.io.writeEnable := io.write.valid && !io.write.flags.isStack
-    btb.io.writePc     := io.write.pc
-    btb.io.writeTarget := io.write.target
+  val (btb, bht, ras) =
+    if (p.Branch.Enabled) {
+      val btb = Module(new TargetBuffer)
+      btb.io.pc          := io.read.pc
+      btb.io.writeEnable := io.write.valid && !io.write.flags.isStack
+      btb.io.writePc     := io.write.pc
+      btb.io.writeTarget := io.write.target
 
-    val bht = Module(new HistoryTable)
-    bht.io.pc          := io.read.pc
-    bht.io.writeEnable := io.write.valid && !io.write.flags.isStack
-    bht.io.writePc     := io.write.pc
-    bht.io.writeTake   := io.write.take
+      val bht = Module(new HistoryTable)
+      bht.io.pc          := io.read.pc
+      bht.io.writeEnable := io.write.valid && !io.write.flags.isStack
+      bht.io.writePc     := io.write.pc
+      bht.io.writeTake   := io.write.take
 
-    val ras = Module(new RetAddrStack)
-    ras.io.flags       := io.read.flags
-    ras.io.writeEnable := io.write.valid
-    ras.io.writeTarget := io.write.target
+      val ras = Module(new RetAddrStack)
+      ras.io.flags       := io.read.flags
+      ras.io.writeEnable := io.write.valid
+      ras.io.writeTarget := io.write.target
 
-    io.read.take :=
-      btb.io.hit && bht.io.take ||
-        io.read.flags.isStack && ras.io.target.valid ||
-        io.read.flags.isUncond
+      io.read.take :=
+        btb.io.hit && bht.io.take ||
+          io.read.flags.isStack && ras.io.target.valid ||
+          io.read.flags.isUncond
 
-    io.read.target := MuxIf(
-      io.read.flags.isUncond -> io.read.uncondAddr,
-      io.read.flags.isStack  -> ras.io.target.bits,
-    )(btb.io.target)
+      io.read.target := MuxIf(
+        io.read.flags.isUncond -> io.read.uncondAddr,
+        io.read.flags.isStack  -> ras.io.target.bits,
+      )(btb.io.target)
 
-  } else {
-    io.read.take   := false.B
-    io.read.target := 0.U
-  }
+      (btb, bht, ras)
+    } else {
+      io.read.take   := false.B
+      io.read.target := 0.U
+      (null, null, null)
+    }
 }
