@@ -21,6 +21,7 @@ $(NETLIST):
 	@rm -rf $(SYN_DIR)
 	@mkdir -p $(SYN_DIR)
 	@echo tcl script/syn.tcl $(TOP) $(PDK) $(PDK_DIR) \"$(VSRCS)\" $(NETLIST) | yosys -g -l $(SYN_DIR)/yosys.log -s -
+	-@rm -rf abc.history
 
 sta: $(NETLIST)
 	@echo Running OpenSTA...
