@@ -136,13 +136,9 @@ Characteristics were estimated using Xilinx part `xc7a200t`
 
 Characteristics were estimated using [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
 
-- Power = 744.4mW
-- Clock Freq = 685.184MHz
-- Area = 30881.2nm2
-
-The analysis above was taken under `v0.1.3`. 
-
-However, after M extension was implemented, the `yosys` takes too long to synthesis, so no valid backend report was created then.
+- Power = 35.072mW
+- Clock Freq = 418.27MHz
+- Area = 79970.8um2
 
 
 ## Road Map
