@@ -187,14 +187,16 @@ foreach l $LIB_FILES { read_liberty -lib $l }
 # generic synthesis (coarse)
 synth -top $DESIGN -flatten -run :fine
 
-share -aggressive
+# share -aggressive
 onehot
 muxpack
 opt_demorgan
 opt_ffinv
 
-# generic synthesis (fine)
-synth -run fine:
+# generic synthesis (fine). The internal generic abc pass is skipped because
+# the technology mapping below runs abc with the target liberty file, which
+# makes the generic LUT mapping a redundant (and slow) extra layer.
+synth -noabc -run fine:
 
 # remove unused cells and wires
 opt_clean -purge
