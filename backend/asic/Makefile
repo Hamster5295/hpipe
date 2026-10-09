@@ -1,5 +1,6 @@
 TOP = HPipe
 PDK = icsprout55
+PDK_DIR = /opt/pdk/icsprout55
 
 BUILD_DIR = build
 SYN_DIR = $(BUILD_DIR)/syn
@@ -10,20 +11,11 @@ NETLIST = $(SYN_DIR)/HPipe.netlist.v
 
 DEFAULT_GOAL := all
 
-init:
-	@echo Downloading iEDA suite...
-	@curl -o iEDA.tar.bz2 https://ysyx.oscc.cc/slides/resources/archive/ieda.tar.bz2
-	@tar -xvjf iEDA.tar.bz2
-	@mv iEDA script/iEDA
-	@rm iEDA.tar.bz2
-	@echo Initializing PDK...
-	@$(MAKE) -C pdk/icsprout55 unzip
-
 syn: $(NETLIST)
 $(NETLIST):
 	@rm -rf $(SYN_DIR)
 	@mkdir -p $(SYN_DIR)
-	@echo tcl script/syn.tcl $(TOP) $(PDK) \"$(VSRCS)\" $(NETLIST) | yosys -g -l $(SYN_DIR)/yosys.log -s -
+	@echo tcl script/syn.tcl $(TOP) $(PDK) $(PDK_DIR) \"$(VSRCS)\" $(NETLIST) | yosys -g -l $(SYN_DIR)/yosys.log -s -
 
 sta: $(NETLIST)
 	@rm -rf $(STA_DIR)
