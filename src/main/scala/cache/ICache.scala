@@ -6,9 +6,7 @@ import hpipe._
 
 class ICacheIO(implicit p: HPipeParameters) extends Bundle {
   val coreRead = Flipped(new CoreReadPort)
-
   val busRead  = new CacheReadPort
-  val busWrite = new CacheWritePort
 }
 
 class ICache(implicit p: HPipeParameters) extends Module {

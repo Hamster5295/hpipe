@@ -29,10 +29,10 @@ class PipeIf(implicit val p: HPipeParameters)
     extends StageModule(new PipeIfIO) {
 
   // Inst Fetch State Machine
-  val pc        = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
-  val fetchBusy = RegZero(Bool())
-
+  val pc           = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
   val pcMisaligned = pc.end(p.PcUnusedWidth).orR
+
+  val fetchBusy = RegZero(Bool())
 
   io.inst.addr.valid := !fetchBusy
   io.inst.addr.bits  := pc
