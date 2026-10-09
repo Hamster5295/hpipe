@@ -23,6 +23,9 @@ case class HPipeParameters(
     val TargetBuf:    TargetBufferParameters = TargetBufferParameters(),
     val HistTable:    HistoryTableParameters = HistoryTableParameters(),
     val RetAddrStack: RetAddrStackParameters = RetAddrStackParameters(),
+
+    // Firtool
+    val FirOpts: List[String] = List(),
 ) {
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth

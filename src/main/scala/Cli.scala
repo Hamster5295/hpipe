@@ -13,7 +13,6 @@ class CliConf(args: Seq[String]) extends ScallopConf(args) {
     opt[String](descr = "Provides a toml config for HPipe to generate from")
   val output =
     opt[String]("target-dir", short = 'o', descr = "The output dir of HPipe.sv")
-  val firOpts = props[String]('F', descr = "The firtool options to be passed")
   verify()
 }
 
@@ -56,11 +55,8 @@ object Cli extends App {
   // Generate in the current directory when not specified
   val out         = cli.output.getOrElse(".")
   val wrappedArgs = Array("--target-dir", out)
-  val firOpts     = cli.firOpts.map { case (k, v) => s"--$k=$v" }.toArray
+  val firOpts     = conf.FirOpts.toArray
 
-  println("> Extra Firtool options")
-  if (cli.firOpts.size == 0) println("  (None)")
-  cli.firOpts.map(b => println(s"  - ${b._1} = ${b._2}"))
   println()
 
   println("> Generating SystemVerilog...")

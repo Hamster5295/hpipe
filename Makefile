@@ -75,8 +75,7 @@ verilog-fpga:
 	@echo Exporting SystemVerilog for FPGA Analysis...
 	@$(MILL) $(PRJ).runMain $(TARGET) 	\
 		--config config/fpga.toml 		\
-		--target-dir $(FPGA_DIR)/rtl 	\
-		-Flowering-options=mitigateVivadoArrayIndexConstPropBug
+		--target-dir $(FPGA_DIR)/rtl
 
 init-fpga: verilog-fpga
 	@$(MAKE) -C $(FPGA_DIR) init
@@ -96,8 +95,7 @@ verilog-asic:
 	@echo Exporting SystemVerilog for ASIC Analysis...
 	@$(MILL) $(PRJ).runMain $(TARGET) 	\
 		--config config/asic.toml 		\
-		--target-dir $(ASIC_DIR)/rtl 	\
-		-Flowering-options=disallowLocalVariables,disallowPackedArrays
+		--target-dir $(ASIC_DIR)/rtl
 
 asic: verilog-asic
 	@echo Analysing backend...
