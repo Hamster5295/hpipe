@@ -1,6 +1,12 @@
 set VTS [list L]
 
-set FOUNDARY_PATH "$PROJ_HOME/pdk/icsprout55"
+# Respect PDK_DIR (from syn.tcl argv or the sta.tcl environment) and fall back
+# to the conventional install location when it is not set.
+if {[info exists PDK_DIR] && $PDK_DIR ne ""} {
+  set FOUNDARY_PATH $PDK_DIR
+} else {
+  set FOUNDARY_PATH "/opt/pdk/icsprout55"
+}
 set STDCELL_PATH  "$FOUNDARY_PATH/IP/STD_cell/ics55_LLSC_H7C_V1p10C100"
 
 proc get_lib_path {VT} {

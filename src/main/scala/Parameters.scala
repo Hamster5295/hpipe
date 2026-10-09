@@ -24,6 +24,9 @@ case class HPipeParameters(
     // Cache & Bus
     val BusWidth:   Int = 64,
     val CacheDepth: Int = 64,
+
+    // Firtool
+    val FirOpts: List[String] = List(),
 ) {
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth

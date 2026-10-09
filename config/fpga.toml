@@ -1,1 +1,5 @@
 UseArithMacro = true
+
+FirOpts = [
+    "--lowering-options=mitigateVivadoArrayIndexConstPropBug"
+]
