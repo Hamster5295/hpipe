@@ -31,8 +31,8 @@ class PipeMem(implicit val p: HPipeParameters)
     LoadOp.UHalf.asUInt -> fromEx.addr(0),
   ))
 
-  io.read.addr.valid := fromEx.flags.load && !loadBusy && !loadMisaligned
-  io.read.addr.bits  := fromEx.addr
+  io.read.req.valid     := fromEx.flags.load && !loadBusy && !loadMisaligned
+  io.read.req.bits.addr := fromEx.addr
 
   io.read.resp.ready := fromEx.flags.load
   val loaded = io.read.resp.bits.data
@@ -46,11 +46,11 @@ class PipeMem(implicit val p: HPipeParameters)
 
   // See PipeIf.fetchBusy for the principle here
   loadBusy := MuxIf(
-    io.flush                                -> false.B,
-    (io.read.addr.fire ^ io.read.resp.fire) -> io.read.addr.fire,
+    io.flush                               -> false.B,
+    (io.read.req.fire ^ io.read.resp.fire) -> io.read.req.fire,
   )(loadBusy)
   val loadDone =
-    (io.read.resp.fire && (loadBusy || io.read.addr.fire)) || loadMisaligned
+    (io.read.resp.fire && (loadBusy || io.read.req.fire)) || loadMisaligned
 
   // Store
   val storeMisaligned = MuxLookup(fromEx.funct, false.B)(Seq(

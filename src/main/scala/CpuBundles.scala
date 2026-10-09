@@ -95,6 +95,10 @@ class TrapInfo(implicit p: HPipeParameters) extends Bundle {
 
 // Mem
 
+class ReadReq(addrWidth: Int) extends Bundle {
+  val addr = UInt(addrWidth.W)
+}
+
 class ReadResp(dataWidth: Int) extends Bundle {
   val data = UInt(dataWidth.W)
   val excp = Bool()
@@ -107,7 +111,7 @@ class WriteReq(addrWidth: Int, dataWidth: Int) extends Bundle {
 }
 
 class ReadPort(addrWidth: Int, dataWidth: Int) extends Bundle {
-  val addr = Decoupled(UInt(addrWidth.W))
+  val req  = Decoupled(new ReadReq(addrWidth))
   val resp = Flipped(Decoupled(new ReadResp(dataWidth)))
 }
 
