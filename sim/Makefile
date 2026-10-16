@@ -18,6 +18,10 @@ SIMFLAGS += -b$(APP_DIR)
 SIMFLAGS += -t$(basename $(APP_DIR)).fst
 endif
 
+ifdef CYCLES
+SIMFLAGS += -n$(CYCLES)
+endif
+
 LIB = lib
 LIBS = $(addprefix $(LIB_DIR)/, $(LIB_LIST))
 

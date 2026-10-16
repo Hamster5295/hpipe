@@ -1,5 +1,7 @@
 #include "debug.h"
 #include "emu.h"
+#include <stdint.h>
+#include <stdlib.h>
 #include <signal.h>
 
 extern "C" {
@@ -23,6 +25,7 @@ int main(int argc, char *argv[]) {
 
   char *batch_target = NULL;
   char *fst_path = NULL;
+  uint64_t cycles = -1;
   if (argc > 0) {
     for (int i = 0; i < argc; i++) {
       char *target = argv[i];
@@ -30,10 +33,12 @@ int main(int argc, char *argv[]) {
         batch_target = target + 2;
       else if (target[0] == '-' && target[1] == 't')
         fst_path = target + 2;
+      else if (target[0] == '-' && target[1] == 'n')
+        cycles = atoi(target + 2);
     }
   }
 
-  auto ops = emu_init(fst_path);
+  auto ops = emu_init(fst_path, cycles);
 
   INFO("Emulator Initialized");
 

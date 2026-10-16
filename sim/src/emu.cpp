@@ -39,6 +39,7 @@ int ret = 0;
 
 // Performances
 int cycles = 0, branch = 0, branchMiss = 0;
+uint64_t max_cycles = -1;
 
 // GDB breakpoints
 vector<size_t> bps(4, -1);
@@ -122,6 +123,11 @@ bool step(int n) {
     } while (!cpu->io_sim_retire_valid);
     DBG("Step Retring 0x%08X", cpu->io_sim_retire_pc);
     DBG("Exec %d times", cnt);
+  }
+
+  if (cycles + n >= max_cycles) {
+    INFO("Max cycles %lu reached, stopping", max_cycles);
+    return false;
   }
 
   return true;
@@ -314,9 +320,11 @@ int gdb_write_reg(void *args, int regno, void *data) {
 
 size_t gdb_get_reg_bytes(int regno __attribute__((unused))) { return 4; }
 
-struct target_ops emu_init(char *fst) {
+struct target_ops emu_init(char *fst, uint64_t cycles) {
   ctx = new VerilatedContext;
   cpu = new VHPipe(ctx);
+
+  max_cycles = cycles;
 
 #ifdef ENABLE_TRACE
   tfp = new VerilatedFstC;

@@ -1,6 +1,8 @@
 #ifndef __EMU_H
 #define __EMU_H
 
+#include <stdint.h>
+
 #define MEM_SIZE (64 * 1024)
 #define MAX_CYCLE_PER_INST 48
 
@@ -39,7 +41,7 @@
   REG(29);                                                                     \
   REG(30);
 
-struct target_ops emu_init(char *fst);
+struct target_ops emu_init(char *fst, uint64_t max_cycles);
 void emu_run(char *file);
 void emu_shutdown();
 int emu_cleanup();
