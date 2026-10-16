@@ -31,7 +31,8 @@ class PipeMem(implicit val p: HPipeParameters)
     LoadOp.UHalf.asUInt -> fromEx.addr(0),
   ))
 
-  io.read.req.valid     := fromEx.flags.load && !loadBusy && !loadMisaligned
+  io.read.req.valid :=
+    fromEx.valid && fromEx.flags.load && !loadBusy && !loadMisaligned
   io.read.req.bits.addr := fromEx.addr
 
   io.read.resp.ready := fromEx.flags.load
@@ -59,7 +60,7 @@ class PipeMem(implicit val p: HPipeParameters)
     StoreOp.Word.asUInt -> fromEx.addr.end(2).orR,
   ))
 
-  io.write.req.valid     := fromEx.flags.store && !storeMisaligned
+  io.write.req.valid := fromEx.valid && fromEx.flags.store && !storeMisaligned
   io.write.req.bits.addr := fromEx.addr
   io.write.req.bits.data := fromEx.data
   io.write.req.bits.mask := MuxLookup(fromEx.funct, 0.U)(Seq(
@@ -103,5 +104,6 @@ class PipeMem(implicit val p: HPipeParameters)
   toId.csr.bits.data := fromEx.csrData
 
   io.busy :=
-    (fromEx.flags.load && !loadDone) || (fromEx.flags.store && !storeDone)
+    fromEx.valid &&
+      ((fromEx.flags.load && !loadDone) || (fromEx.flags.store && !storeDone))
 }
