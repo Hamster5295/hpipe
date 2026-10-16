@@ -1,6 +1,7 @@
 #include "emu.h"
 #include "VHPipe.h"
 #include "debug.h"
+#include "mem.h"
 #include "peripheral.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -31,7 +32,6 @@ VerilatedFstC *tfp;
 // Internal states
 VerilatedContext *ctx;
 VHPipe *cpu;
-uint8_t mem[MEM_SIZE];
 bool inited = false;
 
 // Return Value
@@ -44,78 +44,44 @@ int cycles = 0, branch = 0, branchMiss = 0;
 vector<size_t> bps(4, -1);
 bool halted = false, shutdown = false;
 
-uint32_t mem_addr_trans(uint32_t addr) { return addr - RESET_VECTOR; }
-
-uint32_t mem_read(uint32_t addr, bool *exception) {
-
-  if (is_peripheral(addr)) {
-    return peripheral_read(addr, exception);
-  }
-
-  uint32_t paddr = mem_addr_trans(addr);
-  if (paddr >= MEM_SIZE) {
-    ERR("Invalid memory read at 0x%08X: Out of range 0x%08X", addr,
-        RESET_VECTOR + MEM_SIZE);
-    *exception = true;
-    return 0;
-  }
-
-  uint32_t result = mem[paddr + 3] << 24 | mem[paddr + 2] << 16 |
-                    mem[paddr + 1] << 8 | mem[paddr];
-
-  DBG("[Mem] R [0x%08X] -> 0x%08X", addr, result);
-
-  return result;
-}
-
-void mem_write(uint32_t addr, uint32_t data, uint32_t mask, bool *exception) {
-
-  if (is_peripheral(addr)) {
-    for (int i = 0; i < 4; i++) {
-      if ((mask >> i) & 0x1)
-        peripheral_write(addr + i, 0xFF & (data >> i * 8), exception);
-    }
-    return;
-  }
-
-  uint32_t paddr = mem_addr_trans(addr);
-
-  if (paddr >= MEM_SIZE) {
-    ERR("Invalid memory write at 0x%08X: Out of range 0x%08X", addr,
-        RESET_VECTOR + MEM_SIZE);
-    *exception = true;
-    return;
-  }
-
-  DBG("[Mem] W [0x%08X] <- 0x%08X", addr, data);
-
-  for (int i = 0; i < 4; i++) {
-    if ((mask >> i) & 0x1)
-      mem[paddr + i] = 0xFF & (data >> i * 8);
-  }
-}
-
 void exec() {
 
   cpu->clock = 0;
-  cpu->io_inst_addr_ready = 1;
-  cpu->io_inst_resp_valid = 1;
 
-  if (cpu->io_inst_addr_valid && inited) {
-    bool excp = 0;
-    cpu->io_inst_resp_bits_data = mem_read(cpu->io_inst_addr_bits, &excp);
-    cpu->io_inst_resp_bits_excp = excp;
+  mem_resp_t resp;
+
+  // Inst
+  cpu->io_inst_resp_valid = mem_inst_resp(&resp);
+  cpu->io_inst_resp_bits_data = resp.data;
+  cpu->io_inst_resp_bits_excp = resp.excp;
+
+  if (cpu->io_inst_resp_valid && cpu->io_inst_resp_ready)
+    mem_inst_step();
+  cpu->eval();
+
+  if (cpu->io_inst_req_valid && inited) {
+    cpu->io_inst_req_ready = mem_inst_req(cpu->io_inst_req_bits_addr);
+  } else {
+    cpu->io_inst_req_ready = false;
   }
 
-  cpu->io_read_addr_ready = 1;
-  cpu->io_read_resp_valid = 1;
+  // Data Read
+  cpu->io_read_resp_valid = mem_data_resp(&resp);
+  cpu->io_read_resp_bits_data = resp.data;
+  cpu->io_read_resp_bits_excp = resp.excp;
+
+  if (cpu->io_read_resp_valid && cpu->io_read_resp_ready)
+    mem_data_step();
+  cpu->eval();
+
+  if (cpu->io_read_req_valid && inited) {
+    cpu->io_read_req_ready = mem_data_req(cpu->io_read_req_bits_addr);
+  } else {
+    cpu->io_read_req_ready = false;
+  }
+
+  // Data Write
   cpu->io_write_req_ready = 1;
-
-  if (cpu->io_read_addr_valid && inited) {
-    bool excp = 0;
-    cpu->io_read_resp_bits_data = mem_read(cpu->io_read_addr_bits, &excp);
-    cpu->io_read_resp_bits_excp = excp;
-  }
 
   if (cpu->io_write_req_valid && inited) {
     bool excp = 0;
@@ -157,6 +123,7 @@ bool step(int n) {
     DBG("Step Retring 0x%08X", cpu->io_sim_retire_pc);
     DBG("Exec %d times", cnt);
   }
+
   return true;
 }
 
@@ -191,7 +158,7 @@ void emu_run(char *file) {
   }
 
   fseek(fp, 0L, SEEK_SET);
-  fread(mem, size, 1, fp);
+  fread(mem_ptr(), size, 1, fp);
   INFO("Image Loaded");
   fclose(fp);
 
@@ -283,7 +250,7 @@ int gdb_write_mem(void *args, size_t addr, size_t len, void *val) {
   if (mem_addr_trans(addr) + len > MEM_SIZE) {
     return EFAULT;
   }
-  memcpy(mem + paddr, val, len);
+  memcpy(mem_ptr() + paddr, val, len);
   //   for (int i = 0; i < len; i++) {
   //     mem_write(addr + i, *(uint8_t *)val, 0x1);
   //   }
