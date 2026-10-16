@@ -38,10 +38,13 @@ case class HPipeParameters(
 }
 
 case class TargetBufferParameters(
-    val Depth:    Int = 32,
-    val Ways:     Int = 2,
-    val TagWidth: Int = 16,
-)
+    val Depth:      Int = 32,
+    val Ways:       Int = 2,
+    val TagWidthLo: Int = 8,
+    val TagWidthHi: Int = 8,
+) {
+  def tagWidth = TagWidthHi + TagWidthLo
+}
 
 case class HistoryTableParameters(
     val Depth:       Int = 256,

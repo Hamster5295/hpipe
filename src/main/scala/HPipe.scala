@@ -18,6 +18,7 @@ class HPipeIO(implicit val p: HPipeParameters) extends Bundle {
 class HPipe(implicit val p: HPipeParameters) extends Module {
   val io = IO(new HPipeIO)
 
+  val pipeIr  = Module(new PipeIr)
   val pipeIf  = Module(new PipeIf)
   val pipeId  = Module(new PipeId)
   val pipeSg  = Module(new PipeSg)
@@ -25,14 +26,16 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   val pipeMem = Module(new PipeMem)
   val pipeWb  = Module(new PipeWb)
 
-  val pipes = Seq(pipeIf, pipeId, pipeSg, pipeEx, pipeMem, pipeWb).reverse
+  val pipes =
+    Seq(pipeIr, pipeIf, pipeId, pipeSg, pipeEx, pipeMem, pipeWb).reverse
   val pipeBusyMask = pipes.map(_.io.busy).asUInt
 
   val regFile = Module(new RegFile)
   val csrFile = Module(new CsrFile)
 
   // Ports
-  io.inst <> pipeIf.io.inst
+  io.inst.req <> pipeIr.io.inst
+  pipeIf.io.inst <> io.inst.resp
   pipeMem.io.read <> io.read
   pipeMem.io.write <> io.write
 
@@ -42,7 +45,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   regFile.io.writes := pipeWb.io.regWrite
 
   // CSR
-  pipeIf.io.csr := csrFile.io.csrs
+  pipeIr.io.csr := csrFile.io.csrs
   pipeSg.io.csrRead <> csrFile.io.reads(0)
   pipeEx.io.csrTransform <> csrFile.io.transforms(0)
   pipeWb.io.csrWrite <> csrFile.io.writes(0)
@@ -52,52 +55,57 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
   csrFile.io.retire    := pipeWb.io.retire
 
   // Feed Forward
-  pipeIf.io.feedForwardId  := pipeId.io.feedForward
-  pipeIf.io.feedForwardSg  := pipeSg.io.feedForward
-  pipeIf.io.feedForwardEx  := pipeEx.io.feedForward
-  pipeIf.io.feedForwardMem := pipeMem.io.feedForward
-
+  pipeIr.io.isC            := pipeIf.io.isC
   pipeSg.io.feedForwardEx  := pipeEx.io.feedForward
   pipeSg.io.feedForwardMem := pipeMem.io.feedForward
 
   // Branch
   val branch = pipeEx.io.branch
-  pipeIf.io.fromEx := branch
+  pipeIr.io.branch := branch
+
+  val redirect = branch.bits.redirect
 
   // Stall
-  pipeIf.io.stall := pipeBusyMask.orR
+  pipeIr.io.stall := pipeBusyMask.end(6).orR
+  pipeIf.io.stall := pipeBusyMask.end(5).orR
 
   // Trap
   val trap = pipeWb.io.retire.trapValid
+  pipeIr.io.trap   := trap
   pipeIf.io.trap   := trap
   pipeMem.io.flush := trap
 
   io.write.req.valid :=
     Mux(trap, false.B, pipeMem.io.write.req.valid)
 
+  pipeIf.io.fromIr := RegFlush(
+    pipeIr.io.toIf,
+    !pipeBusyMask.end(6).orR,
+    (pipeIr.io.busy && !pipeBusyMask.end(5).orR) || redirect || trap,
+  )
   pipeId.io.fromIf := RegFlush(
     pipeIf.io.toId,
     !pipeBusyMask.end(5).orR,
-    (pipeIf.io.busy && !pipeBusyMask.end(4).orR) || branch.redirect || trap,
+    (pipeIf.io.busy && !pipeBusyMask.end(4).orR) || redirect || trap,
   )
   pipeSg.io.fromId := RegFlush(
     pipeId.io.toSg,
     !pipeBusyMask.end(4).orR,
-    (pipeId.io.busy && !pipeBusyMask.end(3).orR) || branch.redirect || trap,
+    (pipeId.io.busy && !pipeBusyMask.end(3).orR) || redirect || trap,
   )
   pipeEx.io.fromSg := RegFlush(
     pipeSg.io.toEx,
     !pipeBusyMask.end(3).orR,
-    (pipeSg.io.busy && !pipeBusyMask.end(2).orR) || branch.redirect || trap,
+    (pipeSg.io.busy && !pipeBusyMask.end(2).orR) || redirect || trap,
   )
   pipeMem.io.fromEx := RegFlush(
     pipeEx.io.toMem,
     !pipeBusyMask.end(2).orR,
-    (pipeEx.io.busy && !pipeBusyMask(0)) || trap,
+    (pipeEx.io.busy && !pipeBusyMask.end(1)) || trap,
   )
   pipeWb.io.fromMem := RegFlush(
     pipeMem.io.toWb,
-    !pipeBusyMask(0),
+    !pipeBusyMask.end(1),
     pipeMem.io.busy || trap,
   )
 
@@ -111,6 +119,6 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
     si.regs       := regFile.io.regs
     si.csrs       := csrFile.io.csrs
     si.branch     := branch.valid
-    si.branchMiss := branch.redirect
+    si.branchMiss := redirect
   }
 }

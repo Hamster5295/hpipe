@@ -8,137 +8,94 @@ import hpipe.branch._
 import hpipe.decode._
 import hpipe.decode.Insts._
 
+// class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
+//   val inst = new CoreReadPort
+
+//   val fromIr = Input(new Ir2IfIO)
+//   val toId   = Output(new If2IdIO)
+
+//   val isC = Output(Bool())
+
+//   val fromEx = Input(new BranchInfo)
+
+//   val feedForwardMem = Input(new DestInfo)
+//   val feedForwardEx  = Input(new DestInfo)
+//   val feedForwardSg  = Input(new DestInfo)
+//   val feedForwardId  = Input(new DestInfo)
+
+//   val stall = Input(Bool())
+//   val trap  = Input(Bool())
+
+//   val csr = Input(new Csr)
+// }
+
 class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
-  val inst = new CoreReadPort
+  val inst = Flipped(Decoupled(new ReadResp(p.XLEN)))
 
+  val fromIr = Input(new Ir2IfIO)
   val toId   = Output(new If2IdIO)
-  val fromEx = Input(new BranchInfo)
 
-  val feedForwardMem = Input(new DestInfo)
-  val feedForwardEx  = Input(new DestInfo)
-  val feedForwardSg  = Input(new DestInfo)
-  val feedForwardId  = Input(new DestInfo)
+  val isC = Output(Valid(Bool()))
 
   val stall = Input(Bool())
   val trap  = Input(Bool())
-
-  val csr = Input(new Csr)
 }
 
 class PipeIf(implicit val p: HPipeParameters)
     extends StageModule(new PipeIfIO) {
 
-  // Inst Fetch State Machine
-  val pc           = RegInit(UInt(p.AddrWidth.W), p.ResetVector.U)
-  val pcMisaligned = pc.end(p.PcUnusedWidth).orR
+  // State
+  val sIdle :: sFlush :: Nil = Enum(2)
+  val state                  = RegInit(sIdle)
+  val isIdle                 = state === sIdle
+  val isFlush                = state === sFlush
 
-  val fetchBusy = RegZero(Bool())
+  val fromIr = io.fromIr
 
-  io.inst.req.valid     := !fetchBusy
-  io.inst.req.bits.addr := pc
-  io.inst.resp.ready    := true.B
+  // Resp
+  val resp = io.inst
+  resp.ready := !io.stall
+  val respFire = resp.fire && !isFlush
 
-  /**
-    * The pcFetching bit indicates whether a pc req is sent and not yet received
-    * It follows the truth table below:
-    * 
-    * addr  |   inst    |   result
-    * ==============================
-    *  0    |    0      |   keep
-    *  1    |    0      |   1
-    *  0    |    1      |   0
-    *  1    |    1      |   keep
-    * 
-    * So when (addr ^ inst), pcFetching = addr
-    * else its value is kept
-    */
-  fetchBusy := MuxIf(
-    io.fromEx.redirect                     -> 0.B,
-    (io.inst.req.fire ^ io.inst.resp.fire) -> io.inst.req.fire,
-  )(fetchBusy)
+  val rawInst = resp.bits.data
 
-  // Inst fetch is only valid when
-  // 1. A fetch is in flight, then the response is fired (fetchBusy && inst.fire)
-  // 2. A fetch and its response is fired in the same cycle (addr.fire && inst.fire)
-  // If PC changes when a fetch is in flight (branch), the fetchBusy will be pulled down by MuxIf
-  val fetchDone = io.inst.resp.fire && (fetchBusy || io.inst.req.fire)
+  io.isC.valid := fromIr.valid && respFire && p.ExtC.B
+  io.isC.bits  := !rawInst.end(2).andR // The first cycle is always not C
+  val isC = io.isC.valid && io.isC.bits
 
-  val instRaw = io.inst.resp.bits.data
-  val isC     = !instRaw.end(2).andR && p.ExtC.B
-  val inst    = if (p.ExtC) {
+  val inst = if (p.ExtC) {
     val decomp = Module(new RvcDecompressor)
-    decomp.io.in := instRaw.end(16)
-    Mux(isC, decomp.io.out, instRaw)
-  } else instRaw
-
-  // Decode BR & JAL for BTB
-  val decoder = Module(new EarlyDecoder)
-  decoder.io.pc   := pc
-  decoder.io.inst := inst
-  val decoded = decoder.io.out
-
-  val predictor = Module(new BranchPredictor)
-  val brRead    = predictor.io.read
-  brRead.pc             := pc
-  brRead.flags.isUncond := decoded.isUncond
-  brRead.uncondAddr     := decoded.uncondAddr
-  brRead.flags.isCall   := decoded.isCall
-  brRead.flags.isRet    := decoded.isRet
-
-  val brWrite = predictor.io.write
-  brWrite.pc     := io.fromEx.pc
-  brWrite.flags  := io.fromEx.flags
-  brWrite.valid  := io.fromEx.valid
-  brWrite.target := io.fromEx.target
-  brWrite.take   := io.fromEx.take
-
-  // Csr Forwarding
-  val ffId  = io.feedForwardId
-  val ffSg  = io.feedForwardSg
-  val ffEx  = io.feedForwardEx
-  val ffMem = io.feedForwardMem
-
-  val mepcInId  = ffId.csrMatch(CsrAddr.MEPC)
-  val mepcInSg  = ffSg.csrMatch(CsrAddr.MEPC)
-  val mepcInEx  = ffEx.csrMatch(CsrAddr.MEPC)
-  val mepcInMem = ffMem.csrMatch(CsrAddr.MEPC)
-
-  val mepc = MuxIf(
-    mepcInEx  -> ffEx.csr.bits.data,
-    mepcInMem -> ffMem.csr.bits.data,
-  )(io.csr.mepc)
-
-  val mepcValid = !mepcInId && !mepcInSg
-
-  val busy = (decoded.isMret && !mepcValid) || !fetchDone
-  val halt = io.stall
-
-  val stepPc = pc +% Mux(isC, 2.U, 4.U)
-  val nextPc = MuxIf(
-    // We don't need feed-forward here, as trap will flush everything
-    io.trap                       -> io.csr.mtvec,
-    (decoded.isMret && mepcValid) -> mepc,
-    io.fromEx.redirect            -> io.fromEx.redirectTarget,
-    halt                          -> pc,
-    brRead.take                   -> brRead.target,
-  )(stepPc)
-
-  pc := nextPc
+    decomp.io.in := rawInst
+    Mux(isC, decomp.io.out, rawInst)
+  } else rawInst
 
   val toId = io.toId
-  toId.valid      := !reset.asBool && fetchDone
-  toId.pc         := pc
-  toId.inst       := inst
-  toId.isC        := isC
-  toId.trap.valid := pcMisaligned || io.inst.resp.bits.excp
-  toId.trap.cause :=
-    Mux(io.inst.resp.bits.excp, 1.U, 0.U) // 0 is also the misalign cause
+  toId.valid := fromIr.valid && respFire
+  toId.pc    := fromIr.pc
+  toId.inst  := inst
+  toId.isC   := isC
+  toId.pred  := fromIr.pred
+  toId.trap  := fromIr.trap
 
-  val pred = toId.pred
-  pred.flags  := brRead.flags
-  pred.take   := brRead.take
-  pred.target := brRead.target
-  pred.stepPc := stepPc
+  when(!fromIr.trap.valid && resp.bits.excp) {
+    toId.trap.valid := true.B
+    toId.trap.cause := 1.U // Inst Fetch Error
+  }
 
+  val busy = fromIr.valid && !resp.valid
   io.busy := busy
+
+  // State Machine
+  switch(state) {
+    is(sIdle) {
+      // Case: When Ir requested, not responsed, but a flush is coming
+      //       The input regs are flushed, but the request is not
+      //       So we need to flush the incoming response once
+      when(io.trap && busy)(state := sFlush)
+    }
+
+    is(sFlush) {
+      when(resp.fire)(state := sIdle)
+    }
+  }
 }

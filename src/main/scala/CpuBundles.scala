@@ -49,16 +49,13 @@ class OpFlags(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class BranchInfo(implicit val p: HPipeParameters) extends Bundle {
-  val valid = Bool()
-
   val pc    = Addr()
   val flags = new BranchFlags()
 
-  val take   = Bool()
-  val target = Addr()
+  val take = Bool()
 
-  val redirect       = Bool()
-  val redirectTarget = Addr()
+  val redirect = Bool()
+  val target   = Addr()
 }
 
 class BranchFlags(implicit val p: HPipeParameters) extends Bundle {
@@ -70,7 +67,7 @@ class BranchFlags(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
-  val flags = new BranchFlags
+//   val flags = new BranchFlags
 
   val take   = Bool()
   val target = Addr()
@@ -146,6 +143,11 @@ class StageModule[T <: StageIO](gen: => T)(implicit p: HPipeParameters)
   val io = IO(gen)
 }
 
+class Ir2IfIO(implicit p: HPipeParameters) extends PipeIO {
+  val pred = new BranchPredictInfo
+  val trap = new TrapInfo
+}
+
 class If2IdIO(implicit p: HPipeParameters) extends PipeIO {
   val pred = new BranchPredictInfo
   val isC  = Bool()
@@ -160,6 +162,7 @@ class Id2SgIO(implicit p: HPipeParameters) extends PipeIO {
   val csrAddr = CsrAddr()
 
   val decoded = new DecodeResult
+  val branch  = new BranchFlags
   val isC     = Bool()
 
   val trap = new TrapInfo
@@ -179,8 +182,9 @@ class Sg2ExIO(implicit p: HPipeParameters) extends PipeIO {
   val addrBase = Addr()
   val imm      = Word()
 
-  val funct = UInt(3.W)
-  val flags = new OpFlags()
+  val funct  = UInt(3.W)
+  val flags  = new OpFlags
+  val branch = new BranchFlags
 
   val trap = new TrapInfo
   val pred = new BranchPredictInfo

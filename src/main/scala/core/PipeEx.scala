@@ -14,7 +14,7 @@ class PipeExIO(implicit p: HPipeParameters) extends StageIO {
   val csrTransform = Flipped(new CsrTransformPort)
 
   val feedForward = Output(new DestInfo)
-  val branch      = Output(new BranchInfo)
+  val branch      = Valid(new BranchInfo)
 }
 
 class PipeEx(implicit val p: HPipeParameters)
@@ -80,20 +80,20 @@ class PipeEx(implicit val p: HPipeParameters)
 
   val realTarget = Mux(actualTake, addr, pred.stepPc)
 
-  io.branch.valid          := fromSg.flags.branch || fromSg.flags.jal
-  io.branch.pc             := fromSg.pc
-  io.branch.flags          := pred.flags
-  io.branch.take           := brTake
-  io.branch.target         := addr       // Addr is the branch target when taken
-  io.branch.redirect       := branchMiss && io.branch.valid
-  io.branch.redirectTarget := realTarget // realTarget is the actual branch
+  io.branch.valid      := fromSg.flags.branch || fromSg.flags.jal
+  io.branch.bits.pc    := fromSg.pc
+  io.branch.bits.flags := fromSg.branch
+  io.branch.bits.take  := brTake
+//   io.branch.target         := addr       // Addr is the branch target when taken
+  io.branch.bits.redirect := branchMiss && io.branch.valid && fromSg.valid
+  io.branch.bits.target   := realTarget // realTarget is the actual branch
   // (When br condition not met, realTarget falls to pc + 4)
 
   // Exception
   val excp = io.toMem.trap
 
   val brMisaligned =
-    fromSg.flags.branch && io.branch.target.end(if (p.ExtC) 1 else 2).orR
+    fromSg.flags.branch && addr.end(if (p.ExtC) 1 else 2).orR
 
   excp.valid := fromSg.trap.valid | brMisaligned
   excp.cause := Mux(brMisaligned, 0.U, fromSg.trap.cause)

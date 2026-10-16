@@ -77,10 +77,11 @@ class PipeSg(implicit p: HPipeParameters) extends StageModule(new PipeSgIO) {
   toEx.addrBase := Mux(decoded.useRs1ForAddr, rs1, fromId.pc)
   toEx.imm      := decoded.imm
 
-  toEx.funct := decoded.funct
-  toEx.flags := decoded.flags
-  toEx.trap  := fromId.trap
-  toEx.pred  := fromId.pred
+  toEx.funct  := decoded.funct
+  toEx.flags  := decoded.flags
+  toEx.branch := fromId.branch
+  toEx.trap   := fromId.trap
+  toEx.pred   := fromId.pred
 
   // Pipeline handshake
   io.busy := ldUseStall

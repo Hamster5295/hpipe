@@ -39,11 +39,17 @@ class PipeId(implicit val p: HPipeParameters)
   toSg.valid := fromIf.valid
 
   // Regs & Imm
-  toSg.rs1Addr := rs1Addr
-  toSg.rs2Addr := rs2Addr
-  toSg.rdAddr  := rdAddr
-  toSg.decoded := decoded
-  toSg.isC     := fromIf.isC
+  toSg.rs1Addr         := rs1Addr
+  toSg.rs2Addr         := rs2Addr
+  toSg.rdAddr          := rdAddr
+  toSg.decoded         := decoded
+  toSg.branch.isUncond := decoded.flags.jal
+  toSg.branch.isCall   :=
+    decoded.flags.jal && ((rdAddr === 1.U) || (rdAddr === 5.U))
+  toSg.branch.isRet :=
+    (decoded.flags.jal && decoded.useRs1ForAddr && !(rs1Addr === rdAddr) &&
+      (rs1Addr === 1.U || rs1Addr === 5.U) && !inst(31, 20).orR)
+  toSg.isC := fromIf.isC
 
   toSg.decoded.useRs1 := decoded.useRs1 && rs1Addr.orR
   toSg.decoded.useRs2 := decoded.useRs2 && rs2Addr.orR

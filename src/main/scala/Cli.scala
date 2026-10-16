@@ -26,7 +26,7 @@ object Cli extends App {
              /_/           
 """,
   )
-  println("A 6-stage Pipelined CPU")
+  println("A 7-stage Pipelined CPU")
   val cli = new CliConf(args.toSeq)
 
   val conf = if (cli.config.isDefined) {

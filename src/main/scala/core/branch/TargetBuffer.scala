@@ -6,15 +6,19 @@ import hammer._
 import hpipe._
 
 class TargetEntry(implicit p: HPipeParameters) extends Bundle {
+  val pa     = p.Branch.TargetBuf
   val valid  = Bool()
-  val tag    = UInt(p.Branch.TargetBuf.TagWidth.W)
+  val tag    = UInt(pa.tagWidth.W)
   val target = Addr()
+
+  val flags = new BranchFlags
 }
 
 class TargetBufferIO(implicit p: HPipeParameters) extends Bundle {
   val pc     = Input(Addr())
   val hit    = Output(Bool())
   val target = Output(Addr())
+  val flags  = Output(new BranchFlags)
 
   val writeEnable = Input(Bool())
   val writePc     = Input(Addr())
@@ -26,7 +30,11 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
   val ways            = pa.Ways
   val groups          = pa.Depth / ways
   val groupIndexWidth = log2Ceil(groups)
-  val tagWidth        = pa.TagWidth
+//   val tagWidth        = pa.TagWidth
+
+  def getTag(pc: UInt) =
+    pc.span(math.max(groupIndexWidth + pa.TagWidthLo, 16), pa.TagWidthHi) ##
+      pc.span(groupIndexWidth, pa.TagWidthLo)
 
   val io = IO(new TargetBufferIO)
 
@@ -34,9 +42,9 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
   val writePc = io.writePc.head(p.PcUsedWidth)
 
   val groupIdx      = pc.end(groupIndexWidth)
-  val tag           = pc.span(groupIndexWidth, tagWidth)
+  val tag           = getTag(pc)
   val writeGroupIdx = writePc.end(groupIndexWidth)
-  val writeTag      = writePc.span(groupIndexWidth, tagWidth)
+  val writeTag      = getTag(writePc)
 
   val entries = RegZero(Vec(groups, Vec(ways, new TargetEntry)))
   val plrus   = Seq.fill(groups)(Module(new PseudoLruSelector(ways)))
@@ -49,6 +57,7 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
 
   io.hit    := hit
   io.target := readGroup(hitIndex).target
+  io.flags  := readGroup(hitIndex).flags
 
   plrus.zipWithIndex.map { case (plru, idx) =>
     val valid = groupIdx === idx.U
