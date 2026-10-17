@@ -45,14 +45,14 @@ class PipeIr(implicit p: HPipeParameters) extends StageModule(new PipeIrIO) {
 
   val pred = Module(new BranchPredictor)
   pred.io.read.pc := reqPc
-  pred.io.write   := io.branch
+  pred.io.write   := branch
 
   val stepPc = pc +% Mux(isC, 2.U, 4.U)
   val nextPc = Mux(pred.io.read.take, pred.io.read.target, stepPc)
 
   pc := MuxIf(
     io.trap               -> io.csr.mtvec,
-    branch.bits.redirect  -> io.branch.bits.target,
+    branch.bits.redirect  -> branch.bits.target,
     (stall || !inst.fire) -> pc,
   )(nextPc)
 
