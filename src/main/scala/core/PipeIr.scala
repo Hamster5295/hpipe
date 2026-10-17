@@ -20,7 +20,8 @@ class PipeIrIO(implicit p: HPipeParameters) extends StageIO {
 
 class PipeIr(implicit p: HPipeParameters) extends StageModule(new PipeIrIO) {
 
-  val inst = io.inst
+  val inst   = io.inst
+  val branch = io.branch
 
   // State
   val sIdle :: sWfi :: Nil = Enum(2)
@@ -37,13 +38,12 @@ class PipeIr(implicit p: HPipeParameters) extends StageModule(new PipeIrIO) {
 
   val pc    = RegInit(UInt(p.XLEN.W), p.ResetVector.U)
   val reqPc = Mux(
-    isC && !io.branch.bits.redirect,
+    isC && !branch.bits.redirect,
     pc -% 2.U,
     pc,
   ) // First cycle always predicts !isC. Fix it if first is C.
 
-  val branch = io.branch
-  val pred   = Module(new BranchPredictor)
+  val pred = Module(new BranchPredictor)
   pred.io.read.pc := reqPc
   pred.io.write   := io.branch
 
@@ -54,7 +54,7 @@ class PipeIr(implicit p: HPipeParameters) extends StageModule(new PipeIrIO) {
     io.trap               -> io.csr.mtvec,
     branch.bits.redirect  -> io.branch.bits.target,
     (stall || !inst.fire) -> pc,
-  )(stepPc)
+  )(nextPc)
 
   // Request
   inst.valid     := isIdle && !io.stall && !io.trap
