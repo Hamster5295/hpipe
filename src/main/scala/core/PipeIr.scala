@@ -36,12 +36,10 @@ class PipeIr(implicit p: HPipeParameters) extends StageModule(new PipeIrIO) {
   val isC  = Mux(io.isC.valid, io.isC.bits, wasC)
   wasC := Mux(io.branch.bits.redirect, false.B, isC)
 
-  val pc    = RegInit(UInt(p.XLEN.W), p.ResetVector.U)
-  val reqPc = Mux(
-    isC && !branch.bits.redirect,
-    pc -% 2.U,
-    pc,
-  ) // First cycle always predicts !isC. Fix it if first is C.
+  val pc = RegInit(UInt(p.XLEN.W), p.ResetVector.U)
+
+  // First cycle always predicts !isC. Fix it if first is C.
+  val reqPc = Mux(isC, pc -% 2.U, pc)
 
   val pred = Module(new BranchPredictor)
   pred.io.read.pc := reqPc
