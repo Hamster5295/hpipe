@@ -46,17 +46,18 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
   val endI = inst.end(2).andR
   val midI = inst.span(16, 2).andR
 
-  assert(
-    !half || half && isIdle,
-    "Half signal should only be valid when state === sIdle, as it's expected to appear only when redirection / trap",
-  )
+//   assert(
+//     !half || half && isIdle,
+//     "Half signal should only be valid when state === sIdle, as it's expected to appear only when redirection / trap",
+//   )
 
-  input.ready      := output.ready
-  output.valid     := input.valid
-  output.bits.inst := input.bits.inst
-  output.bits.isC  := false.B
-  output.bits.pc   := input.bits.req.pc
-  output.bits.pred := input.bits.req.pred
+  input.ready             := output.ready
+  output.valid            := input.valid
+  output.bits.inst        := input.bits.inst
+  output.bits.isC         := false.B
+  output.bits.pc          := input.bits.req.pc
+  output.bits.pred        := input.bits.req.pred
+  output.bits.pred.stepPc := output.bits.pc + Mux(output.bits.isC, 2.U, 4.U)
 
   switch(state) {
     is(sIdle) {
@@ -65,24 +66,21 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
       val isCc = !endI && !midI
 
       input.ready      := output.ready
-      output.valid     := input.valid && !half
+      output.valid     := input.valid
       output.bits.inst := inst
       output.bits.isC  := !endI
       output.bits.pc   := input.bits.req.pc
 
       when(input.fire) {
-        buffer := Mux(half || isIc || isCc, inst.head(16), 0.U)
+        buffer := Mux(isIc || isCc, inst.head(16), 0.U)
         pc     := input.bits.req.pc
         pred   := input.bits.req.pred
 
-        val next = Mux1H(Seq(
+        state := Mux1H(Seq(
           isI  -> sIdle,
           isIc -> sSplit,
           isCc -> sPartial,
         ))
-        val halfNext = Mux(midI, sSplit, sPartial)
-
-        state := Mux(half, halfNext, next)
       }
     }
 
@@ -101,12 +99,13 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
       val isIi = midI
       val isCi = !midI
 
-      input.ready      := output.ready
-      output.valid     := input.valid
-      output.bits.inst := inst.end(16) ## buffer
-      output.bits.isC  := false.B
-      output.bits.pc   := pc +% 2.U
-      output.bits.pred := pred
+      input.ready             := output.ready
+      output.valid            := input.valid
+      output.bits.inst        := inst.end(16) ## buffer
+      output.bits.isC         := false.B
+      output.bits.pc          := pc +% 2.U
+      output.bits.pred        := pred
+      output.bits.pred.stepPc := pred.stepPc +% 2.U
 
       when(input.fire && output.fire)
       {
@@ -119,6 +118,19 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
           isCi -> sPartial,
         ))
       }
+    }
+  }
+
+  when(half) {
+    input.ready  := output.ready
+    output.valid := false.B
+
+    when(input.fire) {
+      buffer := inst.head(16)
+      pc     := input.bits.req.pc
+      pred   := input.bits.req.pred
+
+      state := Mux(midI, sSplit, sPartial)
     }
   }
 

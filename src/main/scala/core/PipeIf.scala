@@ -81,7 +81,7 @@ class PipeIf(implicit val p: HPipeParameters)
     inflight.pc          := align4(pc)
     inflight.half        := pc(1)
     inflight.epoch       := reqEpoch
-    inflight.pred.stepPc := stepPc
+    inflight.pred.stepPc := 0.U
     inflight.pred.take   := pred.io.read.take
     inflight.pred.target := pred.io.read.target
   }
