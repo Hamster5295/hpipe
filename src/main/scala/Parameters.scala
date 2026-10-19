@@ -28,6 +28,9 @@ case class HPipeParameters(
     // Firtool
     val FirOpts: List[String] = List(),
 ) {
+
+  require(XLEN == 32, "XLEN is limited to 32 only!")
+
   val XRegAddrWidth = log2Ceil(XLEN)
   val AddrWidth     = DataWidth
 
@@ -35,6 +38,8 @@ case class HPipeParameters(
   val PcUsedWidth   = XLEN - PcUnusedWidth
 
   val CacheWidth = BusWidth // to simplify implementions
+
+  val EpochWidth = 3
 }
 
 case class TargetBufferParameters(

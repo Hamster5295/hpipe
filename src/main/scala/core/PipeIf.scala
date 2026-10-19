@@ -8,94 +8,133 @@ import hpipe.branch._
 import hpipe.decode._
 import hpipe.decode.Insts._
 
-// class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
-//   val inst = new CoreReadPort
-
-//   val fromIr = Input(new Ir2IfIO)
-//   val toId   = Output(new If2IdIO)
-
-//   val isC = Output(Bool())
-
-//   val fromEx = Input(new BranchInfo)
-
-//   val feedForwardMem = Input(new DestInfo)
-//   val feedForwardEx  = Input(new DestInfo)
-//   val feedForwardSg  = Input(new DestInfo)
-//   val feedForwardId  = Input(new DestInfo)
-
-//   val stall = Input(Bool())
-//   val trap  = Input(Bool())
-
-//   val csr = Input(new Csr)
-// }
+class PcReqInfo(implicit p: HPipeParameters) extends Bundle {
+  val pc    = Addr()
+  val half  = Bool()
+  val epoch = UInt(p.EpochWidth.W)
+  val pred  = new BranchPredictInfo
+}
 
 class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
-  val inst = Flipped(Decoupled(new ReadResp(p.XLEN)))
+  val inst = new CoreReadPort
 
-  val fromIr = Input(new Ir2IfIO)
-  val toId   = Output(new If2IdIO)
+  val toId = Output(new If2IdIO)
 
-  val isC = Output(Valid(Bool()))
+  val branch = Flipped(Valid(new BranchInfo))
 
   val stall = Input(Bool())
   val trap  = Input(Bool())
+
+  val csr = Input(new Csr)
 }
 
 class PipeIf(implicit val p: HPipeParameters)
     extends StageModule(new PipeIfIO) {
+  val req    = io.inst.req
+  val resp   = io.inst.resp
+  val toId   = io.toId
+  val branch = io.branch
+  val csr    = io.csr
+
+  def align4(addr: UInt) = addr.head(p.XLEN - 2) ## 0.U(2.W)
 
   // State
-  val sIdle :: sFlush :: Nil = Enum(2)
-  val state                  = RegInit(sIdle)
-  val isIdle                 = state === sIdle
-  val isFlush                = state === sFlush
+  val sIdle :: sWfi :: Nil = Enum(2)
+  val state                = RegInit(sIdle)
+  val isIdle               = state === sIdle
+  val isWfi                = state === sWfi
 
-  val fromIr = io.fromIr
+  val stall = io.stall || isWfi
+  val flush = io.trap || branch.bits.redirect
+
+  // Pc
+  val pc     = RegInit(Addr(), p.ResetVector.U)
+  val stepPc = align4(pc +% 4.U)
+
+  val pred = Module(new BranchPredictor)
+  pred.io.read.pc := align4(pc)
+  pred.io.write   := branch
+
+  pc := MuxIf(
+    io.trap              -> io.csr.mtvec,
+    branch.bits.redirect -> branch.bits.target,
+    (stall || !req.fire) -> pc,
+    pred.io.read.take    -> pred.io.read.target,
+  )(stepPc)
+
+  // Req
+  val sent = RegZero(Bool())
+  sent := MuxIf(
+    flush                  -> false.B,
+    (req.fire ^ resp.fire) -> req.fire,
+  )(sent)
+
+  val reqEpoch = RegZero(UInt(p.EpochWidth.W))
+  reqEpoch := Mux(req.fire, reqEpoch +% 1.U, reqEpoch)
+
+  val realignReady = WireZero(Bool())
+  req.valid     := (!sent || resp.fire) && realignReady && !flush
+  req.bits.addr := align4(pc)
+
+  val inflight = RegZero(new PcReqInfo)
+  when(req.fire) {
+    inflight.pc          := align4(pc)
+    inflight.half        := pc(1)
+    inflight.epoch       := reqEpoch
+    inflight.pred.stepPc := stepPc
+    inflight.pred.take   := pred.io.read.take
+    inflight.pred.target := pred.io.read.target
+  }
 
   // Resp
-  val resp = io.inst
-  resp.ready := !io.stall
-  val respFire = resp.fire && !isFlush
+  val respEpoch = RegZero(UInt(p.EpochWidth.W))
+  val respMatch = inflight.epoch === respEpoch
 
-  val rawInst = resp.bits.data
+  respEpoch :=
+    MuxIf(
+      flush                    -> reqEpoch,
+      (resp.fire && respMatch) -> (respEpoch +% 1.U),
+    )(respEpoch)
 
-  io.isC.valid := fromIr.valid && respFire && p.ExtC.B
-  io.isC.bits  := !rawInst.end(2).andR // The first cycle is always not C
-  val isC = io.isC.valid && io.isC.bits
+  // Realign
+  val (valid, ready, inst, isC, instPc, instPred) = if (p.ExtC) {
+    val realigner = Module(new InstRealigner)
+    realigner.io.input.valid     := resp.valid && respMatch
+    realigner.io.input.bits.inst := resp.bits.data
+    realigner.io.input.bits.req  := inflight
+    realigner.io.flush           := flush
+    realigner.io.output.ready    := !io.stall
 
-  val inst = if (p.ExtC) {
     val decomp = Module(new RvcDecompressor)
-    decomp.io.in := rawInst
-    Mux(isC, decomp.io.out, rawInst)
-  } else rawInst
+    decomp.io.in := realigner.io.output.bits.inst
 
-  val toId = io.toId
-  toId.valid := fromIr.valid && respFire
-  toId.pc    := fromIr.pc
+    (
+      realigner.io.output.valid,
+      realigner.io.input.ready,
+
+      Mux(
+        realigner.io.output.bits.isC,
+        decomp.io.out,
+        realigner.io.output.bits.inst,
+      ),
+      realigner.io.output.bits.isC,
+      realigner.io.output.bits.pc,
+      realigner.io.output.bits.pred,
+    )
+  } else (true.B, true.B, resp.bits.data, false.B, inflight.pc, inflight.pred)
+  realignReady := ready
+
+  resp.ready := ready || !respMatch
+
+  // To Id
+  toId.valid := valid
   toId.inst  := inst
   toId.isC   := isC
-  toId.pred  := fromIr.pred
-  toId.trap  := fromIr.trap
+  toId.pc    := instPc
+  toId.pred  := instPred
 
-  when(!fromIr.trap.valid && resp.bits.excp) {
-    toId.trap.valid := true.B
-    toId.trap.cause := 1.U // Inst Fetch Error
-  }
+  toId.trap.valid := pc.end(p.PcUnusedWidth).orR
+  toId.trap.cause := 0.U // Pc Misaligned
 
-  val busy = fromIr.valid && !resp.valid
-  io.busy := busy
-
-  // State Machine
-  switch(state) {
-    is(sIdle) {
-      // Case: When Ir requested, not responsed, but a flush is coming
-      //       The input regs are flushed, but the request is not
-      //       So we need to flush the incoming response once
-      when(io.trap && busy)(state := sFlush)
-    }
-
-    is(sFlush) {
-      when(resp.fire)(state := sIdle)
-    }
-  }
+  io.busy := !valid
 }

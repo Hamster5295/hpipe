@@ -33,8 +33,8 @@ class ChiperfLogger(hpipe: HPipe, debugger: SimDebugger)(implicit
 
     /// Pipeline
     pIf.printWithBubble(
-      cf"0x${probe(hpipe.pipeIf.inst)}%8x",
-      !probe(hpipe.pipeIr.io.busy),
+      cf"0x${probe(hpipe.pipeIf.toId.pc)}%8x",
+      !probe(hpipe.pipeIf.io.busy),
     )
 
     def printPipe(pip: Pip, io: PipeIO) = {
@@ -49,12 +49,12 @@ class ChiperfLogger(hpipe: HPipe, debugger: SimDebugger)(implicit
     printPipe(pWb, hpipe.pipeWb.io.fromMem)
 
     /// Values
-    pc.print(cf"0x${probe(hpipe.pipeIr.reqPc)}%8x")
+    pc.print(cf"0x${probe(hpipe.pipeIf.io.toId.pc)}%8x")
     sp.print(cf"0x${probe(debugger.regs.sp)}%8x")
 
-    // Branch
-    // btb.print(cf"0x${probe(hpipe.pipeIf.predictor.btb.count)}%8x")
-    // ras.print(cf"${probe(hpipe.pipeIf.predictor.ras.ptr)}")
+    /// Branch
+    btb.print(cf"0x${probe(hpipe.pipeIf.pred.btb.count)}%8x")
+    ras.print(cf"${probe(hpipe.pipeIf.pred.ras.ptr)}")
 
     /// Evts
     when(probe(hpipe.branch.valid)) {
