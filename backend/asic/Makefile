@@ -8,7 +8,7 @@ SYN_DIR = $(BUILD_DIR)/syn
 REPORT_DIR = report
 
 STA ?= sta
-CLK_FREQ_MHZ ?= 500
+CLK_FREQ_MHZ ?= 300
 CLK_PORT_NAME ?= clock
 
 VSRCS = $(shell find rtl -name "*.sv")

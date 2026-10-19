@@ -105,6 +105,8 @@ asic: verilog-asic
 	@echo Reports available at '$(ASIC_DIR)/build'
 
 
+backend: fpga asic
+
 # Publish
 
 cli:
