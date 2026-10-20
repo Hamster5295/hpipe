@@ -26,9 +26,9 @@ gdb_action_t gdb_cont(void *args) {
     if (emu_try_trap())
       return ACT_SHUTDOWN;
 
-    if (emu_get_cpu()->io_sim_retire_valid) {
+    if (emu_cpu()->io_sim_retire_valid) {
       for (auto it = bps.begin(); it != bps.end(); ++it) {
-        if (*it == emu_get_cpu()->io_sim_retire_pc)
+        if (*it == emu_cpu()->io_sim_retire_pc)
           return ACT_RESUME;
       }
     }
@@ -39,7 +39,7 @@ gdb_action_t gdb_cont(void *args) {
 gdb_action_t gdb_emu_stepi(void *args) {
   DBG("GDB emu_step");
   emu_step(1);
-  if (emu_get_cpu()->io_sim_retire_ebreak) {
+  if (emu_cpu()->io_sim_retire_ebreak) {
     INFO("Hit EBREAK, shutting down...");
     return ACT_SHUTDOWN;
   }
@@ -97,25 +97,11 @@ int gdb_read_reg(void *args, int regno, void *reg_value) {
     return EFAULT;
 
   if (regno == 32) {
-    memcpy(reg_value, &emu_get_cpu()->io_sim_retire_pc, 4);
+    memcpy(reg_value, &emu_cpu()->io_sim_retire_pc, 4);
     return 0;
   }
 
-  if (regno == 0) {
-    memcpy(reg_value, &regno, 4);
-    return 0;
-  }
-
-  switch (regno) {
-#define REG(no)                                                                \
-  case (no + 1):                                                               \
-    memcpy(reg_value, &emu_get_cpu()->io_sim_regs_##no, 4);                    \
-    break
-
-    REGS
-
-#undef REG
-  }
+  *(uint32_t *)reg_value = emu_reg(regno);
 
   return 0;
 }
@@ -125,7 +111,7 @@ int gdb_write_reg(void *args, int regno, void *data) {
     return EFAULT;
 
   if (regno == 32) {
-    memcpy(&emu_get_cpu()->io_sim_retire_pc, data, 4);
+    memcpy(&emu_cpu()->io_sim_retire_pc, data, 4);
     return 0;
   }
 
@@ -136,7 +122,7 @@ int gdb_write_reg(void *args, int regno, void *data) {
   switch (regno) {
 #define REG(no)                                                                \
   case (no + 1):                                                               \
-    memcpy(&emu_get_cpu()->io_sim_regs_##no, data, 4);                         \
+    memcpy(&emu_cpu()->io_sim_regs_##no, data, 4);                             \
     break
 
     REGS

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define MEM_SIZE (64 * 1024)
+
 typedef struct {
   bool valid;
   uint32_t data;

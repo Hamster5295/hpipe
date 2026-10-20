@@ -13,3 +13,6 @@
 [submodule "sim/app/zephyr/repo"]
 	path = sim/app/zephyr/repo
 	url = https://github.com/zephyrproject-rtos/zephyr.git
+[submodule "sim/lib/spike"]
+	path = sim/lib/spike
+	url = git@github.com:riscv-software-src/riscv-isa-sim.git

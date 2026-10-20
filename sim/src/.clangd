@@ -3,6 +3,7 @@ CompileFlags:
     [
       -I../include,
       -I../lib/mini-gdbstub/include,
+      -I../lib/spike/build/include,
       -I../build/obj/wave,
       -DENABLE_TRACE,
     ]

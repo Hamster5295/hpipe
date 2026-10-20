@@ -1,5 +1,3 @@
-include lib/Makefile
-
 TOP = HPipe
 
 VERILATOR := verilator
@@ -22,13 +20,19 @@ ifdef CYCLES
 SIMFLAGS += -n$(CYCLES)
 endif
 
+ifdef DIFF
+SIMFLAGS += -d
+endif
+
 LIB = lib
+LIB_LIST += libgdbstub.a libriscv.so
 LIBS = $(addprefix $(LIB_DIR)/, $(LIB_LIST))
 
 # CFLAGS += $(addprefix -I, $(abspath include)) 
 CFLAGS += $(addprefix -I, $(abspath $(OBJ_DIR))) 
 CFLAGS += $(addprefix -I, $(abspath include)) 
 CFLAGS += $(addprefix -I, $(abspath lib/mini-gdbstub/include)) 
+CFLAGS += $(addprefix -I, $(abspath lib/spike/build/include)) 
 CFLAGS += -s -O3
 CFLAGS += -Wno-write-strings
 
@@ -37,14 +41,14 @@ VFLAGS += --no-timing		# handle #x delays
 # LDFLAGS += $(addprefix -L, /usr/lib)
 LDFLAGS += $(addprefix -L, $(abspath $(LIB_DIR)))
 LDFLAGS += $(addprefix -l, "gdbstub")
+LDFLAGS += -Wl,-rpath,$(abspath $(LIB_DIR)) $(addprefix -l, "riscv")
 
 CSRCS = $(shell find -L src -name "*.c") $(shell find -L src -name "*.cpp")
 VSRCS = $(shell find -L rtl -name "*.sv")
 SRCS = $(VSRCS) $(CSRCS)
 
 $(LIBS): 
-	@make -C $(LIB) $(lastword $(subst /, ,$@))
-	@mv $(LIB)/$(lastword $(subst /, ,$@)) $@
+	@$(MAKE) -C $(LIB) all LIB_DIR=$(abspath $(LIB_DIR))
 
 build: $(LIBS)
 	-@rm $(BIN)

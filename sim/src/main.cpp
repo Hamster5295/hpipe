@@ -1,8 +1,8 @@
 #include "debug.h"
 #include "emu.h"
+#include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <signal.h>
 
 extern "C" {
 #include "gdbstub.h"
@@ -25,6 +25,7 @@ int main(int argc, char *argv[]) {
 
   char *batch_target = NULL;
   char *fst_path = NULL;
+  bool difftest = false;
   uint64_t cycles = -1;
   if (argc > 0) {
     for (int i = 0; i < argc; i++) {
@@ -35,10 +36,12 @@ int main(int argc, char *argv[]) {
         fst_path = target + 2;
       else if (target[0] == '-' && target[1] == 'n')
         cycles = atoi(target + 2);
+      else if (target[0] == '-' && target[1] == 'd')
+        difftest = true;
     }
   }
 
-  auto ops = emu_init(fst_path, cycles);
+  auto ops = emu_init(fst_path, cycles, difftest);
 
   INFO("Emulator Initialized");
 

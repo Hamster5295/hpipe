@@ -4,7 +4,6 @@
 #include "VHPipe.h"
 #include <stdint.h>
 
-#define MEM_SIZE (64 * 1024)
 #define MAX_CYCLE_PER_INST 48
 
 #define RESET_VECTOR 0x80000000
@@ -42,7 +41,7 @@
   REG(29);                                                                     \
   REG(30);
 
-struct target_ops emu_init(char *fst, uint64_t max_cycles);
+struct target_ops emu_init(char *fst, uint64_t max_cycles, bool difftest);
 void emu_run(char *file);
 void emu_shutdown();
 int emu_cleanup();
@@ -53,6 +52,9 @@ bool emu_try_trap();
 void emu_set_halt(bool halt);
 bool emu_get_halt();
 
-VHPipe* emu_get_cpu();
+uint32_t emu_reg(int addr);
+uint32_t emu_pc();
+
+VHPipe *emu_cpu();
 
 #endif

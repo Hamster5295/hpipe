@@ -1,5 +1,6 @@
 #include "emu.h"
 #include "debug.h"
+#include "difftest.h"
 #include "gdb.h"
 #include "mem.h"
 #include "peripheral.h"
@@ -41,7 +42,7 @@ int ret = 0;
 int cycles = 0, branch = 0, branchMiss = 0;
 uint64_t max_cycles = -1;
 
-// GDB breakpoints
+// Controls
 bool halted = false, shutdown = false;
 
 void exec() {
@@ -145,14 +146,7 @@ bool try_trap() {
   return false;
 }
 
-bool emu_step(int n) { return step(n); }
-
-bool emu_try_trap() { return try_trap(); }
-
-bool emu_get_halt() { return halted; }
-void emu_set_halt(bool halt) { halted = halt; }
-
-VHPipe *emu_get_cpu() { return cpu; }
+VHPipe *emu_cpu() { return cpu; }
 
 void emu_run(char *file) {
   FILE *fp = fopen(file, "r");
@@ -176,6 +170,11 @@ void emu_run(char *file) {
   INFO("Image Loaded");
   fclose(fp);
 
+  if (diff_enabled()) {
+    diff_mem_write(RESET_VECTOR, mem_ptr(), size);
+    INFO("[DIFF] Memory Synchronized");
+  }
+
   while (true) {
     if (!step(1) || shutdown) {
       ret = 1;
@@ -184,16 +183,28 @@ void emu_run(char *file) {
 
     if (try_trap())
       break;
+
+    if (diff_enabled()) {
+      if (diff_cmp()) {
+        ERR("[DIFF] FAILED @pc=0x%08X", cpu->io_sim_retire_pc);
+        break;
+      }
+      diff_step();
+    }
   }
 
   INFO("Emulator Stopped");
 }
 
-struct target_ops emu_init(char *fst, uint64_t cycles) {
+struct target_ops emu_init(char *fst, uint64_t cycles, bool difftest) {
   ctx = new VerilatedContext;
   cpu = new VHPipe(ctx);
 
   max_cycles = cycles;
+
+  if (difftest) {
+    diff_init();
+  }
 
 #ifdef ENABLE_TRACE
   tfp = new VerilatedFstC;
@@ -241,3 +252,33 @@ int emu_cleanup() {
 }
 
 int emu_get_cycles() { return cycles; }
+
+bool emu_step(int n) { return step(n); }
+
+bool emu_try_trap() { return try_trap(); }
+
+bool emu_get_halt() { return halted; }
+
+void emu_set_halt(bool halt) { halted = halt; }
+
+uint32_t emu_reg(int addr) {
+
+  if (addr == 0) {
+    return 0;
+  }
+
+  switch (addr) {
+#define REG(no)                                                                \
+  case (no + 1):                                                               \
+    return cpu->io_sim_regs_##no;                                              \
+    break
+
+    REGS
+
+#undef REG
+  }
+
+  return 0;
+}
+
+uint32_t emu_pc() { return cpu->io_sim_retire_pc; }
