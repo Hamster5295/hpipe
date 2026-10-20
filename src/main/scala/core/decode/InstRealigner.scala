@@ -51,13 +51,12 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
 //     "Half signal should only be valid when state === sIdle, as it's expected to appear only when redirection / trap",
 //   )
 
-  input.ready             := output.ready
-  output.valid            := input.valid
-  output.bits.inst        := input.bits.inst
-  output.bits.isC         := false.B
-  output.bits.pc          := input.bits.req.pc
-  output.bits.pred        := input.bits.req.pred
-  output.bits.pred.stepPc := output.bits.pc + Mux(output.bits.isC, 2.U, 4.U)
+  input.ready      := output.ready
+  output.valid     := input.valid
+  output.bits.inst := input.bits.inst
+  output.bits.isC  := false.B
+  output.bits.pc   := input.bits.req.pc
+  output.bits.pred := input.bits.req.pred
 
   switch(state) {
     is(sIdle) {
@@ -65,11 +64,13 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
       val isIc = !endI && midI
       val isCc = !endI && !midI
 
-      input.ready      := output.ready
-      output.valid     := input.valid
-      output.bits.inst := inst
-      output.bits.isC  := !endI
-      output.bits.pc   := input.bits.req.pc
+      input.ready             := output.ready
+      output.valid            := input.valid
+      output.bits.inst        := inst
+      output.bits.isC         := !endI
+      output.bits.pc          := input.bits.req.pc
+      output.bits.pred.stepPc :=
+        input.bits.req.pc + Mux(output.bits.isC, 2.U, 4.U)
 
       when(input.fire) {
         buffer := Mux(isIc || isCc, inst.head(16), 0.U)
@@ -85,12 +86,13 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
     }
 
     is(sPartial) {
-      input.ready      := false.B
-      output.valid     := true.B
-      output.bits.inst := buffer.end(16)
-      output.bits.isC  := true.B
-      output.bits.pc   := pc +% 2.U
-      output.bits.pred := pred
+      input.ready             := false.B
+      output.valid            := true.B
+      output.bits.inst        := buffer.end(16)
+      output.bits.isC         := true.B
+      output.bits.pc          := pc +% 2.U
+      output.bits.pred        := pred
+      output.bits.pred.stepPc := pc +% 4.U // pc + 2 + 2 (must be 2bit)
 
       when(output.fire)(state := sIdle)
     }
@@ -105,7 +107,7 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
       output.bits.isC         := false.B
       output.bits.pc          := pc +% 2.U
       output.bits.pred        := pred
-      output.bits.pred.stepPc := pred.stepPc +% 2.U
+      output.bits.pred.stepPc := pc +% 6.U // pc + 2 + 4 (must be 4bit)
 
       when(input.fire && output.fire)
       {
