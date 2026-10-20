@@ -5,10 +5,10 @@ IMAGE = $(OBJ_DIR)/$(TARGET)
 $(shell mkdir -p $(OBJ_DIR))
 
 sim: image
-	make -C ../.. sim APP_DIR=$(abspath $(IMAGE)).bin
+	@$(MAKE) -C ../.. sim APP_DIR=$(abspath $(IMAGE)).bin
 
 wave: image 
-	make -C ../.. wave APP_DIR=$(abspath $(IMAGE)).bin
+	@$(MAKE) -C ../.. wave APP_DIR=$(abspath $(IMAGE)).bin
 
 clean:
 	@echo Removing build directory

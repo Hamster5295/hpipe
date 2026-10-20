@@ -9,7 +9,8 @@ libgdbstub.a:
 libriscv.so:
 	@echo Building $@
 	@cd spike && ./configure --prefix=$(abspath ./spike/build)
-	@make -C spike $(LIB_DIR)
+	@$(MAKE) -C spike
+	@$(MAKE) -C spike install
 	@cp spike/build/lib/libriscv.so $(LIB_DIR)
 	@echo Done!
 
