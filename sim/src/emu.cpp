@@ -1,6 +1,6 @@
 #include "emu.h"
-#include "VHPipe.h"
 #include "debug.h"
+#include "gdb.h"
 #include "mem.h"
 #include "peripheral.h"
 #include <stdint.h>
@@ -42,7 +42,6 @@ int cycles = 0, branch = 0, branchMiss = 0;
 uint64_t max_cycles = -1;
 
 // GDB breakpoints
-vector<size_t> bps(4, -1);
 bool halted = false, shutdown = false;
 
 void exec() {
@@ -146,6 +145,15 @@ bool try_trap() {
   return false;
 }
 
+bool emu_step(int n) { return step(n); }
+
+bool emu_try_trap() { return try_trap(); }
+
+bool emu_get_halt() { return halted; }
+void emu_set_halt(bool halt) { halted = halt; }
+
+VHPipe *emu_get_cpu() { return cpu; }
+
 void emu_run(char *file) {
   FILE *fp = fopen(file, "r");
   if (fp == NULL) {
@@ -181,145 +189,6 @@ void emu_run(char *file) {
   INFO("Emulator Stopped");
 }
 
-gdb_action_t gdb_cont(void *args) {
-  halted = false;
-  DBG("GDB cont");
-  while (true) {
-    if (!step(1))
-      break;
-
-    if (halted)
-      break;
-
-    if (try_trap())
-      return ACT_SHUTDOWN;
-
-    if (cpu->io_sim_retire_valid) {
-      for (auto it = bps.begin(); it != bps.end(); ++it) {
-        if (*it == cpu->io_sim_retire_pc)
-          return ACT_RESUME;
-      }
-    }
-  }
-  return ACT_RESUME;
-}
-
-gdb_action_t gdb_stepi(void *args) {
-  DBG("GDB step");
-  step(1);
-  if (cpu->io_sim_retire_ebreak) {
-    INFO("Hit EBREAK, shutting down...");
-    return ACT_SHUTDOWN;
-  }
-  return ACT_RESUME;
-}
-
-bool gdb_set_bp(void *args, size_t addr, bp_type_t type) {
-  if (type != BP_SOFTWARE)
-    return false;
-
-  for (auto it = bps.begin(); it != bps.end(); ++it) {
-    if (*it == addr)
-      return false;
-  }
-  bps.push_back(addr);
-  return true;
-}
-
-bool gdb_del_bp(void *args, size_t addr, bp_type_t type) {
-  if (type != BP_SOFTWARE)
-    return true;
-
-  for (auto it = bps.begin(); it != bps.end(); ++it) {
-    if (*it == addr) {
-      bps.erase(it);
-      break;
-    }
-  }
-  return true;
-}
-
-void gdb_on_interrupt(void *args) { halted = true; }
-
-int gdb_read_mem(void *args, size_t addr, size_t len, void *val) {
-  if (mem_addr_trans(addr) + len > MEM_SIZE) {
-    return EFAULT;
-  }
-  bool unused;
-  uint32_t result = mem_read(addr, &unused);
-  memcpy(val, (void *)&result, len);
-  return 0;
-}
-
-int gdb_write_mem(void *args, size_t addr, size_t len, void *val) {
-  size_t paddr = mem_addr_trans(addr);
-  if (mem_addr_trans(addr) + len > MEM_SIZE) {
-    return EFAULT;
-  }
-  memcpy(mem_ptr() + paddr, val, len);
-  //   for (int i = 0; i < len; i++) {
-  //     mem_write(addr + i, *(uint8_t *)val, 0x1);
-  //   }
-  return 0;
-}
-
-int gdb_read_reg(void *args, int regno, void *reg_value) {
-  if (regno > 32)
-    return EFAULT;
-
-  if (regno == 32) {
-    memcpy(reg_value, &cpu->io_sim_retire_pc, 4);
-    return 0;
-  }
-
-  if (regno == 0) {
-    memcpy(reg_value, &regno, 4);
-    return 0;
-  }
-
-  switch (regno) {
-#define REG(no)                                                                \
-  case (no + 1):                                                               \
-    memcpy(reg_value, &cpu->io_sim_regs_##no, 4);                              \
-    break
-
-    REGS
-
-#undef REG
-  }
-
-  return 0;
-}
-
-int gdb_write_reg(void *args, int regno, void *data) {
-  if (regno > 32)
-    return EFAULT;
-
-  if (regno == 32) {
-    memcpy(&cpu->io_sim_retire_pc, data, 4);
-    return 0;
-  }
-
-  if (regno == 0) {
-    return 0;
-  }
-
-  switch (regno) {
-#define REG(no)                                                                \
-  case (no + 1):                                                               \
-    memcpy(&cpu->io_sim_regs_##no, data, 4);                                   \
-    break
-
-    REGS
-
-#undef REG
-  }
-
-  return 0;
-}
-
-size_t gdb_get_reg_bytes(int regno __attribute__((unused))) { return 4; }
-
 struct target_ops emu_init(char *fst, uint64_t cycles) {
   ctx = new VerilatedContext;
   cpu = new VHPipe(ctx);
@@ -346,18 +215,7 @@ struct target_ops emu_init(char *fst, uint64_t cycles) {
   cpu->reset = 0;
   inited = true;
 
-  return {
-      .cont = gdb_cont,
-      .stepi = gdb_stepi,
-      .get_reg_bytes = gdb_get_reg_bytes,
-      .read_reg = gdb_read_reg,
-      .write_reg = gdb_write_reg,
-      .read_mem = gdb_read_mem,
-      .write_mem = gdb_write_mem,
-      .set_bp = gdb_set_bp,
-      .del_bp = gdb_del_bp,
-      .on_interrupt = gdb_on_interrupt,
-  };
+  return gdb_get_ops();
 }
 
 void emu_shutdown() { shutdown = true; }

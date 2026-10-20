@@ -1,6 +1,7 @@
 #ifndef __EMU_H
 #define __EMU_H
 
+#include "VHPipe.h"
 #include <stdint.h>
 
 #define MEM_SIZE (64 * 1024)
@@ -46,5 +47,12 @@ void emu_run(char *file);
 void emu_shutdown();
 int emu_cleanup();
 int emu_get_cycles();
+
+bool emu_step(int n);
+bool emu_try_trap();
+void emu_set_halt(bool halt);
+bool emu_get_halt();
+
+VHPipe* emu_get_cpu();
 
 #endif
