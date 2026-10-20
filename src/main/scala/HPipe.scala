@@ -64,6 +64,7 @@ class HPipe(implicit val p: HPipeParameters) extends Module {
 
   // Stall
   pipeIf.io.stall := pipeBusyMask.end(5).orR
+  pipeEx.io.stall := pipeBusyMask.end(3).orR
 
   // Trap
   val trap = pipeWb.io.retire.trapValid
