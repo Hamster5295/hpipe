@@ -9,10 +9,11 @@ import hpipe.decode._
 import hpipe.decode.Insts._
 
 class PcReqInfo(implicit p: HPipeParameters) extends Bundle {
-  val pc    = Addr()
-  val half  = Bool()
-  val epoch = UInt(p.EpochWidth.W)
-  val pred  = new BranchPredictInfo
+  val pc             = Addr()
+  val pcInMiddle     = Bool()
+  val epoch          = UInt(p.EpochWidth.W)
+  val pred           = new BranchPredictInfo
+  val predPcInMiddle = Bool()
 }
 
 class PipeIfIO(implicit p: HPipeParameters) extends StageIO {
@@ -51,15 +52,19 @@ class PipeIf(implicit val p: HPipeParameters)
   val pc     = RegInit(Addr(), p.ResetVector.U)
   val stepPc = align4(pc +% 4.U)
 
+  val pcInMiddle = pc(1)
+
   val pred = Module(new BranchPredictor)
   pred.io.read.pc := align4(pc)
   pred.io.write   := branch
+
+  val brTake = pred.io.read.take && !pcInMiddle
 
   pc := MuxIf(
     io.trap              -> io.csr.mtvec,
     branch.bits.redirect -> branch.bits.target,
     (stall || !req.fire) -> pc,
-    pred.io.read.take    -> pred.io.read.target,
+    brTake               -> pred.io.read.target,
   )(stepPc)
 
   // Req
@@ -78,12 +83,13 @@ class PipeIf(implicit val p: HPipeParameters)
 
   val inflight = RegZero(new PcReqInfo)
   when(req.fire) {
-    inflight.pc          := align4(pc)
-    inflight.half        := pc(1)
-    inflight.epoch       := reqEpoch
-    inflight.pred.stepPc := 0.U // Unused, will be generated in realigner
-    inflight.pred.take   := pred.io.read.take
-    inflight.pred.target := pred.io.read.target
+    inflight.pc             := align4(pc)
+    inflight.pcInMiddle     := pcInMiddle
+    inflight.epoch          := reqEpoch
+    inflight.pred.stepPc    := 0.U // Unused, will be generated in realigner
+    inflight.pred.take      := brTake
+    inflight.pred.target    := pred.io.read.target
+    inflight.predPcInMiddle := pred.io.read.pcInMiddle
   }
 
   // Resp

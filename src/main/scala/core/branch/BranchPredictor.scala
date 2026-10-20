@@ -6,10 +6,10 @@ import hammer._
 import hpipe._
 
 class BranchReadPort(implicit p: HPipeParameters) extends Bundle {
-  val pc     = Input(Addr())
-  val target = Output(Addr())
-  val take   = Output(Bool())
-//   val uncondAddr = Input(Addr())
+  val pc         = Input(Addr())
+  val target     = Output(Addr())
+  val take       = Output(Bool())
+  val pcInMiddle = Output(Bool())
 }
 
 class BranchPredictorIO(implicit p: HPipeParameters) extends Bundle {
@@ -27,8 +27,9 @@ class BranchPredictor(implicit p: HPipeParameters) extends Module {
       btb.io.writeEnable := io.write.valid
       btb.io.writePc     := io.write.bits.pc
       btb.io.writeTarget := io.write.bits.target
+      btb.io.writeFlags  := io.write.bits.flags
 
-      val flags = btb.io.flags
+      val flags = btb.io.meta.flags
 
       val bht = Module(new HistoryTable)
       bht.io.pc          := io.read.pc
@@ -39,16 +40,19 @@ class BranchPredictor(implicit p: HPipeParameters) extends Module {
       val ras = Module(new RetAddrStack)
       ras.io.flags       := flags
       ras.io.writeEnable := io.write.valid
-      ras.io.writeTarget := io.write.bits.target
+      ras.io.writeTarget := io.write.bits.stepPc
 
       io.read.take :=
-        btb.io.hit && bht.io.take ||
-          flags.isStack && ras.io.target.valid ||
-          flags.isUncond
+        btb.io.hit &&
+          (bht.io.take ||
+            flags.isRet && ras.io.target.valid ||
+            flags.isUncond)
 
       io.read.target := MuxIf(
-        flags.isStack -> ras.io.target.bits,
+        flags.isRet -> ras.io.target.bits,
       )(btb.io.target)
+
+      io.read.pcInMiddle := btb.io.meta.pcInMiddle
 
       (btb, bht, ras)
     } else {

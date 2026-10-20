@@ -56,6 +56,7 @@ class BranchInfo(implicit val p: HPipeParameters) extends Bundle {
 
   val redirect = Bool()
   val target   = Addr()
+  val stepPc   = Addr()
 }
 
 class BranchFlags(implicit val p: HPipeParameters) extends Bundle {
@@ -67,11 +68,14 @@ class BranchFlags(implicit val p: HPipeParameters) extends Bundle {
 }
 
 class BranchPredictInfo(implicit val p: HPipeParameters) extends Bundle {
-//   val flags = new BranchFlags
-
   val take   = Bool()
   val target = Addr()
   val stepPc = Addr()
+}
+
+class BranchPredictMeta(implicit p: HPipeParameters) extends Bundle {
+  val flags      = new BranchFlags
+  val pcInMiddle = Bool()
 }
 
 class RetireInfo(implicit val p: HPipeParameters) extends Bundle {

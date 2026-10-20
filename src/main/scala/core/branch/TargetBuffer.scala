@@ -8,21 +8,22 @@ import hpipe._
 class TargetEntry(implicit p: HPipeParameters) extends Bundle {
   val pa     = p.Branch.TargetBuf
   val valid  = Bool()
-  val tag    = UInt(pa.tagWidth.W)
+  val tag    = UInt(pa.TagWidth.W)
   val target = Addr()
 
-  val flags = new BranchFlags
+  val meta = new BranchPredictMeta
 }
 
 class TargetBufferIO(implicit p: HPipeParameters) extends Bundle {
   val pc     = Input(Addr())
   val hit    = Output(Bool())
   val target = Output(Addr())
-  val flags  = Output(new BranchFlags)
+  val meta   = Output(new BranchPredictMeta)
 
   val writeEnable = Input(Bool())
   val writePc     = Input(Addr())
   val writeTarget = Input(Addr())
+  val writeFlags  = Input(new BranchFlags)
 }
 
 class TargetBuffer(implicit p: HPipeParameters) extends Module {
@@ -30,11 +31,9 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
   val ways            = pa.Ways
   val groups          = pa.Depth / ways
   val groupIndexWidth = log2Ceil(groups)
-//   val tagWidth        = pa.TagWidth
+  val tagWidth        = pa.TagWidth
 
-  def getTag(pc: UInt) =
-    pc.span(math.max(groupIndexWidth + pa.TagWidthLo, 16), pa.TagWidthHi) ##
-      pc.span(groupIndexWidth, pa.TagWidthLo)
+  def getTag(pc: UInt) = pc.span(groupIndexWidth, tagWidth)
 
   val io = IO(new TargetBufferIO)
 
@@ -45,6 +44,9 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
   val tag           = getTag(pc)
   val writeGroupIdx = writePc.end(groupIndexWidth)
   val writeTag      = getTag(writePc)
+
+  dontTouch(tag)
+  dontTouch(writeTag)
 
   val entries = RegZero(Vec(groups, Vec(ways, new TargetEntry)))
   val plrus   = Seq.fill(groups)(Module(new PseudoLruSelector(ways)))
@@ -57,7 +59,7 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
 
   io.hit    := hit
   io.target := readGroup(hitIndex).target
-  io.flags  := readGroup(hitIndex).flags
+  io.meta   := readGroup(hitIndex).meta
 
   plrus.zipWithIndex.map { case (plru, idx) =>
     val valid = groupIdx === idx.U
@@ -80,6 +82,10 @@ class TargetBuffer(implicit p: HPipeParameters) extends Module {
     entry.tag    := Mux(io.writeEnable && replace, writeTag, entry.tag)
     entry.target :=
       Mux(io.writeEnable && (replace || change), io.writeTarget, entry.target)
+    entry.meta.flags :=
+      Mux(io.writeEnable && replace, io.writeFlags, entry.meta.flags)
+    entry.meta.pcInMiddle :=
+      Mux(io.writeEnable && replace, io.writePc(1), entry.meta.pcInMiddle)
 
     io.writeEnable && replace
   }.asUInt.orR

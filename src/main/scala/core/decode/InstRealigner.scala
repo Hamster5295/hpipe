@@ -28,6 +28,7 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
 
   val input  = io.input
   val output = io.output
+  val req    = input.bits.req
 
   val sIdle :: sPartial :: sSplit :: sSplitDone :: Nil = Enum(4)
 
@@ -41,10 +42,10 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
   val pc     = RegZero(Addr())
   val pred   = RegZero(new BranchPredictInfo)
 
-  val inst = input.bits.inst
-  val half = input.bits.req.half
-  val endI = inst.end(2).andR
-  val midI = inst.span(16, 2).andR
+  val inst       = input.bits.inst
+  val pcInMiddle = input.bits.req.pcInMiddle
+  val endI       = inst.end(2).andR
+  val midI       = inst.span(16, 2).andR
 
 //   assert(
 //     !half || half && isIdle,
@@ -64,24 +65,29 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
       val isIc = !endI && midI
       val isCc = !endI && !midI
 
+      val flushUpper = req.pred.take && !req.predPcInMiddle
+
       input.ready             := output.ready
       output.valid            := input.valid
       output.bits.inst        := inst
       output.bits.isC         := !endI
-      output.bits.pc          := input.bits.req.pc
-      output.bits.pred.stepPc :=
-        input.bits.req.pc + Mux(output.bits.isC, 2.U, 4.U)
+      output.bits.pc          := req.pc
+      output.bits.pred.stepPc := req.pc + Mux(output.bits.isC, 2.U, 4.U)
 
       when(input.fire) {
         buffer := Mux(isIc || isCc, inst.head(16), 0.U)
-        pc     := input.bits.req.pc
-        pred   := input.bits.req.pred
+        pc     := req.pc
+        pred   := req.pred
 
-        state := Mux1H(Seq(
-          isI  -> sIdle,
-          isIc -> sSplit,
-          isCc -> sPartial,
-        ))
+        state := Mux(
+          flushUpper,
+          sIdle,
+          Mux1H(Seq(
+            isI  -> sIdle,
+            isIc -> sSplit,
+            isCc -> sPartial,
+          )),
+        )
       }
     }
 
@@ -123,7 +129,11 @@ class InstRealigner(implicit p: HPipeParameters) extends Module {
     }
   }
 
-  when(half) {
+  // For this case, the input inst is in layout of:
+  // - xI
+  // - xC
+  // Where we don't care about x
+  when(pcInMiddle) {
     input.ready  := output.ready
     output.valid := false.B
 

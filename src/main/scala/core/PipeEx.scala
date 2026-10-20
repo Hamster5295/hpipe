@@ -90,6 +90,7 @@ class PipeEx(implicit val p: HPipeParameters)
   io.branch.bits.redirect := branchMiss && io.branch.valid && fromSg.valid
   io.branch.bits.target   := realTarget // realTarget is the actual branch
   // (When br condition not met, realTarget falls to pc + 4)
+  io.branch.bits.stepPc := pred.stepPc
 
   // Exception
   val excp = io.toMem.trap
