@@ -125,5 +125,5 @@ class PipeEx(implicit val p: HPipeParameters)
   toId.csr.bits.addr := fromSg.csrAddr
   toId.csr.bits.data := csrResult
 
-  io.busy := Mux(fromSg.flags.muldiv, mdu.io.busy, false.B)
+  io.busy := Mux(fromSg.flags.muldiv, mdu.io.busy, false.B) && !io.stall
 }

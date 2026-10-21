@@ -4,13 +4,8 @@
 #include "VHPipe.h"
 #include <stdint.h>
 
-#define UART_BASE 0x1000
-#define RTC_BASE 0x2000
-
-#define PLIC_BASE       0x0C000000
-#define PLIC_NDEV       32
-
-void plic_set_source(int src, bool asserted);
+#define UART_BASE 0x10000000
+#define RTC_BASE 0x20000000
 
 typedef struct peripheral_t {
   uint32_t addr_h12;

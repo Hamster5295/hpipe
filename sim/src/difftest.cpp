@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "emu.h"
 #include "mem.h"
+#include "peripheral.h"
 #include "riscv/processor.h"
 #include "riscv/sim.h"
 #include "utils.h"
@@ -13,7 +14,8 @@ sim_t *model;
 cfg_t cfg;
 
 auto *mem_ref = new mem_t(MEM_SIZE);
-vector<pair<reg_t, abstract_mem_t *>> mems{{RESET_VECTOR, mem_ref}};
+vector<pair<reg_t, abstract_mem_t *>> mems{{RESET_VECTOR, mem_ref},
+                                           {UART_BASE, new mem_t(4096)}};
 
 bool enabled = false;
 
@@ -22,9 +24,10 @@ bool diff_enabled() { return enabled; }
 void diff_init() {
   enabled = true;
 
-  cfg.isa = "RV32IMC";
+  cfg.isa = "RV32IMC_zicsr_zicntr";
   cfg.priv = "M";
-  cfg.mem_layout = {mem_cfg_t(RESET_VECTOR, MEM_SIZE)};
+  cfg.mem_layout = {mem_cfg_t(RESET_VECTOR, MEM_SIZE),
+                    mem_cfg_t(UART_BASE, 4096)};
   cfg.hartids = {0};
   cfg.start_pc.set_global(RESET_VECTOR);
   cfg.pmpregions = 0;
