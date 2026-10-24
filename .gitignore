@@ -341,7 +341,6 @@ hs_err_pid*
 
 # IDE
 .metals
-.clangd
 
 # deps
 .deps
