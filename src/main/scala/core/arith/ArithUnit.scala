@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 import hpipe._
+import hpipe.widget._
 
 object AluOp extends ChiselEnum {
   val Add, Sll, Slt, Sltu, Xor, Srx, Or, And = Value

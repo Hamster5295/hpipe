@@ -1,10 +1,12 @@
-package hpipe
+package hpipe.widget
 
 import chisel3._
 import chisel3.util._
 import hammer._
+import harith.uint.UIntSrt4Div
+import hpipe._
 
-class IntDiv(width: Int) extends Bundle {
+class IntDivIO(width: Int) extends Bundle {
   val valid    = Input(Bool())
   val dividend = Input(UInt(width.W))
   val divisor  = Input(UInt(width.W))
@@ -16,9 +18,8 @@ class IntDiv(width: Int) extends Bundle {
   val remainder = Output(UInt(width.W))
 }
 
-class IntNonRestoringDiv(width: Int)(implicit p: HPipeParameters)
-    extends Module {
-  val io = IO(new IntDiv(width))
+class IntDiv(width: Int)(implicit p: HPipeParameters) extends Module {
+  val io = IO(new IntDivIO(width))
 
   val reg = RegZero(UInt((width * 2 + 1).W))
 

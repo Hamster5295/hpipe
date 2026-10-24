@@ -7,6 +7,7 @@ import chisel3.util._
 import chisel3.util.experimental.decode._
 import hammer._
 import hpipe._
+import hpipe.widget._
 
 class EarlyDecodeResult(implicit p: HPipeParameters) extends Bundle {
   val isUncond   = Bool()

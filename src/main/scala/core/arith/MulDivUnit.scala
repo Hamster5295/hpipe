@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import hammer._
 import hpipe._
+import hpipe.widget._
 
 object MulDivOp extends ChiselEnum {
   val Mul, Mulh, Mulhsu, Mulhu, Div, Divu, Rem, Remu = Value
@@ -27,7 +28,6 @@ class MulDivUnit(implicit val p: HPipeParameters) extends Module {
   val isMulUpper = io.op.in(Mulh.asUInt, Mulhu.asUInt, Mulhsu.asUInt)
   val isDiv      = io.op.msb() && ~io.op(1)
   val isRem      = io.op.msb() && io.op(1)
-  val isSigned   = io.op.in(Div.asUInt, Rem.asUInt)
 
   val mul = Module(new IntMul(32))
   mul.io.valid   := io.valid && isMul
@@ -37,10 +37,10 @@ class MulDivUnit(implicit val p: HPipeParameters) extends Module {
   mul.io.aSigned := io.op.in(Mul.asUInt, Mulh.asUInt, Mulhsu.asUInt)
   mul.io.bSigned := io.op.in(Mul.asUInt, Mulh.asUInt)
 
-  val div = Module(new IntNonRestoringDiv(32))
+  val div = Module(new IntDiv(32))
   div.io.dividend := io.src1
   div.io.divisor  := io.src2
-  div.io.signed   := isSigned
+  div.io.signed   := io.op.in(Div.asUInt, Rem.asUInt)
   div.io.valid    := io.valid && (isDiv || isRem)
   div.io.clear    := ~io.valid
 

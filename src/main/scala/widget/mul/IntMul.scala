@@ -1,7 +1,10 @@
-package hpipe
+package hpipe.widget
 
 import chisel3._
 import chisel3.util._
+import hammer._
+import harith.uint._
+import hpipe._
 
 class IntMulIO(width: Int) extends Bundle {
   val valid = Input(Bool())
@@ -15,16 +18,15 @@ class IntMulIO(width: Int) extends Bundle {
   val o       = Output(UInt((width * 2).W))
 }
 
-abstract class AbstractIntMul(width: Int) extends Module {
+class IntMul(width: Int)(implicit p: HPipeParameters) extends Module {
   val io = IO(new IntMulIO(width))
+
+  val mul = Module(if (p.UseArithMacro) new IntMacroMul(width)
+  else new IntAsicMul(width))
+
+  io <> mul.io
 }
 
-class IntMul(width: Int)(implicit p: HPipeParameters)
-    extends AbstractIntMul(width) {
-  val inner = Module(
-    if (p.UseArithMacro) new IntMacroMul(width)
-    else new IntBoothMul(width),
-  )
-
-  io <> inner.io
+trait IntMulBase {
+  val io: IntMulIO
 }

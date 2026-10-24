@@ -8,11 +8,12 @@ import hammer.test._
 import java.util.Random
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
+import hpipe.widget.IntDiv
 
 class DividerSpec extends AnyFreeSpec with Matchers with ChiselSim {
 
   def sim(width: Int) =
-    Sim(new IntNonRestoringDiv(width)(HPipeParameters())) { dut =>
+    Sim(new IntDiv(width)(HPipeParameters())) { dut =>
       Test(s"UInt$width", dut) { dut =>
         dut.io.signed.poke(false)
         for (i <- 0 until 1024) {
