@@ -124,11 +124,11 @@ If `rs1` can be forwarded, BTB will predict correctly, as `JALR` always takes br
 
 Characteristics were estimated using Xilinx part `xc7a200t`
 
-- Power = 433mW
+- Power = 436mW
 - Clock Freq = 169.5MHz
 - Utilization
-  - LUT = 4705
-  - FF  = 5030
+  - LUT = 4616
+  - FF  = 4967
   - DSP = 4
 
 
@@ -136,9 +136,9 @@ Characteristics were estimated using Xilinx part `xc7a200t`
 
 Characteristics were estimated using [icsprout55](https://github.com/openecos-projects/icsprout55-pdk) 55nm PDK
 
-- Power = 35.072mW
-- Clock Freq = 196.1MHz
-- Area = 77822.08um2
+- Power = 23.71mW
+- Clock Freq = 250.38MHz
+- Area = 79342.76um2
 
 > The mass decline of Frequency comes from the io preservation by OpenSTA
 
@@ -173,3 +173,4 @@ This project exists with the help of the Open Source Community.
 Thanks
 - [The YSYX Project](https://ysyx.oscc.cc/) for providing a comprehensive walkthough of the Processor full-stack design & validation, along with a set of open source projects. The transplant of `riscv-tests` and `backend` won't exist without it.
 - [mini-gdbstub](https://github.com/RinHizakura/mini-gdbstub) for providing a really simple gdb server framework
+- [Spike](https://github.com/riscv-software-src/riscv-isa-sim) for providing a comprehensive reference model
